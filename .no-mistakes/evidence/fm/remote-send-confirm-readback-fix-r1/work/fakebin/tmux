@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+case "${1:-}" in
+ display-message) for a in "$@"; do case "$a" in *cursor_y*) echo 1; exit;; esac; done; echo %1 ;;
+ capture-pane) printf '%s\n' 'Quick safety check: Is this a project you created or trust?' '❯ 1. Yes, I trust this folder' '  2. No, exit' 'Enter to confirm · Esc to cancel' ;;
+ send-keys) printf '%s\n' "$*" >> "$FM_TMUX_LOG" ;;
+esac

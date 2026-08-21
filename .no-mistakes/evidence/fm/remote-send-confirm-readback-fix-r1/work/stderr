@@ -1,0 +1,8 @@
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /Users/kunchen/.no-mistakes/evidence/01M0K454EQ8W8MNGBGC7YKWDYF/work/home/.pi/extensions/fm-primary-turnend-guard.ts -e /Users/kunchen/.no-mistakes/evidence/01M0K454EQ8W8MNGBGC7YKWDYF/work/home/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: text not sent to sess:fm-mate: pane is a gated modal dialog, not an accepting composer (harness=claude; backend=tmux). No Enter was sent. Inspect with fm-peek.sh; a workspace-trust or similar confirm prompt must be cleared before any steer.

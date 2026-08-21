@@ -1,0 +1,8 @@
+=== End-user trust-dialog send ===
+exit=1
+error: text not sent to sess:fm-mate: pane is a gated modal dialog, not an accepting composer (harness=claude; backend=tmux). No Enter was sent. Inspect with fm-peek.sh; a workspace-trust or similar confirm prompt must be cleared before any steer.
+tmux Enter calls=0
+durable pending records=0
+=== Durable recovery body ===
+payload-bytes=593 stored-bytes=593 exact-match=yes
+full-payload-in-recovery=yes summary-bytes=121
