@@ -1,0 +1,49 @@
+339fb7509322d7d13ab284bbd8ea1d8d3f9c8aa45dfb59ee416d5a1deeec672a
+ready pf-investigation req-demo discord
+delivered pf-investigation request=req-demo platform=discord chunks=1
+thread req-demo is still OPEN: hand it on with 'rechain ...' or close it with 'retire pf-investigation --reason ...'
+
+=== Session-start pending surface after delivery ===
+open-loop pf-investigation request=req-demo platform=discord
+  delivered=2026-08-21T23:42:43Z window-closes=2030-01-08T00:00:00Z
+  summary=investigate and fix worker placement
+  -> bind the follow-on with rechain, or close the loop with retire pf-investigation --reason ...
+
+=== Retained registration state (public-safe fields only) ===
+obligation_id=pf-investigation
+work_home=main
+work_id=investigation
+followup_expires_at=2030-01-08T00:00:00Z
+request_context_b64=<bounded encoded public-safe context>
+state=delivered
+delivered_at=2026-08-21T23:42:43Z
+
+=== Rechain the delivered investigation baton to follow-on fix work ===
+retired pf-investigation reason=handed on to pf-followon
+When this work reaches its promised terminal outcome, report it as typed data
+(never as a sentence for someone to parse) by running exactly:
+
+  /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0K1Y4ADW6E61A1D3HE2DCJ4/bin/fm-public-followup-emit.sh \
+    --home /Users/kunchen/.no-mistakes/evidence/01M0K1Y4ADW6E61A1D3HE2DCJ4/manual-home.zQkKx0 \
+    --obligation pf-followon \
+    --relation rel-1 \
+    --source-home main \
+    --work-id followon-fix \
+    --generation 1 \
+    --outcome pr-merged \
+    --deliverable pr_url=<value> \\
+
+    --outcome-text '<one bounded public-safe sentence>'
+
+Do not post anything publicly yourself and do not look for the public thread:
+the home above owns the reply.
+
+=== Registry after rechain ===
+pf-followon: work_id=followon-fix state=open
+source registration present: no
+retirement receipt present: yes
+reason=handed on to pf-followon
+retired_at=2026-08-21T23:42:44Z
+
+=== Public delivery observed ===
+PUBLIC POST PAYLOAD: {"request_id":"req-demo","text":"Investigation shipped the fix."}
