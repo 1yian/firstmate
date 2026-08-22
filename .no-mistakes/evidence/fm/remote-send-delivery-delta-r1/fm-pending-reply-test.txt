@@ -1,0 +1,44 @@
+ok - pending request bodies are never scanned as records
+ok - pending reply creation removes partial serialization artifacts
+ok - pending reply creation falls back to sha256sum
+ok - normal correlated reply resolves once (idempotent)
+ok - completed turn with no report triggers exactly one recovery
+ok - recovery transport releases and reacquires its correlation lock around delivery
+ok - recovery validates durable bodies and preserves legacy summary fallback
+ok - recovery exit 4 remains distinct, visible, and operator-settleable
+ok - recovery attempts reconcile without reinjection
+ok - recovery reply resolves the original expectation
+ok - second missed turn escalates once and remains durable
+ok - escalations and replies wake; the home's own escalation close stays quiet
+ok - failed escalation publication remains retryable and publishes once
+ok - legacy escalation closes under the shared default key
+pending-reply: request body missing for fd373b99922e67f5
+ok - legacy escalation cannot close an unrelated default-key decision
+pending-reply: request body missing for 39bad4bbe33f2269
+ok - foreign correlated blocker cannot impersonate a pending-reply escalation
+ok - concurrent resolution closes one keyed escalation exactly once
+ok - concurrent escalation yields to a late correlated reply
+ok - transport success cannot masquerade as reply success
+ok - undelivered records remain immutable across scan paths
+ok - delivery confirmation fallback reconciles durably
+ok - unrelated events and stale correlation ids cannot resolve
+ok - restart preserves expectation and exact parent destination
+ok - wrong-home reports are detected but do not silently acknowledge
+ok - direct unmarked captain input creates no expectation
+ok - fm-send marked secondmate path creates pending and embeds corr
+ok - status-pointed document resolves the expectation
+ok - optional helper report resolves without being required for correctness
+ok - backend busy/idle observation covers Pi/Claude paths without conversation scrape
+ok - tmux and zellij unknown states use bounded capture fallback
+ok - pending replies scope Kimi capture fallback by recorded harness
+ok - tick skips terminal records and reuses target observations
+ok - correlations are reused only for matching open task records
+ok - tick end-to-end: miss -> one recovery -> escalate -> durable
+pending-reply: request body missing for 42b6ba96864e74b0
+ok - typed-unproven records escalate once with exact suffix-aware settlement guidance
+ok - typed-unproven supersedes only unconfirmed delivery uncertainty and stays settleable
+ok - typed abandonment serializes with watcher escalation
+ok - failed transport discards undelivered expectation only
+ok - a remote repost waits for the reply channel and still fires on a real miss
+ok - a mirrored correlated remote reply resolves without any repost
+ok - all pending-reply tests passed

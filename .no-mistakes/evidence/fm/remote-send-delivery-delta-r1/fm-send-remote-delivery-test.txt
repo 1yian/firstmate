@@ -1,0 +1,9 @@
+ok - fm-send remote: delivered-unconfirmed reports delivered, exits 0, keeps the expectation armed
+ok - fm-send remote: typed-unproven settlement guidance stays exact and suffix-aware
+ok - fm-send remote: a real remote failure still fails loudly with the remote diagnostics
+ok - fm-send remote: ssh 255 still refuses loudly and preserves the expectation as delivery_unknown
+ok - fm-send remote: a delivered-unconfirmed answer closes its --resolve-key decision
+ok - fm-send local: an unconfirmed submit exits 3 with an honest non-error report
+ok - fm-send local: an unconfirmed submit still never closes a --resolve-key decision
+ok - fm-send local: an unconfirmed secondmate send keeps its reply expectation armed
+all fm-send-remote-delivery tests passed

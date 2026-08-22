@@ -1,0 +1,41 @@
+$ fm-send.sh demo "2"
+exit=0
+--- stderr (end-user surface) ---
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /tmp/fm-send-evidence.BN3qID/home/.pi/extensions/fm-primary-turnend-guard.ts -e /tmp/fm-send-evidence.BN3qID/home/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+--- terminal transport ---
+TYPE literal payload=2twddftaknl8rah03rzkfoti
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY BSpace
+KEY Enter
+--- payload received by agent at Enter ---
+2
+--- final composer state ---
+typed-buffer=2
+enter-sent=yes

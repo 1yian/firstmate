@@ -1,0 +1,35 @@
+ok - fm_composer_queued_enter_verdict: pending + busy returns empty (queued Enter)
+ok - fm_composer_queued_enter_verdict: pending + idle/unknown stays pending
+ok - fm_composer_queued_enter_verdict: only proven pending is converted
+ok - fm_composer_classify_screen: pre-type gate verdicts do not leak post-Enter
+ok - fm_composer_screen_is_gated: only current modal evidence is combined
+ok - fm_composer_delivery_delta_verdict: 11 real-harness scenarios, plain and ANSI captures agreeing (22 verdicts)
+ok - fm_composer_delivery_delta_verdict: a mid-word wrap, a hint row, and a non-bottom-anchored composer do not block acceptance
+ok - fm_composer_delivery_delta_verdict: refuses a swallowing modal the gate scorer does not recognise
+ok - fm_composer_delivery_delta_verdict: a trust dialog refuses before typing and again after, both with a reason
+ok - fm_composer_delivery_delta_verdict: a scrollback copy plus a ticking pane is not delivery
+ok - fm_composer_delivery_delta_verdict: when a redrawing pane defeats novelty, the occurrence count still refuses
+ok - fm_composer_delivery_delta_verdict: overlapping anchors cannot manufacture an occurrence increase
+ok - fm_composer_delivery_delta_verdict: a partial write that lost the payload tail is refused
+ok - fm_composer_delivery_delta_verdict: a payload echoed with no container at all is a healthy send
+ok - fm_composer_delivery_delta_verdict: an unusable payload is refused with a named reason
+ok - fm_composer_delivery_delta_verdict: short collision anchors are refused
+ok - fm_composer_envelope_prepare: a short payload gets a fresh full-length anchor and an exact erase count
+ok - fm_composer_envelope_prepare: a single-character suffix is selected afresh
+ok - fm_composer_envelope_prepare: a self-proving payload is typed verbatim with no envelope
+ok - fm_composer_envelope_prepare: an unerasable short payload is refused, not guessed at
+ok - fm_composer_envelope_boundary_verdict: opposite checkpoints pin both erase directions
+ok - fm_composer_typed_delivery_core: a short steer is proven and leaves only the payload in the composer
+ok - fm_composer_typed_delivery_core: a self-proving steer is delivered with no envelope
+ok - fm_composer_typed_delivery_core: every unproven successful write is typed-unproven
+ok - fm_composer_typed_delivery_core: unchanged visible tail never invites a duplicate write
+ok - fm_composer_typed_delivery_core: a rising count prevents ambiguous row diff from inviting retry
+ok - fm_composer_typed_delivery_core: an earlier copy of the payload on screen proves nothing
+ok - fm_composer_typed_delivery_core: a gated modal is refused before anything is typed
+ok - fm_composer_typed_delivery_core: unavailable boundary probes refuse before typing
+ok - fm_composer_typed_delivery_core: no erase primitive refuses short steers before typing, long steers still work
+ok - fm_composer_typed_delivery_core: erase checkpoints and final payload retention refuse every measured direction
+ok - fm_composer_typed_delivery_core: every way the erase can fail reports typed-unproven, never a bare refusal
+ok - fm_composer_typed_delivery_core: stranded warnings are exact transport evidence only
+ok - fm_composer_delivery_delta_verdict: box glyphs in the payload vanish on both sides, not just one
+ok - fm_composer_delivery_delta_verdict: a narrow single-row composer that scrolls its buffer still proves delivery
