@@ -1,0 +1,32 @@
+=== End-user brief: valid typed contract ===
+When this work reaches its promised terminal outcome, report it as typed data
+(never as a sentence for someone to parse) by running exactly:
+
+  /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0KCZVJRBVVQARVTE9EHH139/bin/fm-public-followup-emit.sh \
+    --home /var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T//fm-public-followup.u5VAqz/evidence-brief \
+    --obligation pf-evidence \
+    --relation rel-code \
+    --source-home main \
+    --work-id work-evidence \
+    --generation 1 \
+    --outcome pr-merged \
+    --deliverable pr_url=<value> \
+    --outcome-text '<one bounded public-safe sentence>'
+
+Do not post anything publicly yourself and do not look for the public thread:
+the home above owns the reply.
+=== End-user brief: malformed typed contract fails closed ===
+fm-public-followup: public-followup obligation 'pf-evidence' has no readable required deliverable keys
+exit=1
+=== End-user promotion: unresolved remote Relay parent warns but promotion proceeds ===
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0KCZVJRBVVQARVTE9EHH139/.pi/extensions/fm-primary-turnend-guard.ts -e /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0KCZVJRBVVQARVTE9EHH139/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+promoted promote-remote to ship mode=local-only yolo=off (teardown protection restored)
+next: FM_HOME=/var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T//fm-public-followup.u5VAqz/evidence-promote-remote bin/fm-send.sh fm-promote-remote '<ship instructions for mode=local-only: review scratch state with git status and git log; reset to a clean default-branch base; carry over only intended fix changes; create branch fm/promote-remote; implement; report done>'
+warning: could not resolve the consent-holding parent home for secondmate remote-mate; promotion succeeded, but any open public loop must be inspected and rechained from the parent.
+persisted-kind=ship
