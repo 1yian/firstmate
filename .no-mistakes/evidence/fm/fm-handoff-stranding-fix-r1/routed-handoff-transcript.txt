@@ -1,0 +1,20 @@
+--- handoff CLI response ---
+handed off 1 item(s) to design: wake-item
+  into /private/var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T/fm-backlog-handoff.rhlKJ7/live-wake-sub/data/backlog.md
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0Q2GKJAPCVZS6Q7RQADKM5M/.pi/extensions/fm-primary-turnend-guard.ts -e /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0Q2GKJAPCVZS6Q7RQADKM5M/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+--- receiving home durable backlog ---
+## Queued
+- [ ] wake-item - routed to a live receiver (repo: alpha)
+
+## Done
+## In flight
+--- supported tmux endpoint received wake ---
+send-keys -t firstmate:fm-design -l [fm-from-firstmate]⁣corr=6efd57a321fb63f4 New routed work is in your backlog. Run bin/fm-session-start.sh now, then act on the routed task.
+wake submissions after idempotent rerun: 1
+ok - a routed handoff wakes once and a successful rerun stays idempotent

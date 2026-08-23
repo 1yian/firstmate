@@ -1,0 +1,10 @@
+--- parent-visible stall notification ---
+check: secondmate wake-loop stalled: mate=mate row=7 age=10s
+--- foreign row before/after SHA-256 (must match) ---
+4f97967a93682bbc22356d82bd187651c339d978906539c26915490bf64cbb22  /var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T//fm-wake-tests.ZN4rFT/secondmate-foreign-stall/foreign-before
+4f97967a93682bbc22356d82bd187651c339d978906539c26915490bf64cbb22  /var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T//fm-wake-tests.ZN4rFT/secondmate-foreign-stall/foreign-after
+--- empty queue checkpoint output (must contain no stall) ---
+check: rearm-resurface
+--- healthy queue checkpoint output (must contain no stall) ---
+check: rearm-resurface
+ok - foreign secondmate queue stalls notify once, remain byte-stable, and stay quiet when empty or healthy
