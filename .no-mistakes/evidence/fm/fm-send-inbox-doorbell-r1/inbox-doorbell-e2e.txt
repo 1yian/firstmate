@@ -1,0 +1,27 @@
+END-TO-END FM-SEND INBOX + DOORBELL DEMONSTRATION
+
+Initial fm-send exit:
+0
+
+Terminal received (constant doorbells only; multiline payload is absent):
+Firstmate instruction waiting: read /Users/kunchen/.no-mistakes/evidence/01M0PY6VCAP06XZ32CBJTX9PW3/inbox-doorbell-e2e/home/state/demo.inbox/001.msg, act on it, then mv it to /Users/kunchen/.no-mistakes/evidence/01M0PY6VCAP06XZ32CBJTX9PW3/inbox-doorbell-e2e/home/state/demo.inbox/handled/.
+Firstmate instruction waiting: read /Users/kunchen/.no-mistakes/evidence/01M0PY6VCAP06XZ32CBJTX9PW3/inbox-doorbell-e2e/home/state/demo.inbox/002.msg, act on it, then mv it to /Users/kunchen/.no-mistakes/evidence/01M0PY6VCAP06XZ32CBJTX9PW3/inbox-doorbell-e2e/home/state/demo.inbox/handled/.
+
+Persisted inbox tree after worker acknowledgement and follow-up:
+demo.inbox/002.msg
+demo.inbox/handled/001.msg
+
+Acknowledged 001.msg body (raw record protocol):
+schema=fm-task-inbox.v1
+at=2026-08-23T09:53:21Z
+--
+Deploy release candidate
+Then verify health
+
+Preserve blank line
+
+Unacknowledged follow-up 002.msg body (sequence was not reused):
+schema=fm-task-inbox.v1
+at=2026-08-23T09:53:23Z
+--
+Follow-up after acknowledgement

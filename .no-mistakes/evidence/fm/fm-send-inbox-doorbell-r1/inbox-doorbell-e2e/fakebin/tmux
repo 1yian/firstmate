@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -u
+case "${1:-}" in
+  send-keys)
+    shift
+    literal=0
+    while [ $# -gt 0 ]; do
+      case "$1" in -t) shift 2;; -l) literal=1; shift;; *) break;; esac
+    done
+    [ "$literal" = 0 ] || printf '%s\n' "${1:-}" >> "$FM_SEND_LOG"
+    ;;
+  display-message)
+    case "$*" in *cursor_y*) printf '1\n';; *) printf 'fakepane\n';; esac
+    ;;
+  capture-pane) printf '╭────╮\n│    │\n╰────╯\n';;
+  list-windows) exit 0;;
+esac
+exit 0

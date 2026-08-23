@@ -1,0 +1,5 @@
+window=sess:fm-demo
+endpoint_task_id=demo
+kind=ship
+harness=claude
+backend=tmux
