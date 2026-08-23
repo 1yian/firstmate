@@ -1,0 +1,9 @@
+$ fm-watch-checkpoint.sh --seconds 3  # aged row 42
+check: secondmate wake-loop stalled: mate=design row=42 age=11s
+$ grep -c secondmate-wake-loop-design- main/state/.wake-queue
+1
+$ cmp foreign-before receiver/state/.wake-queue
+foreign-row-byte-identical=yes
+$ fm-watch-checkpoint.sh --seconds 2  # same foreign row after acknowledgement
+duplicate-stall-notification=no
+foreign-row-still-byte-identical=yes

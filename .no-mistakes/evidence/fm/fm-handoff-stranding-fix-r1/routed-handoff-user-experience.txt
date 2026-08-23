@@ -1,0 +1,21 @@
+$ fm-backlog-handoff.sh design demo-routed-item  # endpoint intentionally absent
+handed off 1 item(s) to design: demo-routed-item
+  into /Users/kunchen/.no-mistakes/evidence/01M0PPA8XZW9K5YGW44HHNGJTC/.handoff-demo-fixture/receiver/data/backlog.md
+error: handed off work to secondmate design, but no live receiver endpoint is recorded; the destination backlog is durable and the receiver was not woken
+exit=1
+$ grep demo-routed-item receiver/data/backlog.md
+- [ ] demo-routed-item - verify loud failure and recovery wake (repo: alpha)
+$ fm-backlog-handoff.sh design demo-routed-item  # endpoint restored
+nothing to move: demo-routed-item already present in /Users/kunchen/.no-mistakes/evidence/01M0PPA8XZW9K5YGW44HHNGJTC/.handoff-demo-fixture/receiver/data/backlog.md
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0PPA8XZW9K5YGW44HHNGJTC/.pi/extensions/fm-primary-turnend-guard.ts -e /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0PPA8XZW9K5YGW44HHNGJTC/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+exit=0
+$ grep "New routed work" tmux.log
+send-keys -t firstmate:fm-design -l [fm-from-firstmate]⁣corr=16d2d8abbd96daf4 New routed work is in your backlog. Run bin/fm-session-start.sh now, then act on the routed task.
+$ test ! -e state/.backlog-handoff-design.wake-pending
+wake-pending cleared=yes
