@@ -1,0 +1,42 @@
+=== Public help interface ===
+Usage:
+  fm-lint.sh                         lint the context-selected file set (see above)
+  fm-lint.sh --fast [path]...       local lint with extended analysis disabled
+  fm-lint.sh <path>...               lint explicit roots with the same config
+  fm-lint.sh --jobs <1|2> [path]...  override bounded worker count
+  fm-lint.sh --telemetry <path> ...  write a quiet metrics snapshot
+  fm-lint.sh --required-version      print the ShellCheck pin
+  fm-lint.sh --list-files            print the file set that would be linted
+  fm-lint.sh --help                  print this usage
+
+=== Fast local mode with real ShellCheck ===
+fm-lint.sh: ShellCheck 0.11.0 (pinned 0.11.0)
+fm-lint.sh: fast local mode; ShellCheck extended analysis disabled
+format	fm-lint-telemetry-v1
+shellcheck_version	0.11.0
+analysis_mode	fast
+root_count	1
+
+=== CI/default full mode ignores ambient FM_LINT_FAST=1 ===
+fm-lint.sh: ShellCheck 0.11.0 (pinned 0.11.0)
+fm-lint.sh: full ShellCheck extended analysis enabled
+format	fm-lint-telemetry-v1
+shellcheck_version	0.11.0
+analysis_mode	full
+root_count	1
+
+=== Fast mode catches an ordinary ShellCheck defect ===
+fm-lint.sh: ShellCheck 0.11.0 (pinned 0.11.0)
+fm-lint.sh: fast local mode; ShellCheck extended analysis disabled
+
+In /Users/kunchen/.no-mistakes/evidence/01M0R1NFG9QRR47554HCYND47B/ordinary-defect.sh line 3:
+  local a= b=
+          ^-- SC1007 (warning): Remove space after = if trying to assign a value (for empty string, use var='' ... ).
+
+For more information:
+  https://www.shellcheck.net/wiki/SC1007 -- Remove space after = if trying to...
+exit_status=1
+
+=== CI refuses the local-only --fast flag ===
+fm-lint.sh: --fast is local-only; CI uses full ShellCheck analysis.
+exit_status=2
