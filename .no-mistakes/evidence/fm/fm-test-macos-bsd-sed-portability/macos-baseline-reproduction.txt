@@ -1,0 +1,18 @@
+macOS/BSD baseline reproduction
+platform: macOS 26.5.2
+
+[base fm-inbox note] exit=1
+sed: 1: "/var/folders/0k/bf8mwt2 ...": invalid command code f
+
+[base fm-tool-update-check suite] exit=1
+not ok - the report must be exactly one line for the wake record
+
+[base fm-voice-relay suite] exit=1
+ok - one deny decision per item covers every list that item could appear in
+ok - the state verb is a closed vocabulary, so free text cannot ride out on it
+ok - the backlog and the state directory always come from the same home
+ok - a finished task's pull request is neither counted nor named
+ok - a deny substring on an open title removes its pull request and says so
+ok - an unknown read scope refuses instead of widening
+ok - the configured read scope is honoured
+not ok - fixture should start with an empty inbox

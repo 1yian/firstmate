@@ -1,0 +1,18 @@
+macOS end-to-end fm-inbox note verification
+platform: macOS 26.5.2
+
+$ FM_HOME=<temporary-home> bin/fm-inbox.sh note "Portable queue smoke test"
+queued 1787480581-QzEAhy
+  Portable queue smoke test
+  firstmate will pick this up at its next check.
+
+published note: state/inbox/1787480581-QzEAhy.note
+record id matches filename: yes
+record:
+id=1787480581-QzEAhy
+at=2026-08-23T10:23:01Z
+source=text
+--
+Portable queue smoke test
+
+wake records matching note id: 1
