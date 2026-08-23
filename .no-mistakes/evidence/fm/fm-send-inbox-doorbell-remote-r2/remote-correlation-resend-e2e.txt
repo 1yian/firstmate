@@ -1,0 +1,27 @@
+END-USER SCENARIO: ambiguous remote send followed by the printed correlation-reusing resend
+
+--- CLI guidance after two completion-unknown SSH results ---
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the requested message WILL still be sent.
+●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0R4V0YRSKM0GCEBJ8MXCPQ1/.pi/extensions/fm-primary-turnend-guard.ts -e /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0R4V0YRSKM0GCEBJ8MXCPQ1/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+notice: doorbell did not reach fm-remote:p1; the steer is durably recorded at /var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T/fm-send-remote-delivery.T2HDfJ/remote-idem-rhome/state/parent-route/rsm.inbox/001.msg
+notice: doorbell did not reach fm-remote:p1; the steer is durably recorded at /var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T/fm-send-remote-delivery.T2HDfJ/remote-idem-rhome/state/parent-route/rsm.inbox/001.msg
+error: steer to remote secondmate rsm is unconfirmed (transport lost twice; remote completion unknown). Only the correlation-reusing resend below is idempotent and lands on the same remote inbox record:
+FM_HOME=/var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T/fm-send-remote-delivery.T2HDfJ/remote-idem-11711 FM_PENDING_REPLY_EXISTING_CORR=c47bb8db5a19aa4f /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0R4V0YRSKM0GCEBJ8MXCPQ1/bin/fm-send.sh rsm please\ rename\ the\ metric
+
+--- Durable remote inbox state after executing the printed resend ---
+record_count=1
+record_name=001.msg
+schema=fm-task-inbox.v1
+at=2026-08-23T21:05:12Z
+--
+[fm-from-firstmate]⁣corr=c47bb8db5a19aa4f please rename the metric
+--- Parent pending-reply state after successful resend ---
+corr_id=c47bb8db5a19aa4f
+task_id=rsm
+phase=awaiting_report
+delivered_epoch=1787519113
