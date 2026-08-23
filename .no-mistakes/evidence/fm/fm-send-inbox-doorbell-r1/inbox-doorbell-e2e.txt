@@ -1,38 +1,27 @@
-END-TO-END fm-send inbox + doorbell demonstration
-command: FM_HOME=<fixture>/home fm-send.sh worker <multiline payload>
-exit_code: 0
+FM inbox+doorbell end-to-end evidence
+fm-send exit: 0
 
-persisted_record: /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0Q4HBQ7KTX75T37ESQB06R3/.test-evidence-inbox/home/state/worker.inbox/001.msg
-record_files:
-/Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0Q4HBQ7KTX75T37ESQB06R3/.test-evidence-inbox/home/state/worker.inbox/001.msg
+Persisted unhandled record:
+001.msg
 
-record_body_rendered_between_markers:
-<<<BODY
-Deploy release 7
-Preserve  double spaces
-
-BODY>>>
-record_body_hex (final 0a 0a proves blank/trailing newline preservation):
-           44  65  70  6c  6f  79  20  72  65  6c  65  61  73  65  20  37
-           0a  50  72  65  73  65  72  76  65  20  20  64  6f  75  62  6c
-           65  20  73  70  61  63  65  73  0a  0a                        
+Persisted body (od hex; ends 0a 0a, proving both trailing newlines):
+ 64 65 70 6c 6f 79 20 72 65 6c 65 61 73 65 20 63
+ 61 6e 64 69 64 61 74 65 0a 74 68 65 6e 20 72 65
+ 70 6f 72 74 20 73 74 61 74 75 73 0a 0a 
 
 
-terminal_literal_text (the only text typed into the worker pane):
-Firstmate instruction waiting: read /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0Q4HBQ7KTX75T37ESQB06R3/.test-evidence-inbox/home/state/worker.inbox/001.msg, act on it, then mv it to /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0Q4HBQ7KTX75T37ESQB06R3/.test-evidence-inbox/home/state/worker.inbox/handled/.
+Terminal channel (constant doorbell only; payload absent):
+Firstmate instruction waiting: list <fixture>/home/state/demo.inbox/*.msg and, in numeric order, read and act on each, then mv each handled file to <fixture>/home/state/demo.inbox/handled/.
 
-payload_leaked_to_terminal: NO
+Acknowledgement action: mv 001.msg handled/
+unhandled records after ack: 0
+handled records after ack: 1
 
-acknowledgement: mv 001.msg handled/
-unhandled_after_ack: 0
-
-handled_record: /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0Q4HBQ7KTX75T37ESQB06R3/.test-evidence-inbox/home/state/worker.inbox/handled/001.msg
-
-send_stderr:
+fm-send stderr:
 ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ●  WATCHER DOWN - SUPERVISION IS OFF
 ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
 ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
 ●  This is a supervision warning only; the requested message WILL still be sent.
-●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0Q4HBQ7KTX75T37ESQB06R3/.test-evidence-inbox/home/.pi/extensions/fm-primary-turnend-guard.ts -e /Users/kunchen/.no-mistakes/worktrees/016d88035d58/01M0Q4HBQ7KTX75T37ESQB06R3/.test-evidence-inbox/home/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e <fixture>/home/.pi/extensions/fm-primary-turnend-guard.ts -e <fixture>/home/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
 ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
