@@ -1,0 +1,16 @@
+$ fm-branch-outcome.sh append --task worker-42 --verdict captain --summary "PR https://example.test/pr/42 is green and ready for captain review"
+1
+
+$ fm-branch-outcome.sh startup-replay
+BRANCH OUTCOMES (handled by the supervision branch, not yet seen by this session):
+{"seq":1,"epoch":1787512493,"task":"worker-42","wake":"","verdict":"captain","summary":"PR https://example.test/pr/42 is green and ready for captain review"}
+
+$ fm-branch-outcome.sh startup-replay  # second delivery is intentionally empty
+<>
+
+$ FM_SUPERVISION_ACTOR=branch fm-lease.sh claim worker-42 --actor branch
+$ fm-lease.sh check worker-42
+branch 8722 1787512494 live
+$ FM_SUPERVISION_ACTOR=main fm-lease.sh claim worker-42 --actor main
+error: claim refused - task 'worker-42' is leased to the branch supervision actor (state/.lease-worker-42)
+exit=6
