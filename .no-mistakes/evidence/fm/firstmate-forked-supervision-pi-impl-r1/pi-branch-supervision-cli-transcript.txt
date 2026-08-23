@@ -1,0 +1,20 @@
+FIRSTMATE PI BRANCH SUPERVISION — EXECUTABLE INTERFACE TRANSCRIPT
+
+1) Stable branch prefix across home/cwd/timezone
+sha256=28c4f5aa37555e348d4fc71c7111ca83899fdd793312bbf26cbb15e73b08983b
+sha256=28c4f5aa37555e348d4fc71c7111ca83899fdd793312bbf26cbb15e73b08983b
+identical=yes bytes=10212
+
+2) Store-first outcome, durable wake idempotency, and startup replay
+wake_seq=41 first_outcome=1 duplicate_outcome=1
+wake_seq=42 outcome=2
+durable_rows=2
+BRANCH OUTCOMES (handled by the supervision branch, not yet seen by this session):
+{"seq":1,"wake_seq":41,"epoch":1787486503,"task":"worker-1","wake":"","verdict":"routine","summary":"worker remains healthy"}
+{"seq":2,"wake_seq":42,"epoch":1787486503,"task":"worker-2","wake":"","verdict":"captain","summary":"PR ready; captain decision required"}
+replay_after_ack=<empty>
+
+3) Per-task lease excludes the other supervision actor
+branch 23609 1787486503 live
+main_claim_exit=6
+error: claim refused - task 'worker-1' is leased to the branch supervision actor (state/.lease-worker-1)
