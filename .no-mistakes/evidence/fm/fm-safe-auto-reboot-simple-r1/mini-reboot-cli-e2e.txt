@@ -1,0 +1,42 @@
+=== Actual CLI: BOTH resource threshold and two confirmed idle reads ===
+--- check at t=100 ---
+fm-mini-reboot: resource condition not triggered, doing nothing
+--- check at t=200 ---
+fm-mini-reboot: resource condition not triggered, doing nothing
+--- check at t=300 ---
+fm-mini-reboot: resource condition triggered:
+fm-mini-reboot:   reason=maintenance-threshold-crossed-in-3-samples
+fm-mini-reboot: resource triggered but idle window not confirmed, staying put:
+fm-mini-reboot:   confirmed=no
+fm-mini-reboot:   reason=not-both-idle(now=idle prev=none)
+fm-mini-reboot:   verdict=idle
+--- check at t=700 ---
+fm-mini-reboot: resource condition triggered:
+fm-mini-reboot:   reason=maintenance-threshold-crossed-in-3-samples
+fm-mini-reboot: both conditions hold: resource triggered AND idle window confirmed - executing reboot
+fm-mini-reboot: invoking reboot helper: /var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//fm-mrb-evidence.Gy5nNc/both/helper (reason: reason=maintenance-threshold-crossed-in-3-samples;)
+fm-mini-reboot: reboot helper exited 0
+--- observable helper side effect ---
+HELPER_INVOKED reason=reason=maintenance-threshold-crossed-in-3-samples;
+
+=== Actual CLI: resource threshold only; idle registry absent ===
+--- check at t=100 ---
+fm-mini-reboot: resource condition not triggered, doing nothing
+--- check at t=200 ---
+fm-mini-reboot: resource condition not triggered, doing nothing
+--- check at t=300 ---
+fm-mini-reboot: resource condition triggered:
+fm-mini-reboot:   reason=maintenance-threshold-crossed-in-3-samples
+fm-mini-reboot: resource triggered but idle window not confirmed, staying put:
+fm-mini-reboot:   confirmed=no
+fm-mini-reboot:   reason=not-both-idle(now=busy: no homes registered for idle-check (config/mini-reboot-homes) prev=none)
+fm-mini-reboot:   verdict=busy: no homes registered for idle-check (config/mini-reboot-homes)
+--- check at t=700 ---
+fm-mini-reboot: resource condition triggered:
+fm-mini-reboot:   reason=maintenance-threshold-crossed-in-3-samples
+fm-mini-reboot: resource triggered but idle window not confirmed, staying put:
+fm-mini-reboot:   confirmed=no
+fm-mini-reboot:   reason=not-both-idle(now=busy: no homes registered for idle-check (config/mini-reboot-homes) prev=busy: no homes registered for idle-check (config/mini-reboot-homes))
+fm-mini-reboot:   verdict=busy: no homes registered for idle-check (config/mini-reboot-homes)
+--- observable helper side effect ---
+HELPER_NOT_INVOKED
