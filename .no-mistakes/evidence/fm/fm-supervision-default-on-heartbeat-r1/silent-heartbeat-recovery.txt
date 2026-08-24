@@ -1,0 +1,21 @@
+Firstmate supervision outcome recovery - executable CLI evidence
+
+$ fm-branch-outcome.sh append ... --silent true
+1
+$ fm-branch-outcome.sh append ... --silent false
+2
+
+Persisted outcome protocol rows:
+{"seq":1,"task":"fleet","verdict":"routine","summary":"Heartbeat reviewed; no changes.","silent":true}
+{"seq":2,"task":"fleet","verdict":"routine","summary":"Recovered stalled watcher.","silent":false}
+
+$ fm-branch-outcome.sh startup-replay
+BRANCH OUTCOMES (handled by the supervision branch, not yet seen by this session):
+{"seq":2,"epoch":1787562799,"task":"fleet","wake":"","verdict":"routine","summary":"Recovered stalled watcher.","silent":false}
+
+Recovery state after replay:
+cursor=2
+unread_rows=0
+
+
+Interpretation: the silent no-op row is durable but absent from replay; the useful routine action is visible; both rows are acknowledged.
