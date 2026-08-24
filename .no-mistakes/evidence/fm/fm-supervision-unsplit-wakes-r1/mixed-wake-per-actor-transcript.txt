@@ -1,0 +1,14 @@
+=== Initial durable queue ===
+1	1	check	some-poll.check.sh	check: PR merged (main-only)
+1	2	signal	task-a.status	signal: task-a ready
+1	3	stale	fm-window	stale: task-a window
+
+=== Branch actor presentation (stdout) ===
+1	2	signal	task-a.status	signal: task-a ready
+1	3	stale	fm-window	stale: task-a window
+
+=== Queue after branch acknowledgement through 3 ===
+1	1	check	some-poll.check.sh	check: PR merged (main-only)
+
+=== Main actor later presentation (stdout) ===
+1	1	check	some-poll.check.sh	check: PR merged (main-only)
