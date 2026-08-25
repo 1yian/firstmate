@@ -1,0 +1,4 @@
+OK - pull_request trigger contract preserved
+OK - concurrency behavior preserved
+OK - caller bot exemptions preserved
+OK - shared action is immutable and caller supplies no weakening inputs

@@ -1,0 +1,17 @@
+CASE matching event head + review/test/document completed: PASS (exit 0) expected exit 0 => OK
+  Found structurally compliant pipeline step attestation.
+CASE stale attestation from another commit: REJECT (exit 1) expected exit 1 => OK
+  ::error::Pipeline attestation head_sha does not match the current PR head.
+  attestation.head_sha: 1111111111111111111111111111111111111111
+  PR head: 2222222222222222222222222222222222222222
+CASE attestation missing head_sha: REJECT (exit 1) expected exit 1 => OK
+  ::error::This PR is missing structured pipeline step attestation.
+  This repository requires no-mistakes >= 1.46.0 (https://github.com/kunchenguid/no-mistakes/pull/670). Older no-mistakes that only writes the signature line is not enough.
+CASE required document step skipped: REJECT (exit 1) expected exit 1 => OK
+  ::error::Required no-mistakes pipeline steps are not completed: document (status=skipped).
+  This repository requires review, test, document to have status=completed. Quota skips and agent skips are not compliant.
+CASE unparseable v1 attestation: REJECT (exit 1) expected exit 1 => OK
+  ::error::This PR is missing structured pipeline step attestation.
+  This repository requires no-mistakes >= 1.46.0 (https://github.com/kunchenguid/no-mistakes/pull/670). Older no-mistakes that only writes the signature line is not enough.
+CASE signature absent: REJECT (exit 1) expected exit 1 => OK
+  ::error::This PR was not raised through no-mistakes.
