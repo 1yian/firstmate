@@ -1,0 +1,3 @@
+ok - real Pi SDK 0.81.1 accepts the branch session construction and preserves an unpromptable wake
+ok - real Pi SDK 0.81.1 applies an explicit branch model on create and over a reopened session's recorded model
+ok - real Pi SDK 0.81.1 reports its own supported effort levels and applies an explicit branch effort over a reopened session's recorded level
