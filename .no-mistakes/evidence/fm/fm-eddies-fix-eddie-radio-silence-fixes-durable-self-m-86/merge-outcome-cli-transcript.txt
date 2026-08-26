@@ -1,0 +1,35 @@
+=== confirmed ===
+forge commands:
+  pr merge 61 --repo example/repo --squash
+  pr view 61 --repo example/repo
+exit: 0
+parent reply channel:
+  done [key=merged-task-x1]: merged task-x1 https://github.com/example/repo/pull/61
+merge notification marker: present
+merge poll: armed
+stderr:
+  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ●  WATCHER DOWN - SUPERVISION IS OFF
+  ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+  ●  This is a supervision warning only; the guarded operation WILL still run.
+  ●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M0YH8TXE6XC964W807AP11W7/.pi/extensions/fm-primary-turnend-guard.ts -e /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M0YH8TXE6XC964W807AP11W7/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+=== queued ===
+forge commands:
+  pr merge 66 --repo example/repo --squash
+  pr view 66 --repo example/repo
+exit: 0
+parent reply channel: <absent>
+merge notification marker: absent
+merge poll: armed
+stderr:
+  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ●  WATCHER DOWN - SUPERVISION IS OFF
+  ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+  ●  This is a supervision warning only; the guarded operation WILL still run.
+  ●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M0YH8TXE6XC964W807AP11W7/.pi/extensions/fm-primary-turnend-guard.ts -e /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M0YH8TXE6XC964W807AP11W7/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+  ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+

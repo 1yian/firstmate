@@ -1,0 +1,29 @@
+END-TO-END DURABLE MERGE OUTCOME DEMO
+
+$ fm-pr-merge.sh task-main https://github.com/acme/demo/pull/42  # main home
+exit: 0
+forge calls:
+pr merge 42 --repo acme/demo --squash
+pr view 42 --repo acme/demo
+captain-facing durable wake:
+1	check	merged-task-main-https://github.com/acme/demo/pull/42	check: merge landed: task-main https://github.com/acme/demo/pull/42
+canonical notification marker:
+fm-pr-poll-merge-notified-v1
+github
+github.com
+acme/demo
+42
+
+$ fm-pr-merge.sh task-mate https://github.com/acme/demo/pull/43  # secondmate home
+exit: 0
+forge calls:
+pr merge 43 --repo acme/demo --squash
+pr view 43 --repo acme/demo
+durable parent reply:
+done [key=merged-task-mate]: merged task-mate https://github.com/acme/demo/pull/43
+canonical notification marker:
+fm-pr-poll-merge-notified-v1
+github
+github.com
+acme/demo
+43
