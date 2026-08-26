@@ -1,0 +1,19 @@
+$ fm-secondmate-reconcile.sh notify --snapshot markerless-remote.json
+sent: evidence-mate orphan_in_flight
+
+$ persisted remote steering inbox record
+record=state/parent-route/evidence-mate.inbox/001.msg
+schema=fm-task-inbox.v1
+at=2026-08-26T23:03:20Z
+delivery=fire-and-forget
+--
+[fm-from-firstmate]⁣delivery=cfbbb8e0630b0bc7 A fleet snapshot found that your home's backlog and task metadata disagreed.
+
+Please check your current books and, if they still disagree, reconcile them to match reality. Nothing outside your home has been changed, and no reply is expected.cooldown_record=1787785400
+
+$ repeat notify inside cooldown
+cooldown: evidence-mate 0
+
+$ notify from old snapshot after route replacement
+stale: evidence-mate orphan_in_flight
+remote_inbox_record_count=1 (unchanged; replacement received nothing)
