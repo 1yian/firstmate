@@ -1,0 +1,21 @@
+End-to-end reconcile enqueue evidence
+
+$ fm-secondmate-reconcile.sh notify --snapshot snapshot.json
+sent: mate orphan_in_flight
+
+$ fm-secondmate-reconcile.sh notify --snapshot snapshot.json  # immediate recap
+cooldown: mate 0
+
+Durable inbox records: 1
+Record: reconcile-main/state/mate.inbox/001.msg
+Cooldown epoch: 1787776569
+
+Delivered fire-and-forget instruction body:
+[fm-from-firstmate]⁣delivery=b590b5d0eaa1c030 Your home's backlog and its task metadata disagree, and only you can settle it: these in-flight backlog items have no task metadata in your home, so no worker is running them: stale-scout, watch-row
+
+Please reconcile your own books: move each row to the section that matches reality, or clean up the leftover record. Nothing outside your home has been changed, and no reply is expected.
+
+Durable record envelope:
+schema=fm-task-inbox.v1
+at=2026-08-26T20:36:07Z
+delivery=fire-and-forget
