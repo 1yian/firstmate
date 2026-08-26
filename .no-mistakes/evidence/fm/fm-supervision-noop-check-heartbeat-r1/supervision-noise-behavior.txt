@@ -1,0 +1,16 @@
+$ bin/fm-procevent-lavish.sh silent <captured-result>; echo exit=$?
+empty ended board with no content: exit=0 (0 means suppress)
+ended board with a declared content block: exit=1 (nonzero means announce)
+ended board with malformed content header: exit=1 (nonzero means announce)
+Send & End with captain answer: exit=1 (nonzero means announce)
+
+$ targeted end-to-end behavior checks
+ok - an empty board close is captured and recorded handled without ever waking the captain
+ok - a board close carrying the captain's real answer is still announced
+ok - the adapter owns which Lavish results are silent, and fails closed on everything else
+ok - an adapter with no silence verdict keeps announcing every result
+ok - a heartbeat review survives a check row arriving before its drain
+ok - pre-drain eligibility re-check excludes a newly main-owned row without deferring eligible work
+ok - a co-present check row neither vetoes nor rides a heartbeat into main
+ok - every main-only check class still reaches main, never the supervision branch
+ok - heartbeat restoration failure stays on main
