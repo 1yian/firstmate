@@ -1,0 +1,6 @@
+Installed Pi package: 0.81.1
+Catalog choices: 42
+Visible bound: 10
+Opened rendered list lines: 11
+First choice: Follow main (anthropic/main-model)
+Search cheap result: openai-codex/cheap-oauth
