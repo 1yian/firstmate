@@ -1,0 +1,17 @@
+$ fm-secondmate-reconcile.sh notify --snapshot mismatch.json
+sent: mate orphan_in_flight:["stale-scout","watch-row"]
+durable inbox records: 1
+
+pending-reply records: 0
+
+delivered instruction excerpt:   Please reconcile your own books: move each row to the section that matches reality, or clean up the leftover record. Nothing outside your home has been changed, and this is the only time you will be asked about this particular disagreement.
+
+$ fm-secondmate-reconcile.sh notify --snapshot mismatch.json  # same episode
+dedupe: mate orphan_in_flight:["stale-scout","watch-row"]
+durable inbox records after repeat: 1
+
+
+$ fm-secondmate-reconcile.sh notify --snapshot clear.json
+cleared: mate
+$ fm-secondmate-reconcile.sh episode mate
+(no active episode)
