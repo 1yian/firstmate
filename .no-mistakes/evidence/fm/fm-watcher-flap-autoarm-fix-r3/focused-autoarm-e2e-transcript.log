@@ -1,0 +1,25 @@
+
+=== OPEN CLAIM: concurrent firing defers without a lock ===
+ok - auto-arm: a live open generation claim defers concurrent firings with no lock held
+persisted ledger: epoch=464 owner_pid=60569 outcome=arming updated_at=1
+arm invocations by competing firing: 0
+owner mutex present after firing: no
+
+=== STUCK CLAIM: later firing supersedes and re-arms ===
+ok - auto-arm: a hung generation owner with no watcher beat is superseded so re-arming self-heals
+persisted successor ledger: epoch=465 owner_pid=61438 outcome=rewake updated_at=1787802872
+successful successor arm invocations:        1
+owner mutex present after completion: no
+
+=== FAILURE MARKER REFUSAL: no delivery until marker can commit ===
+ok - auto-arm: marker-write refusal defers delivery until one successor commits the notice
+final persisted ledger: epoch=3 owner_pid=64004 outcome=failed-suppressed updated_at=1787802874
+notice marker exists after restored-path successor: yes
+bounded arm attempts across three firings:        6
+
+=== REAL HUNG OWNER: one successor translation, old owner silent ===
+ok - auto-arm: a superseded owner goes silent - one supersession episode, one translation, no held mutex
+winning persisted ledger: epoch=2 owner_pid=65761 outcome=rewake updated_at=1787802883
+total arms (hung owner + successor):        2
+superseded owner output bytes:        0
+owner mutex present after both finish: no

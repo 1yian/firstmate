@@ -1,0 +1,2 @@
+not ok - the superseding generation must translate its own close: expected exit 2, got 0
+baseline test exit=1 (nonzero reproduces the watcher-flap behavior)
