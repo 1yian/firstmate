@@ -1,0 +1,19 @@
+END-TO-END WATCHER DEMONSTRATION
+
+Status stream supplied by the crew (tabs shown as <TAB>):
+  done:<TAB><TAB>Release and local installation completed successfully<TAB>
+  working: tidying release notes
+
+Real fm-watch.sh output:
+signal: <fixture>/state/release.status
+
+Main-session wake rendered by real fm-wake-drain.sh:
+1787867744	2	signal	release.status	signal: <fixture>/state/release.status
+wake annotation: unread wake-EVENT since last drain, not current state: release.status: done:  Release and local installation completed successfully 
+wake annotation: latest wake-EVENT observed at drain, not current state: release.status: working: tidying release notes
+
+After appending only: working: cleanup continued
+  Per-notification path produced no watcher output: yes
+  Heartbeat recovery path completed: yes (streak=1)
+  Watcher remained running with no duplicate wake: yes
+  Durable wake queue stayed unchanged: yes (lines=2)
