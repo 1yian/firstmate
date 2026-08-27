@@ -1,0 +1,5 @@
+fm-pr-merge-notified.sh end-user behavior (0=already published, 1=deliver)
+before publication, PR 42              exit=1
+after publication, PR 42 + punctuation exit=0
+different identity, PR 43              exit=1
+no PR identity                         exit=1
