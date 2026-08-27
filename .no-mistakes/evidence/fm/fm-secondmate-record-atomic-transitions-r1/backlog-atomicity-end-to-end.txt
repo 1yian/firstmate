@@ -1,0 +1,60 @@
+=== Ordinary dispatch -> completion ===
+before dispatch: state=queued meta=absent
+spawned evidence-ship harness=claude kind=ship mode=no-mistakes yolo=off window=firstmate:fm-evidence-ship worktree=/var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//fm-backlog-atomicity.6OlY4W/evidence-ordinary/wt
+after dispatch:  state=in_flight meta=present
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no live watcher process holds this home lock (last beat: 3s ago).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M107AXSRZJ9809X6FX71J9FB/.pi/extensions/fm-primary-turnend-guard.ts -e /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M107AXSRZJ9809X6FX71J9FB/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T/fm-backlog-atomicity.6OlY4W/evidence-ordinary/project: already current
+teardown evidence-ship complete (window firstmate:fm-evidence-ship, worktree /var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//fm-backlog-atomicity.6OlY4W/evidence-ordinary/wt)
+Backlog: evidence-ship is closed in data/backlog.md. Run tasks-axi ready for dependency-cleared candidates, check date gates, and dispatch only work whose blockers are gone and date is due.
+after teardown:  state=done meta=absent close-marker=absent
+persisted backlog row:
+task:
+  id: evidence-ship
+  title: item for evidence-ship
+  state: done
+  blocked: no
+  blocked_by: none
+  held: no
+  hold_reason: "-"
+  hold_kind: "-"
+  hold_until: "-"
+  kind: ship
+  repo: "-"
+  priority: "-"
+  created: "-"
+  closed: 2026-08-26
+  deps: none
+  links: none
+  body: ""
+=== Restart recovery of interrupted matching incarnation ===
+before restart: state=in_flight meta=present close-marker=present
+BOOTSTRAP_INFO: closed the backlog item for evidence-recovery that an interrupted cleanup left open
+MISSING: treehouse (install: curl -fsSL https://kunchenguid.github.io/treehouse/install.sh | sh)
+MISSING: no-mistakes (install: curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | sh)
+MISSING: gh-axi (install: npm install -g gh-axi && gh-axi setup hooks)
+after restart:  state=done meta=absent close-marker=absent
+persisted recovered backlog row:
+task:
+  id: evidence-recovery
+  title: item for evidence-recovery
+  state: done
+  blocked: no
+  blocked_by: none
+  held: no
+  hold_reason: "-"
+  hold_kind: "-"
+  hold_until: "-"
+  kind: ship
+  repo: "-"
+  priority: "-"
+  created: "-"
+  closed: 2026-08-26
+  deps: none
+  links: none
+  body: local main

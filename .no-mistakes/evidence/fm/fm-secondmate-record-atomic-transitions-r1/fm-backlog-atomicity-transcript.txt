@@ -1,0 +1,20 @@
+ok - dispatch publishes the record and moves the backlog item In flight in one run
+ok - dispatch refuses, before creating anything, when the home has no item for the id
+ok - dispatch refuses a closed item instead of silently reopening it
+ok - a failed backlog transition fails the dispatch loudly and leaves no record
+ok - dispatch does not resurrect a row closed after preflight
+ok - dispatch fails when its backlog row vanishes after preflight
+ok - completion closes a local-only ship, with its landing note, before reporting success
+ok - completion closes a scout item against its report
+ok - completion refuses to report success while its item is still open, and records what it owes
+ok - session start marks an item In flight when this home already owns a worker for it
+ok - session start finishes a close an interrupted cleanup recorded but never landed
+ok - session start preserves a pending close across a transient backlog read failure
+ok - session start finishes a close for the matching meta incarnation
+ok - recovery preserves both records when meta removal fails
+ok - session start drops a close recorded for an older meta incarnation
+ok - session start treats an unversioned close as stale when meta exists
+ok - session start leaves a captain-held item where the captain put it
+ok - a manual-backlog home dispatches and completes without a hard failure
+ok - a secondmate home keeps its own books paired through dispatch and completion
+ok - dispatching a persistent secondmate needs no backlog item
