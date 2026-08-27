@@ -1,0 +1,12 @@
+Observed provider-facing captain outcome payload:
+This is a supervision outcome delivered automatically by the supervision branch. It was not typed by the captain. If you have already reported this outcome to the captain earlier in this conversation, do not report it again. Otherwise relay only this outcome to the captain now, in one short message, in captain outcome language. Do not restate or repeat any earlier answer.
+
+task-9: PR https://example.com/pr/9 checks green, ready for review
+Observed delivery semantics:
+captain verdict -> one invisible follow-up turn; routine verdict -> visible note without a triggered turn
+
+Mutation check (base unconditional instruction): expected failure observed
+ok - branch owns accepted wakes with a stable prefix contract and verdict-driven merge delivery
+not ok - captain outcome body never lets main deduplicate what it already said: This is a supervision outcome delivered automatically by the supervision branch. It was not typed by the captain and it is not your own earlier output. Relay only this outcome to the captain now, in one short message, in captain outcome language. Do not restate or repeat any earlier answer.
+
+task-9: PR https://example.com/pr/9 checks green, ready for review
