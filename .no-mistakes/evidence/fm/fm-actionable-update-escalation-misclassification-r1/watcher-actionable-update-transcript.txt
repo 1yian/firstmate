@@ -1,0 +1,6 @@
+$ bash tests/fm-watch-triage.test.sh
+ok - signal_reason_is_actionable reads the whole unread batch, not just its last line
+ok - an unread captain event surfaces once, a later routine append does not, and a repeated line does
+ok - scan_captain_relevant_statuses reports the captain-relevant event, not the newest line
+ok - watcher surfaces a broken status symlink as a trust refusal
+ok - a captain decision hidden behind a later routine append surfaces even while the crew is provably working

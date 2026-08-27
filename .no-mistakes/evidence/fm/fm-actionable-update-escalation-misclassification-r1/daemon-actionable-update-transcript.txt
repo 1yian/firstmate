@@ -1,0 +1,5 @@
+$ bash tests/fm-daemon.test.sh
+ok - classify_signal skips turn markers and reports every status sibling
+ok - catch-all surfaces status paths excluded from trusted snapshots
+ok - catch-all multi-event markers preserve terminal stale dedupe
+ok - classify_signal escalates every unseen event despite repeated seen content
