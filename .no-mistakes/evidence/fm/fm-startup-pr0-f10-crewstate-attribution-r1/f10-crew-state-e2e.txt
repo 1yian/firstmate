@@ -1,0 +1,5 @@
+F10 end-to-end evidence (real bin/fm-crew-state.sh entrypoint, PATH-stubbed no-mistakes)
+Scenario 1: newest ACTIVE pipeline-owned run has an unresolvable lane head; older row is failed at the worktree head.
+state: working · source: run-step · validating (running)
+Scenario 2: only the genuine failed run remains on the branch at the worktree head.
+state: failed · source: run-step · run failed

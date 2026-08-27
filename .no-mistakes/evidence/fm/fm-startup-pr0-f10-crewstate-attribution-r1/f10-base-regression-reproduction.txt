@@ -1,0 +1,3 @@
+Regression reproduction against base commit 4f89f5b (same real entrypoint logic, PATH-stubbed no-mistakes):
+Newest row is ACTIVE pipeline-owned at an unresolvable head; older row is failed at the worktree head.
+state: failed · source: run-step · run failed
