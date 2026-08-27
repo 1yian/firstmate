@@ -1,0 +1,13 @@
+=== Concurrent Stop while owner A is live/open ===
+exit=0 output_bytes=0 arm_count=1
+=== Stop after owner A and watcher beacon become stuck ===
+exit=2
+firstmate watcher wake - one supervision event needs a handling turn now.
+stale: fixture-win actionable
+Run bin/fm-wake-drain.sh first, handle the wake, then run its exact WAKE_ACK_REQUIRED --ack-through command. Until that post-handling acknowledgement, interruption leaves the wake durable for idempotent re-handling. This Stop hook owns watcher continuity: when the handling turn ends, the next needed cycle arms automatically - do NOT run bin/fm-watch-arm.sh after an ordinary wake.
+=== Original owner A resumes after supersession ===
+exit=0 delivered_output_bytes=0
+=== Final persisted claim ===
+epoch=2 owner_pid=24184 outcome=rewake updated_at=1787796589
+Wed Aug 26 19:09:42 2026     bash /var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//fm-claude-stop-autoarm.COgbla/evidence-supersession/bin/fm-claude-stop-autoarm.sh
+arm_count=2 micro_mutex_present=no
