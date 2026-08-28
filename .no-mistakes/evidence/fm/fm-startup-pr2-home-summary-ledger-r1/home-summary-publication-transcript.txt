@@ -1,0 +1,55 @@
+Firstmate home-summary publication demo
+=======================================
+Initial published ledger:
+{
+  "schema": "fm-secondmate-home-summary.v1",
+  "generated": "2026-08-28T05:30:00Z",
+  "generated_epoch": 1787895000,
+  "home": "/Users/kunchen/.no-mistakes/evidence/01M13AQNG1J7JTKHJ297FHBR24/home-summary-demo/home",
+  "state": "no_active_work",
+  "queued": [],
+  "counts": {
+    "active_children": 0,
+    "decisions_open": 0,
+    "holds": 0,
+    "queued": 0,
+    "landed": 0,
+    "endpoints": 0
+  }
+}
+
+Backlog-only change observed after 1-second live-watcher cadence:
+{
+  "schema": "fm-secondmate-home-summary.v1",
+  "generated": "2026-08-28T05:31:00Z",
+  "generated_epoch": 1787895060,
+  "home": "/Users/kunchen/.no-mistakes/evidence/01M13AQNG1J7JTKHJ297FHBR24/home-summary-demo/home",
+  "state": "no_active_work",
+  "queued": [
+    {
+      "id": "evidence-task",
+      "title": "Verify recurring publication",
+      "blocked_by": null,
+      "blocked_by_ids": [],
+      "unresolved_blocker_ids": [],
+      "blocked_reason": null,
+      "hold_reason": null,
+      "hold_kind": null,
+      "hold_until": null,
+      "deferred_marker": false,
+      "captain_actionable": false,
+      "repo": "firstmate",
+      "kind": "ship"
+    }
+  ],
+  "counts": {
+    "active_children": 0,
+    "decisions_open": 0,
+    "holds": 0,
+    "queued": 1,
+    "landed": 0,
+    "endpoints": 0
+  }
+}
+
+Published content equals fresh fm-fleet-snapshot.sh --secondmate-home-summary content modulo generated fields: YES

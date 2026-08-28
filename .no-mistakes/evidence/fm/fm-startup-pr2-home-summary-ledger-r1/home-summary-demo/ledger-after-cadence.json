@@ -1,0 +1,44 @@
+{
+  "schema": "fm-secondmate-home-summary.v1",
+  "generated": "2026-08-28T05:31:00Z",
+  "generated_epoch": 1787895060,
+  "home": "/Users/kunchen/.no-mistakes/evidence/01M13AQNG1J7JTKHJ297FHBR24/home-summary-demo/home",
+  "valid": true,
+  "reason": null,
+  "invalidity": {
+    "kind": null,
+    "ids": []
+  },
+  "state": "no_active_work",
+  "active_children": [],
+  "decisions_open": [],
+  "holds": [],
+  "queued": [
+    {
+      "id": "evidence-task",
+      "title": "Verify recurring publication",
+      "blocked_by": null,
+      "blocked_by_ids": [],
+      "unresolved_blocker_ids": [],
+      "blocked_reason": null,
+      "hold_reason": null,
+      "hold_kind": null,
+      "hold_until": null,
+      "deferred_marker": false,
+      "captain_actionable": false,
+      "repo": "firstmate",
+      "kind": "ship"
+    }
+  ],
+  "landed": [],
+  "endpoints": [],
+  "counts": {
+    "active_children": 0,
+    "decisions_open": 0,
+    "holds": 0,
+    "queued": 1,
+    "landed": 0,
+    "endpoints": 0
+  },
+  "omitted": []
+}
