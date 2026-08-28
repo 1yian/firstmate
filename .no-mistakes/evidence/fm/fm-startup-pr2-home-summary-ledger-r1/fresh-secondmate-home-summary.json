@@ -1,0 +1,61 @@
+{
+  "schema": "fm-secondmate-home-summary.v1",
+  "generated": "2026-08-28T11:01:00Z",
+  "generated_epoch": 1787914860,
+  "home": "/var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//fm-ledger-evidence.yVSS3I/home",
+  "valid": true,
+  "reason": null,
+  "invalidity": {
+    "kind": null,
+    "ids": []
+  },
+  "state": "externally_held",
+  "active_children": [],
+  "decisions_open": [
+    {
+      "id": "evidence-task",
+      "key": "evidence-dependency",
+      "verb": "blocked",
+      "summary": "reviewer-visible status append",
+      "reason": null,
+      "source": "status"
+    }
+  ],
+  "holds": [
+    {
+      "id": "evidence-task",
+      "title": "evidence-task",
+      "blocked_by": null,
+      "blocked_by_ids": [],
+      "unresolved_blocker_ids": [],
+      "reason": "reviewer-visible status append",
+      "source": "child-state"
+    }
+  ],
+  "queued": [],
+  "landed": [],
+  "endpoints": [
+    {
+      "id": "evidence-task",
+      "state": "blocked",
+      "source": "status-log",
+      "endpoint": {
+        "target": "fmtest:fm-evidence-task",
+        "exists": true,
+        "agent_alive": "not_checked",
+        "status": "unknown",
+        "observed_at": "2026-08-28T11:01:00Z",
+        "freshness": "fresh"
+      }
+    }
+  ],
+  "counts": {
+    "active_children": 0,
+    "decisions_open": 1,
+    "holds": 1,
+    "queued": 0,
+    "landed": 0,
+    "endpoints": 1
+  },
+  "omitted": []
+}

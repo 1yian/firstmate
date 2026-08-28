@@ -1,0 +1,10 @@
+End-to-end home ledger publication evidence
+Trigger: appended blocked status to state/evidence-task.status while the real fm-watch.sh was polling.
+Observed generation: 2026-08-28T11:01:00Z
+Observed generated_epoch: 1787914860
+Observed state: externally_held
+Observed hold: evidence-task
+Schema: fm-secondmate-home-summary.v1
+Published ledger parses as JSON: yes
+Published ledger equals a fresh --secondmate-home-summary result modulo generated fields: yes
+File mode: 600
