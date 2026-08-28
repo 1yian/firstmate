@@ -1,0 +1,166 @@
+{
+  "families": [
+    {
+      "count": 18,
+      "duration_ms": 760719,
+      "failed": 0,
+      "name": "watcher-wake-lock"
+    }
+  ],
+  "finished_at": "2026-08-28T18:13:26Z",
+  "run_id": "fm-test-run-1787940612567-31344",
+  "scripts": [
+    {
+      "duration_ms": 59222,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-watch-recovery-loop.test.sh"
+    },
+    {
+      "duration_ms": 71229,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-watch-arm.test.sh"
+    },
+    {
+      "duration_ms": 21695,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-inactive-reconcile.test.sh"
+    },
+    {
+      "duration_ms": 107337,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-watcher-lock.test.sh"
+    },
+    {
+      "duration_ms": 59825,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-cursor-primary.test.sh"
+    },
+    {
+      "duration_ms": 41627,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-turnend-guard.test.sh"
+    },
+    {
+      "duration_ms": 8988,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-wake-drain-unread-status.test.sh"
+    },
+    {
+      "duration_ms": 28651,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-daemon.test.sh"
+    },
+    {
+      "duration_ms": 49976,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-wake-queue.test.sh"
+    },
+    {
+      "duration_ms": 27868,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-task-inbox.test.sh"
+    },
+    {
+      "duration_ms": 7596,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-guard-stale-banner.test.sh"
+    },
+    {
+      "duration_ms": 23181,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-tool-update-check.test.sh"
+    },
+    {
+      "duration_ms": 7042,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-wake-daemon-lifecycle-e2e.test.sh"
+    },
+    {
+      "duration_ms": 6310,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-watch-checkpoint.test.sh"
+    },
+    {
+      "duration_ms": 666,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-supervision-events.test.sh"
+    },
+    {
+      "duration_ms": 3418,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-session-lock-ancestry.test.sh"
+    },
+    {
+      "duration_ms": 43573,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-pi-watch-extension.test.sh"
+    },
+    {
+      "duration_ms": 192515,
+      "exit": 0,
+      "expected_gate_skip": "none",
+      "family": "watcher-wake-lock",
+      "gate_skip": false,
+      "path": "tests/fm-watch-triage.test.sh"
+    }
+  ],
+  "selection": "family=watcher-wake-lock;jobs=4",
+  "started_at": "2026-08-28T18:10:12Z",
+  "summary": {
+    "duration_ms": 193612,
+    "failed": 0,
+    "skipped_gate": 0,
+    "total": 18
+  }
+}
