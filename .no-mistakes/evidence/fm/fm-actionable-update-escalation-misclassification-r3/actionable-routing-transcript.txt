@@ -1,0 +1,11 @@
+STATUS STREAM (actionable completion followed by routine work):
+done: release and local installation completed successfully
+working: tidying release notes
+WATCHER OUTPUT (main session is awakened):
+signal: /var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//actionable-routing-evidence.jPkDSg/hidden-actionable-demo/state/release.status
+DURABLE WAKE DRAIN (queued signal delivered to firstmate):
+1787889561	2	signal	release.status	signal: /var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//actionable-routing-evidence.jPkDSg/hidden-actionable-demo/state/release.status
+wake annotation: unread wake-EVENT since last drain, not current state: release.status: done: release and local installation completed successfully
+wake annotation: latest wake-EVENT observed at drain, not current state: release.status: working: tidying release notes
+SURFACED EVENT IDENTITY:
+1	done: release and local installation completed successfully
