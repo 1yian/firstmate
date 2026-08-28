@@ -1,0 +1,15 @@
+=== Crew status batch (tabs rendered as <TAB>) ===
+done:<TAB><TAB>Backpass 0.1.7 release and local install completed
+working: tidying release notes
+working: cleanup continued
+=== First real watcher result ===
+signal: /var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//fm-actionable-evidence.BB4cxO/actionable-update/state/release.status
+=== Main-session drain output ===
+1787875307	2	signal	release.status	signal: /var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//fm-actionable-evidence.BB4cxO/actionable-update/state/release.status
+wake annotation: unread wake-EVENT since last drain, not current state: release.status: done:  Backpass 0.1.7 release and local install completed
+wake annotation: latest wake-EVENT observed at drain, not current state: release.status: working: tidying release notes
+=== Later routine append and heartbeat replay check ===
+watcher remained active: yes
+heartbeat recovery ran: yes
+additional queued wakes: 0
+replay output bytes: 0
