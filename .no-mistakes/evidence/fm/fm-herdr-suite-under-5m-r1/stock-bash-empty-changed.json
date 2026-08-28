@@ -1,0 +1,14 @@
+{
+  "families": [],
+  "finished_at": "2026-08-28T22:11:30Z",
+  "run_id": "fm-test-run-1787955090482-44740",
+  "scripts": [],
+  "selection": "changed:base=HEAD",
+  "started_at": "2026-08-28T22:11:30Z",
+  "summary": {
+    "duration_ms": 55,
+    "failed": 0,
+    "skipped_gate": 0,
+    "total": 0
+  }
+}
