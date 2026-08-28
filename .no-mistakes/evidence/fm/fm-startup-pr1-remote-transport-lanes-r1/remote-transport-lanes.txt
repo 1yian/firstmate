@@ -1,5 +1,4 @@
-ok - a displaced stale-lock holder retries without reusing a sequence
-ok - a fresh orphaned sequence lock survives until stale recovery
+ok - atomic sequence claims remain unique and reap only after expiry
 ok - lanes run homes concurrently while each home stays FIFO
 ok - same-home jobs staged in the same second execute in staging-sequence order
 ok - same-home sequence order follows completed staging publication
@@ -12,6 +11,3 @@ ok - a live explicit-stdin stage survives the staging-litter age bound
 ok - --stdin still delivers a payload caller's bytes
 ok - abandoned stage litter is reaped by age while fresh staging survives
 ALL TESTS PASSED
-real 50.33
-user 8.73
-sys 16.04
