@@ -1,0 +1,134 @@
+Firstmate shared-fixture end-to-end validation
+Commit: 522348f65b79ce69696b46833a6a1a61f3ee3f44
+
+===== tests/fm-test-fixtures.test.sh =====
+FM_TEST_BEGIN 2026-08-29T19:19:07Z tests/fm-test-fixtures.test.sh family=unclassified expected_gate_skip=none
+ok - fake no-mistakes --version is the shared constant and overridable
+ok - init/doctor no-mistakes stub touches markers and refuses other verbs
+ok - fake gh authenticates and fake gh-axi reports the shared version
+ok - spawn fakebin answers pane path, logs -l payloads, and installs extra tools
+ok - send stubs log typed text and fake ssh records argv with a controllable exit
+ok - spawn-home layout writes harness pin, beat, and brief
+FM_TEST_END 2026-08-29T19:19:08Z tests/fm-test-fixtures.test.sh exit=0 duration_ms=967 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=1030
+FM_TEST_SUMMARY_FAMILY family=unclassified count=1 duration_ms=967 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-test-fixtures.test.sh duration_ms=967
+
+===== tests/fm-busy-adapter-wiring.test.sh =====
+FM_TEST_BEGIN 2026-08-29T19:19:08Z tests/fm-busy-adapter-wiring.test.sh family=unclassified expected_gate_skip=none
+ok - pi extension reports agent_start busy, settles idle only via ctx.isIdle(), and keeps turn_end a notification
+ok - pi extension awaits agent_settled before the next agent_start without a test delay
+ok - pi extension events from a superseded incarnation are rejected as stale
+ok - kimi and grok install no unverified semantic wiring and classify through their own gates
+ok - opencode plugin classifies from session.status, scoped to the latched worker session
+ok - claude hooks open on UserPromptSubmit and close on Stop, StopFailure, and SessionEnd
+ok - claude hook events from a superseded incarnation are rejected without breaking the hook
+ok - codex classifies unknown until a semantic source is verified, never idle or footer-matched
+all fm-busy-adapter-wiring tests passed
+FM_TEST_END 2026-08-29T19:19:34Z tests/fm-busy-adapter-wiring.test.sh exit=0 duration_ms=25370 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=25438
+FM_TEST_SUMMARY_FAMILY family=unclassified count=1 duration_ms=25370 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-busy-adapter-wiring.test.sh duration_ms=25370
+
+===== tests/fm-gate-refuse.test.sh =====
+FM_TEST_BEGIN 2026-08-29T19:19:34Z tests/fm-gate-refuse.test.sh family=session-bootstrap expected_gate_skip=none
+ok - fm-gate-refuse-lib: refuses when NO_MISTAKES_GATE is set
+ok - fm-gate-refuse-lib: refuses when NO_MISTAKES_GATE is set empty
+ok - fm-gate-refuse-lib: refuses from a gate worktree via git-common-dir (marker unset)
+ok - fm-gate-refuse-lib: no-op for a normal session (neither signal, set -eu clean)
+ok - fm-spawn: refuses on marker and gate-worktree backstop; a normal crew spawn is unaffected
+ok - fm-send: refuses on marker and gate-worktree backstop; a normal steer uses the inbox
+ok - fm-teardown: refuses on marker and gate-worktree backstop; a normal teardown is unaffected
+FM_TEST_END 2026-08-29T19:19:42Z tests/fm-gate-refuse.test.sh exit=0 duration_ms=8568 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=8636
+FM_TEST_SUMMARY_FAMILY family=session-bootstrap count=1 duration_ms=8568 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-gate-refuse.test.sh duration_ms=8568
+
+===== tests/fm-grok-harness.test.sh =====
+FM_TEST_BEGIN 2026-08-29T19:19:43Z tests/fm-grok-harness.test.sh family=pure-contract-unit expected_gate_skip=none
+ok - grok global hook requires a firstmate registry token
+ok - grok teardown removes pointer and token state
+ok - fm-lock recognizes grok harness processes
+FM_TEST_END 2026-08-29T19:19:51Z tests/fm-grok-harness.test.sh exit=0 duration_ms=8897 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=8974
+FM_TEST_SUMMARY_FAMILY family=pure-contract-unit count=1 duration_ms=8897 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-grok-harness.test.sh duration_ms=8897
+
+===== tests/fm-spawn-dispatch-profile.test.sh =====
+FM_TEST_BEGIN 2026-08-29T19:19:52Z tests/fm-spawn-dispatch-profile.test.sh family=backend-dispatch expected_gate_skip=none
+ok - no --model/--effort records defaults and types the claude launch instructions
+ok - non-cursor launches clear inherited Cursor identity markers
+ok - relative home overrides ignore CDPATH and become absolute before spawn launch construction
+ok - FM_HOME defaults resolve relative paths and preserve absolute spellings
+ok - absolute override spellings are preserved in spawn launch paths
+ok - unresolvable relative spawn overrides fail with named diagnostics
+ok - active crew-dispatch profile requires an explicit harness for ship spawns
+ok - active crew-dispatch profile requires an explicit harness for scout spawns
+ok - active crew-dispatch profile allows an explicit resolved harness
+ok - active crew-dispatch profile allows the legacy positional harness form
+ok - active crew-dispatch profile allows the raw launch-command escape hatch
+ok - claude receives --model and --effort profile flags
+ok - codex receives --model and model_reasoning_effort profile flags
+ok - codex omits unsupported max effort instead of passing a bad config value
+ok - grok receives --model and --reasoning-effort profile flags
+ok - grok omits unsupported max reasoning effort
+ok - grok omits unsupported xhigh reasoning effort
+ok - cursor receives its model-qualified reasoning class and exact task workspace
+ok - cursor refuses model ids absent from its resolved binary's live catalog
+ok - cursor preserves the requested model when its live catalog is unreachable
+ok - opencode receives --model and omits the unsupported effort axis
+ok - pi receives --model and --thinking max profile flags
+ok - Pi launch probing omits --tui-mode on older Pi and preserves it on supporting Pi
+ok - pi-signed shares Pi launch semantics while preserving its configured and recorded identity
+ok - pi-signed refuses safely and actionably when the selected executable is unavailable
+ok - pi-signed is a distinct persistent secondmate runtime with shared Pi supervision semantics
+ok - batch dispatch forwards shared --harness, --model, and --effort to every pair
+ok - claude forwards firstmate's CLAUDE_CONFIG_DIR so the crewmate uses the same credential store
+ok - claude omits the config-dir prefix when firstmate runs with the single-store default
+ok - non-claude harnesses do not receive the claude CLAUDE_CONFIG_DIR prefix
+ok - active crew-dispatch profile does not block secondmate launches
+# all fm-spawn-dispatch-profile tests passed
+FM_TEST_END 2026-08-29T19:21:18Z tests/fm-spawn-dispatch-profile.test.sh exit=0 duration_ms=86804 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=86869
+FM_TEST_SUMMARY_FAMILY family=backend-dispatch count=1 duration_ms=86804 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-spawn-dispatch-profile.test.sh duration_ms=86804
+
+===== tests/fm-spawn-pool-base-freshen.test.sh =====
+FM_TEST_BEGIN 2026-08-29T19:21:18Z tests/fm-spawn-pool-base-freshen.test.sh family=unclassified expected_gate_skip=none
+# observed spawn: spawned pool-current-base-r1 harness=codex kind=ship mode=no-mistakes yolo=off window=firstmate:fm-pool-current-base-r1 worktree=/var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T//fm-spawn-pool-base-freshen.ZKHCTV/current-base/pool
+# observed base: HEAD=4d66118e8b2e9eb25e0cd9570c03d232baf7fc01 origin/main=4d66118e8b2e9eb25e0cd9570c03d232baf7fc01 advanced-main=must survive a newly spawned branch
+ok - a stale pooled worktree refreshes to current origin/main before a crew branch is created
+ok - a stale pooled worktree resolves and refreshes a non-main default branch
+# observed direct-pr spawn: spawned pool-direct-pr-r3 harness=codex kind=ship mode=direct-PR yolo=off window=firstmate:fm-pool-direct-pr-r3 worktree=/var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T//fm-spawn-pool-base-freshen.ZKHCTV/direct-pr/pool
+# observed scout spawn: spawned pool-scout-r3 harness=codex kind=scout window=firstmate:fm-pool-scout-r3 worktree=/var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T//fm-spawn-pool-base-freshen.ZKHCTV/scout/pool
+ok - direct-PR ships and scouts both refresh stale pooled worktrees before launch
+# observed dirty refusal: error: pooled worktree '/var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T//fm-spawn-pool-base-freshen.ZKHCTV/dirty-refusal/pool' is not clean; refusing to discard uncommitted work while refreshing its base; preserved=keep this local work
+ok - a dirty pooled worktree is refused without discarding its local work
+# observed unresolved-default refusal: error: could not resolve origin's current default branch for pooled worktree '/var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T//fm-spawn-pool-base-freshen.ZKHCTV/unresolved-default/pool'; refusing to launch from a potentially stale base
+ok - an unresolved remote default branch refuses the pooled worktree
+# observed unreachable-origin refusal: error: could not fetch origin for pooled worktree '/var/folders/0k/bf8mwt2n5qddzk24r20gfk0c0000gn/T//fm-spawn-pool-base-freshen.ZKHCTV/unreachable-origin/pool'; refusing to launch from a potentially stale base
+ok - an unreachable origin refuses a potentially stale pooled worktree
+# observed stale-pin refusal: error: submodule 'ui' is checked out at cf1788937bc0a8e8e7760f7e3c0ecfc8ba90d86c, but this base records fc9d6b36ec6d6251e773e22e94ce105e1083c0c1
+ok - two consecutive spawns across a moved submodule pin end in a refusal naming both pins and no remedy
+ok - an unpushed submodule commit keeps the uncommitted-work refusal and survives it
+ok - work inside a submodule is still refused as uncommitted work, not called stale
+ok - a stale pin carrying real work is refused conservatively, never called stale
+ok - a stale pin beside other dirt yields the conservative refusal alone, with no stale-pin line
+# all fm-spawn-pool-base-freshen tests passed
+FM_TEST_END 2026-08-29T19:22:07Z tests/fm-spawn-pool-base-freshen.test.sh exit=0 duration_ms=48673 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=48725
+FM_TEST_SUMMARY_FAMILY family=unclassified count=1 duration_ms=48673 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-spawn-pool-base-freshen.test.sh duration_ms=48673
+
+===== tests/fm-tangle-guard.test.sh =====
+FM_TEST_BEGIN 2026-08-29T19:22:07Z tests/fm-tangle-guard.test.sh family=session-bootstrap expected_gate_skip=none
+ok - fm_primary_tangle_branch: feature branch alarms; default/detached/non-git stay silent
+ok - fm-guard: bordered tangle banner fires only for a feature branch and suppresses repair commands in read-only mode
+ok - fm-bootstrap: TANGLE problem line fires only for a feature branch and suppresses repair commands in detect-only mode
+ok - fm-brief: ship brief asserts worktree isolation before the branch step
+ok - fm-spawn: aborts unless the resolved worktree is a genuine, isolated worktree
+ok - fm-spawn: appends windows by session-colon, pins the name, and targets the window id
+FM_TEST_END 2026-08-29T19:22:20Z tests/fm-tangle-guard.test.sh exit=0 duration_ms=12989 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=13047
+FM_TEST_SUMMARY_FAMILY family=session-bootstrap count=1 duration_ms=12989 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-tangle-guard.test.sh duration_ms=12989
