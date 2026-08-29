@@ -1,0 +1,13 @@
+Firstmate per-home ledger end-to-end evidence
+
+1. Started the real fm-watch.sh against a seeded home.
+2. Appended a blocked status line to state/ledger-task.status.
+3. Watcher published state/home-summary.json with generated=2026-08-28T10:01:00Z and generated_epoch=1787911260.
+4. Compared the published document with a fresh real fm-fleet-snapshot.sh --secondmate-home-summary result after removing only generated and generated_epoch: IDENTICAL.
+5. Started the real writer with its producer deliberately blocked, allowing its 1-second deadline to terminate the worker mid-refresh.
+6. Writer exit code: 124 (deadline termination).
+7. Ledger SHA-256 before interrupted refresh: 53da7ce04ef1a0c8b15ce7d7c798b6b5c370e78be9187c012ae12d23d0f02bba
+8. Ledger SHA-256 after interrupted refresh:  53da7ce04ef1a0c8b15ce7d7c798b6b5c370e78be9187c012ae12d23d0f02bba
+9. The surviving ledger parses as valid JSON: YES.
+
+Result: status-triggered publication matches the real producer, and interrupted publication preserves the prior complete document byte-for-byte.
