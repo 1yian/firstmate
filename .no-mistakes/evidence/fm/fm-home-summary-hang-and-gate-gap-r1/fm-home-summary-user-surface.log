@@ -1,0 +1,13 @@
+ok - best-effort refresh bounds failure reporting fallback
+ok - valid publication ignores an unavailable failure record
+ok - publication completes on a home carrying accumulated status history
+ok - producer bounds each per-task current-state read
+ok - a stalled publication does not delay the watcher liveness beacon
+HOME_SUMMARY: state/home-summary.json has not been republished since 2026-08-28T10:00:00Z; 2 failed attempt(s) recorded in state/.home-summary-refresh.log, last: second failure after publication'
+HOME_SUMMARY: state/home-summary.json has not been republished since 2026-08-28T10:00:00Z; 2 failed attempt(s) recorded in state/.home-summary-refresh.log, last: second failure after publication'
+HOME_SUMMARY: this home has never published state/home-summary.json; 2 failed attempt(s) recorded in state/.home-summary-refresh.log, last: refresh exceeded its 60-second deadline'
+HOME_SUMMARY: this home has never published state/home-summary.json; 2 failed attempt(s) recorded in state/.home-summary-refresh.log, last: refresh exceeded its 60-second deadline'
++ 952: grep -F 'HOME_SUMMARY: this home has never published state/home-summary.json'
+HOME_SUMMARY: this home has never published state/home-summary.json; 2 failed attempt(s) recorded in state/.home-summary-refresh.log, last: refresh exceeded its 60-second deadline'
+HOME_SUMMARY: this home has never published state/home-summary.json; 2 failed attempt(s) recorded in state/.home-summary-refresh.log, last: refresh exceeded its 60-second deadline'
+ok - repeated publication failure is reported at session start until it clears
