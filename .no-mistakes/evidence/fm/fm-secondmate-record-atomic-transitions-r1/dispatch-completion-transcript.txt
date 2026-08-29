@@ -1,0 +1,16 @@
+=== Before dispatch ===
+state=queued
+record=absent
+=== fm-spawn.sh ===
+spawned evidence-atomic-pair harness=claude kind=ship mode=no-mistakes yolo=off window=firstmate:fm-evidence-atomic-pair worktree=/var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//fm-backlog-evidence.jMdve5/wt
+=== After successful dispatch ===
+state=in_flight
+record=present
+=== fm-teardown.sh ===
+/var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T/fm-backlog-evidence.jMdve5/project: already current
+teardown evidence-atomic-pair complete (window firstmate:fm-evidence-atomic-pair, worktree /var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//fm-backlog-evidence.jMdve5/wt)
+Backlog: evidence-atomic-pair is closed in data/backlog.md. Run tasks-axi ready for dependency-cleared candidates, check date gates, and dispatch only work whose blockers are gone and date is due.
+=== After successful completion ===
+state=done
+record=absent
+close_marker=absent
