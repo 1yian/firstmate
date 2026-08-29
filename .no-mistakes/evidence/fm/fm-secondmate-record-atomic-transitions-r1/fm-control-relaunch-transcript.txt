@@ -1,4 +1,4 @@
-FM_TEST_BEGIN 2026-08-29T20:23:00Z tests/fm-control-relaunch.test.sh family=backend-dispatch expected_gate_skip=none
+FM_TEST_BEGIN 2026-08-29T22:25:13Z tests/fm-control-relaunch.test.sh family=backend-dispatch expected_gate_skip=none
 ok - fm-control relaunch: a same-harness relaunch replaces the agent in the same endpoint and worktree
 ok - fm-control relaunch: durable task metadata survives replacement launch publication
 ok - fm-control relaunch: delivery and concurrent task metadata publication serialize
@@ -47,7 +47,8 @@ ok - fm-spawn --relaunch: an unrecorded task is refused
 ok - fm-spawn --relaunch: refuses to start a replacement outside the copy holding the work
 ok - relaunch re-reads the backlog item instead of blindly re-running the transition
 ok - relaunch heals an item that drifted out of In flight while the task stayed live
-FM_TEST_END 2026-08-29T20:24:10Z tests/fm-control-relaunch.test.sh exit=0 duration_ms=70471 gate_skip=false
-FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=70533
-FM_TEST_SUMMARY_FAMILY family=backend-dispatch count=1 duration_ms=70471 failed=0
-FM_TEST_SLOWEST rank=1 script=tests/fm-control-relaunch.test.sh duration_ms=70471
+FM_TEST_END 2026-08-29T22:26:28Z tests/fm-control-relaunch.test.sh exit=0 duration_ms=75013 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=75074
+FM_TEST_SUMMARY_FAMILY family=backend-dispatch count=1 duration_ms=75013 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-control-relaunch.test.sh duration_ms=75013
+fm-test-run: wrote timing artifact: /Users/kunchen/.no-mistakes/evidence/01M15B2X4TSJ4HEJ732WBPZRNP/fm-control-relaunch-results.json
