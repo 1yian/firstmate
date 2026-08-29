@@ -1,0 +1,15 @@
+command: FM_HOME=<evidence>/session-home FM_ROOT_OVERRIDE=<worktree> FM_BACKEND=orca bin/fm-session-start.sh
+exit: 0
+SESSION START - /Users/kunchen/.no-mistakes/evidence/01M17JMAY6EF3MS9RHW8S6NRKM/session-home
+lock acquired: harness pid 91892
+(no queued wakes)
+READ-ONCE CONTRACT
+FLEET STATE
+CONTEXT
+NEXT STEP
+The digest above is complete for this session start. The READ-ONCE CONTRACT
+persisted completion owner pid: 91892
+
+deferred network stage after the digest:
+completed off the startup path in 1s: GitHub authentication, dead-secondmate relaunch, secondmate convergence, pending handoff delivery, and project clone refresh with its drift reporting.
+(silent - no problems found)

@@ -1,0 +1,6 @@
+1) Hard-linked executable source is refused:
+exit=1 output=error: custom check is unavailable trust_created=no
+2) Private single-link executable registers through the real CLI:
+exit=0 output=registered: state/demo.check.sh trust_mode=600
+3) Hard-linked trust destination is refused and external alias survives:
+exit=1 output=error: custom check trust path is unavailable alias_survives=yes
