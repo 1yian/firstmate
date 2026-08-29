@@ -1,0 +1,23 @@
+END-TO-END WATCHER TRANSCRIPT
+
+Worker status append (actionable events followed by routine chatter):
+working: publishing
+needs-decision [key=release]: approve production target
+done: release 1.4.0 published and installed
+working: cleaning the build directory
+
+Always-on watcher surfaced:
+signal: /var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//fm-actionable-evidence.ZwyYfi/state/release-worker.status
+
+Captain wake drain presented:
+1787983517	2	signal	release-worker.status	signal: /var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//fm-actionable-evidence.ZwyYfi/state/release-worker.status
+wake annotation: unread wake-EVENT since last drain, not current state: release-worker.status: working: publishing
+wake annotation: unread wake-EVENT since last drain, not current state: release-worker.status: needs-decision [key=release]: approve production target
+wake annotation: unread wake-EVENT since last drain, not current state: release-worker.status: done: release 1.4.0 published and installed
+wake annotation: latest wake-EVENT observed at drain, not current state: release-worker.status: working: cleaning the build directory
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+release-worker [key=release] needs-decision: approve production target
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+
+Drain acknowledgement instruction:
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 37099.1787983517.AUNlUq
