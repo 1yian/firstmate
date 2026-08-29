@@ -1,0 +1,5 @@
+window=fm-evidence-direct-pr
+worktree=/tmp/wt
+kind=ship
+mode=direct-PR
+yolo=off

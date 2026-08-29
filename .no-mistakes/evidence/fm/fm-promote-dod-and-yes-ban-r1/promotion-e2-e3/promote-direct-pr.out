@@ -1,0 +1,4 @@
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+promoted evidence-direct-pr to ship mode=direct-PR yolo=off (teardown protection restored)
+wrote ship instructions for mode=direct-PR: /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home/data/evidence-direct-pr/ship-instructions.md
+next: FM_HOME=/Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home bin/fm-send.sh fm-evidence-direct-pr "$(cat /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home/data/evidence-direct-pr/ship-instructions.md)"

@@ -1,0 +1,56 @@
+
+$ bin/fm-promote.sh evidence-no-mistakes --mode no-mistakes --yolo off
+promoted evidence-no-mistakes to ship mode=no-mistakes yolo=off (teardown protection restored)
+wrote ship instructions for mode=no-mistakes: /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home/data/evidence-no-mistakes/ship-instructions.md
+next: FM_HOME=/Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home bin/fm-send.sh fm-evidence-no-mistakes "$(cat /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home/data/evidence-no-mistakes/ship-instructions.md)"
+$ FM_HOME=/Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home bin/fm-send.sh fm-evidence-no-mistakes "$(cat /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home/data/evidence-no-mistakes/ship-instructions.md)"
+captured worker message for fm-evidence-no-mistakes -> /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/promotion-delivered-no-mistakes.md
+
+$ bin/fm-promote.sh evidence-direct-pr --mode direct-PR --yolo off
+promoted evidence-direct-pr to ship mode=direct-PR yolo=off (teardown protection restored)
+wrote ship instructions for mode=direct-PR: /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home/data/evidence-direct-pr/ship-instructions.md
+next: FM_HOME=/Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home bin/fm-send.sh fm-evidence-direct-pr "$(cat /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home/data/evidence-direct-pr/ship-instructions.md)"
+$ FM_HOME=/Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home bin/fm-send.sh fm-evidence-direct-pr "$(cat /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home/data/evidence-direct-pr/ship-instructions.md)"
+captured worker message for fm-evidence-direct-pr -> /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/promotion-delivered-direct-PR.md
+
+$ bin/fm-promote.sh evidence-local-only --mode local-only --yolo off
+promoted evidence-local-only to ship mode=local-only yolo=off (teardown protection restored)
+wrote ship instructions for mode=local-only: /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home/data/evidence-local-only/ship-instructions.md
+next: FM_HOME=/Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home bin/fm-send.sh fm-evidence-local-only "$(cat /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home/data/evidence-local-only/ship-instructions.md)"
+$ FM_HOME=/Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home bin/fm-send.sh fm-evidence-local-only "$(cat /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home/data/evidence-local-only/ship-instructions.md)"
+captured worker message for fm-evidence-local-only -> /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/promotion-delivered-local-only.md
+
+$ bin/fm-brief.sh evidence-brief repo --mode no-mistakes
+scaffolded: /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/brief-home/data/evidence-brief/brief.md (ship, mode=no-mistakes; replace {TASK})
+
+=== Delivered contract checkpoints ===
+
+[no-mistakes]
+5. These ship instructions supersede the scout delivery rules and report-based Definition of done. Everything else in your original instructions carries over unchanged: the status protocol; the instruction inbox and its acknowledgement; the escalation rules, including ask-user; the worktree isolation assertion; and every safety rule.
+# Definition of done
+Delivery contract: mode=no-mistakes
+The task is complete only when committed on your branch.
+- ask-user findings are never yours to answer: escalate to firstmate (rule 6) and stop.
+- NEVER pass `--yes` (or `-y`) to `no-mistakes axi run` or `no-mistakes axi respond`. It is banned fleet-wide.
+
+[direct-PR]
+5. These ship instructions supersede the scout delivery rules and report-based Definition of done. Everything else in your original instructions carries over unchanged: the status protocol; the instruction inbox and its acknowledgement; the escalation rules, including ask-user; the worktree isolation assertion; and every safety rule.
+# Definition of done
+Delivery contract: mode=direct-PR
+This task ships **direct-PR**: you raise the PR yourself, without the no-mistakes pipeline.
+The task is complete only when committed on your branch.
+When it is implemented and committed, push your branch and open a PR with `gh-axi`, then append `done: PR {url}` to the status file and stop.
+Do NOT run /no-mistakes. The configured merge authority decides whether to merge the PR; firstmate relays the outcome.
+
+[local-only]
+5. These ship instructions supersede the scout delivery rules and report-based Definition of done. Everything else in your original instructions carries over unchanged: the status protocol; the instruction inbox and its acknowledgement; the escalation rules, including ask-user; the worktree isolation assertion; and every safety rule.
+# Definition of done
+Delivery contract: mode=local-only
+This task ships **local-only**: no remote, no PR, no pipeline.
+The task is complete only when committed on your branch `fm/evidence-local-only`. Do NOT push, do NOT open a PR, do NOT merge.
+When it is implemented and committed, append `done: ready in branch fm/evidence-local-only` to the status file and stop.
+The configured merge authority approves the ready branch, then firstmate merges it into local `main` through the guarded fast-forward path.
+
+[generated no-mistakes brief ban]
+- ask-user findings are never yours to answer: escalate to firstmate (rule 6) and stop.
+- NEVER pass `--yes` (or `-y`) to `no-mistakes axi run` or `no-mistakes axi respond`. It is banned fleet-wide.

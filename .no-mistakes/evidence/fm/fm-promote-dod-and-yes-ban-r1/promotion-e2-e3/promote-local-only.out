@@ -1,0 +1,4 @@
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+promoted evidence-local-only to ship mode=local-only yolo=off (teardown protection restored)
+wrote ship instructions for mode=local-only: /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home/data/evidence-local-only/ship-instructions.md
+next: FM_HOME=/Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home bin/fm-send.sh fm-evidence-local-only "$(cat /Users/kunchen/.no-mistakes/evidence/01M160G9MKS4YX7G6Q74ECZ8RQ/promotion-e2-e3/home/data/evidence-local-only/ship-instructions.md)"

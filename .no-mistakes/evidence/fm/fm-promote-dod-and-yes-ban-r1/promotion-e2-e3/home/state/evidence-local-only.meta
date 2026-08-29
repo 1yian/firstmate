@@ -1,0 +1,5 @@
+window=fm-evidence-local-only
+worktree=/tmp/wt
+kind=ship
+mode=local-only
+yolo=off
