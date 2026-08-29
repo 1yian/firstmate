@@ -1,0 +1,4 @@
+working: publishing
+needs-decision [key=release]: approve production target
+done: release 1.4.0 published and installed
+working: cleaning the build directory

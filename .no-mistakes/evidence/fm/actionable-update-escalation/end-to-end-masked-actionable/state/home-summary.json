@@ -1,0 +1,28 @@
+{
+  "schema": "fm-secondmate-home-summary.v1",
+  "generated": "2026-08-29T06:55:13Z",
+  "generated_epoch": 1787986513,
+  "home": "/Users/kunchen/.no-mistakes/evidence/01M15TNAWH13TJY94PEVW6QG8A/end-to-end-masked-actionable/non-git-root",
+  "valid": false,
+  "reason": "missing structured backlog",
+  "invalidity": {
+    "kind": "missing_backlog",
+    "ids": []
+  },
+  "state": "unknown",
+  "active_children": [],
+  "decisions_open": [],
+  "holds": [],
+  "queued": [],
+  "landed": [],
+  "endpoints": [],
+  "counts": {
+    "active_children": 0,
+    "decisions_open": 0,
+    "holds": 0,
+    "queued": 0,
+    "landed": 0,
+    "endpoints": 0
+  },
+  "omitted": []
+}

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+case "${1:-}" in
+  list-windows) exit 0 ;;
+  capture-pane) exit 0 ;;
+  display-message) exit 1 ;;
+esac
+exit 1

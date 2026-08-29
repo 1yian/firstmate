@@ -1,0 +1,20 @@
+END-TO-END MASKED ACTIONABLE UPDATE
+
+$ appended status stream (actionable lines followed by routine chatter)
+working: publishing
+needs-decision [key=release]: approve production target
+done: release 1.4.0 published and installed
+working: cleaning the build directory
+
+$ bin/fm-watch.sh
+signal: /Users/kunchen/.no-mistakes/evidence/01M15TNAWH13TJY94PEVW6QG8A/end-to-end-masked-actionable/state/release.status
+
+$ bin/fm-wake-drain.sh
+1787986514	2	signal	release.status	signal: /Users/kunchen/.no-mistakes/evidence/01M15TNAWH13TJY94PEVW6QG8A/end-to-end-masked-actionable/state/release.status
+wake annotation: unread wake-EVENT since last drain, not current state: release.status: working: publishing
+wake annotation: unread wake-EVENT since last drain, not current state: release.status: needs-decision [key=release]: approve production target
+wake annotation: unread wake-EVENT since last drain, not current state: release.status: done: release 1.4.0 published and installed
+wake annotation: latest wake-EVENT observed at drain, not current state: release.status: working: cleaning the build directory
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+release [key=release] needs-decision: approve production target
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
