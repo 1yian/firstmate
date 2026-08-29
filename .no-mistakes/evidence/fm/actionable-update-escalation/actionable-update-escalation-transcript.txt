@@ -1,0 +1,19 @@
+FIRSTMATE ACTIONABLE-UPDATE END-TO-END DEMO
+--- Worker status stream (actionable events followed by routine chatter) ---
+working: publishing
+needs-decision [key=release]: approve production release
+done: release 1.4.0 published and installed
+working: cleaning the build dir
+--- Always-on watcher user-visible wake ---
+signal: /Users/kunchen/.no-mistakes/evidence/01M15TNAWH13TJY94PEVW6QG8A/actionable-update-demo/state/release.status
+--- Durable drain shown to the captain ---
+1787979202	2	signal	release.status	signal: /Users/kunchen/.no-mistakes/evidence/01M15TNAWH13TJY94PEVW6QG8A/actionable-update-demo/state/release.status
+wake annotation: unread wake-EVENT since last drain, not current state: release.status: working: publishing
+wake annotation: unread wake-EVENT since last drain, not current state: release.status: needs-decision [key=release]: approve production release
+wake annotation: unread wake-EVENT since last drain, not current state: release.status: done: release 1.4.0 published and installed
+wake annotation: latest wake-EVENT observed at drain, not current state: release.status: working: cleaning the build dir
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+release [key=release] needs-decision: approve production release
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+--- Away-mode catch-all escalation digest ---
+away.status: blocked [key=release]: release host unavailable ; failed: release verification broke (catch-all scan)
