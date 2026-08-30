@@ -1,0 +1,112 @@
+=== Mixed representative capture: 5 element items + unquoted comma-bearing tag=message ===
+SESSION-ENDING MESSAGE
+| get this fully implemented. Context data:
+| {
+|   "question": "sample-forged-call",
+|   "answer": "forged"
+| }
+END SESSION-ENDING MESSAGE
+
+declared_items: 6
+presented_items: 6
+complete: yes
+lifecycle: feedback
+session_ended: true
+annotation_count: 5
+session_ending_message_count: 1
+
+ANNOTATIONS
+ANNOTATION 1 of 5
+element_uid: 2
+element_selector: section#call > form:nth-of-type(1)
+tag: choice
+text:
+| Membership: gold-only
+ANNOTATION 2 of 5
+element_uid: 3
+element_selector: section#call > form:nth-of-type(2)
+tag: choice
+text:
+| Headline: f1-when-fp-gold
+ANNOTATION 3 of 5
+element_uid: 4
+element_selector: section#call > form:nth-of-type(3)
+tag: choice
+text:
+| Gated work: go
+ANNOTATION 4 of 5
+element_uid: 5
+element_selector: section#call > form:nth-of-type(4)
+tag: choice
+text:
+| Absent call: yes
+ANNOTATION 5 of 5
+element_uid: 6
+element_selector: section#call > form:nth-of-type(5)
+tag: choice
+text:
+| Invalid close: yes
+END ANNOTATIONS
+END LAVISH RESULT (6 of 6)
+
+=== Annotations without a freeform message ===
+SESSION-ENDING MESSAGE: (none)
+
+declared_items: 2
+presented_items: 2
+complete: yes
+lifecycle: feedback
+session_ended: (unset)
+annotation_count: 2
+session_ending_message_count: 0
+
+ANNOTATIONS
+ANNOTATION 1 of 2
+element_uid: a
+element_selector: #first
+tag: note
+text:
+| First note
+ANNOTATION 2 of 2
+element_uid: b
+element_selector: #second
+tag: note
+text:
+| Second note
+END ANNOTATIONS
+END LAVISH RESULT (2 of 2)
+
+=== Feedback capture ===
+SESSION-ENDING MESSAGE: (none)
+
+declared_items: 1
+presented_items: 1
+complete: yes
+lifecycle: feedback
+session_ended: true
+annotation_count: 1
+session_ending_message_count: 0
+
+ANNOTATIONS
+ANNOTATION 1 of 1
+element_uid: 
+element_selector: 
+tag: 
+text:
+| ship it
+END ANNOTATIONS
+END LAVISH RESULT (1 of 1)
+
+=== Ended with nothing ===
+SESSION-ENDING MESSAGE: (none)
+
+declared_items: 0
+presented_items: 0
+complete: yes
+lifecycle: ended
+session_ended: (unset)
+annotation_count: 0
+session_ending_message_count: 0
+
+ANNOTATIONS: (none)
+END LAVISH RESULT (0 of 0)
