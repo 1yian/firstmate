@@ -1,0 +1,12 @@
+FIRSTMATE ATOMIC LIFECYCLE — END-TO-END EVIDENCE
+
+DISPATCH before: backlog=queued record=absent
+spawned review-dispatch harness=claude kind=ship mode=no-mistakes yolo=off window=firstmate:fm-review-dispatch worktree=/var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//fm-backlog-atomicity.iY8wXp/evidence-dispatch/wt
+DISPATCH after:  backlog=in_flight record=present
+
+COMPLETION before: backlog=in_flight record=present close-marker=absent
+COMPLETION after:  backlog=done record=absent close-marker=absent
+
+RESTART HEAL before: backlog=queued record=present
+BOOTSTRAP_INFO: marked review-recovery in flight to match the worker this home already owns
+RESTART HEAL after:  backlog=in_flight record=present
