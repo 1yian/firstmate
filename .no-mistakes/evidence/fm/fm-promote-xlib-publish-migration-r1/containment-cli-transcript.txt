@@ -1,0 +1,43 @@
+# End-user CLI containment verification
+
+## fm-promote refuses a symlinked live task record
+command exit: 1
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M19R0VN808EYTMXTEPJQAH2G/.pi/extensions/fm-primary-turnend-guard.ts -e /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M19R0VN808EYTMXTEPJQAH2G/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+error: task record for demo-promote is unsafe or missing (task record resolves outside its authorized directory at /var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T//fm-containment-evidence.o1WzIJ/promote-refuse/home/state/demo-promote.meta)
+symlink preserved: yes; foreign target untouched: yes; instructions absent: yes; staging files: 0
+
+## fm-promote normal record happy path
+command exit: 0
+persisted fields:
+kind=ship
+mode=direct-PR
+yolo=off
+ship instructions published: yes
+
+## fm-x-link refuses symlink publication and cleans its staged rewrite
+command exit: 1
+fm-x-link: failed to record the link in state/demo-x.meta
+symlink preserved: yes; foreign target untouched: yes; staging files: 0
+
+## fm-x-followup --clear refuses a dangling symlink
+command exit: 1
+fm-x-followup: unsafe task record in state/demo-x.meta
+dangling symlink preserved: yes; target still absent: yes
+
+## Relay link/follow-up normal-record happy path
+link exit: 0; output: linked demo-relay to X request req-happy
+follow-up exit: 0; output: fm-x-reply: DRY RUN - would POST to https://myfirstmate.io/connector/followup (recorded: state/x-outbox/req-happy.json): milestone update
+req-happy
+persisted Relay fields:
+x_request=req-happy
+x_request_ts=1700000000
+x_platform=x
+x_reply_max_chars=280
+x_followups=1
+dry-run follow-up artifact published: yes
