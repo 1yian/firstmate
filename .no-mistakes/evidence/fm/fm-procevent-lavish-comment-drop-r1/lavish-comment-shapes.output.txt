@@ -1,0 +1,44 @@
+SESSION-ENDING MESSAGE
+| Pure message comment
+END SESSION-ENDING MESSAGE
+
+declared_items: 5
+presented_items: 5
+malformed_items: 0
+complete: yes
+lifecycle: feedback
+session_ended: true
+annotation_count: 4
+session_ending_message_count: 1
+
+ANNOTATIONS
+ANNOTATION 1 of 4
+element_uid: el-distinct
+element_selector: section#distinct > div
+tag: div
+text:
+| Distinct element text
+prompt:
+| Captain's distinct comment
+ANNOTATION 2 of 4
+element_uid: el-equal
+element_selector: section#equal > div
+tag: div
+text:
+| Use subscription quota
+prompt:
+| Use subscription quota
+ANNOTATION 3 of 4
+element_uid: el-annotation
+element_selector: section#annotation > p
+tag: note
+text:
+| Pure annotation text
+ANNOTATION 4 of 4
+element_uid: el-choice
+element_selector: section#quota > button
+tag: choice
+text:
+| Subscription quota
+END ANNOTATIONS
+END LAVISH RESULT (5 of 5)

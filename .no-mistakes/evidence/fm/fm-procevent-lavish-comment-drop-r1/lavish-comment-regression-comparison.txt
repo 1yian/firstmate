@@ -1,0 +1,52 @@
+Regression reproduction (base 0866a770):
+element_uid: el-distinct
+element_selector: section#distinct > div
+tag: div
+text:
+| Distinct element text
+ANNOTATION 2 of 4
+Result: Captain's distinct comment is absent.
+
+Changed behavior (target bd46b006):
+element_uid: el-distinct
+element_selector: section#distinct > div
+tag: div
+text:
+| Distinct element text
+prompt:
+| Captain's distinct comment
+ANNOTATION 2 of 4
+Result: element text and Captain's distinct comment are both present.
+
+Equal comment/text behavior (target bd46b006):
+element_uid: el-equal
+element_selector: section#equal > div
+tag: div
+text:
+| Use subscription quota
+prompt:
+| Use subscription quota
+ANNOTATION 3 of 4
+Pure annotation (target bd46b006; no prompt field):
+
+element_uid: el-annotation
+element_selector: section#annotation > p
+tag: note
+text:
+| Pure annotation text
+ANNOTATION 4 of 4
+element_uid: el-choice
+Choice (target bd46b006; Context data filtered):
+
+element_uid: el-choice
+element_selector: section#quota > button
+tag: choice
+text:
+| Subscription quota
+END ANNOTATIONS
+END LAVISH RESULT (5 of 5)
+Pure message (target bd46b006):
+
+SESSION-ENDING MESSAGE
+| Pure message comment
+END SESSION-ENDING MESSAGE

@@ -1,0 +1,11 @@
+session:
+  file: /review.html
+  status: feedback
+  session_ended: true
+  ended_by: user
+prompts[5]{uid,prompt,selector,tag,text}:
+  "el-distinct","Captain's distinct comment","section#distinct > div",div,"Distinct element text"
+  "el-equal","Use subscription quota","section#equal > div",div,"Use subscription quota"
+  "el-annotation","","section#annotation > p",note,"Pure annotation text"
+  "el-choice","Context data: {\"question\":\"quota-source\",\"answer\":\"subscription\"}","section#quota > button",choice,"Subscription quota"
+  "","Pure message comment","",message,"Freeform message"
