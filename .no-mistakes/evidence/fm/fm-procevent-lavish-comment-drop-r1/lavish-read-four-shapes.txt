@@ -1,0 +1,87 @@
+Public interface exercised: bin/fm-procevent-lavish.sh read <result-file>
+Behavioral assertions: PASS for selector+comment, pure annotation, choice, and pure message.
+
+===== selector-comment =====
+SESSION-ENDING MESSAGE: (none)
+
+declared_items: 1
+presented_items: 1
+malformed_items: 0
+complete: yes
+lifecycle: feedback
+session_ended: true
+annotation_count: 1
+session_ending_message_count: 0
+
+ANNOTATIONS
+ANNOTATION 1 of 1
+element_uid: el-n1
+element_selector: section#n1 > div
+tag: div
+text:
+| Deterministic tie-break for ambiguous model ids (N1)MY PICK
+prompt:
+| are we able to tell which model id belongs to a subscription vs an api key? generally speaking we should favor subscription quota when it is a tie
+END ANNOTATIONS
+END LAVISH RESULT (1 of 1)
+
+===== pure-annotation =====
+SESSION-ENDING MESSAGE: (none)
+
+declared_items: 1
+presented_items: 1
+malformed_items: 0
+complete: yes
+lifecycle: feedback
+session_ended: true
+annotation_count: 1
+session_ending_message_count: 0
+
+ANNOTATIONS
+ANNOTATION 1 of 1
+element_uid: el-a
+element_selector: section#call > p:nth-of-type(1)
+tag: note
+text:
+| Membership gold-only callout
+END ANNOTATIONS
+END LAVISH RESULT (1 of 1)
+
+===== choice =====
+SESSION-ENDING MESSAGE: (none)
+
+declared_items: 1
+presented_items: 1
+malformed_items: 0
+complete: yes
+lifecycle: feedback
+session_ended: true
+annotation_count: 1
+session_ending_message_count: 0
+
+ANNOTATIONS
+ANNOTATION 1 of 1
+element_uid: el-choice
+element_selector: section#quota > button
+tag: choice
+text:
+| Subscription quota
+END ANNOTATIONS
+END LAVISH RESULT (1 of 1)
+
+===== pure-message =====
+SESSION-ENDING MESSAGE
+| ship this after review
+END SESSION-ENDING MESSAGE
+
+declared_items: 1
+presented_items: 1
+malformed_items: 0
+complete: yes
+lifecycle: feedback
+session_ended: true
+annotation_count: 0
+session_ending_message_count: 1
+
+ANNOTATIONS: (none)
+END LAVISH RESULT (1 of 1)
