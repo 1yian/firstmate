@@ -1,0 +1,27 @@
+END-USER CHECK RETIREMENT TRANSCRIPT
+
+1. Registered files before retirement:
+demo.check-trust
+demo.check.sh
+sibling.note
+
+2. Attempt retirement with explicitly empty FM_STATE_OVERRIDE:
+exit=1
+error: state directory is unavailable
+files still present after refusal:
+demo.check-trust
+demo.check.sh
+sibling.note
+
+3. Retire normally using FM_HOME/state:
+exit=0
+unregistered: state/demo.check.sh
+files remaining after successful retirement:
+sibling.note
+
+4. Observable checks:
+PASS empty override refused loudly
+PASS normal retirement succeeded
+PASS named check removed
+PASS named trust binding removed
+PASS unrelated sibling preserved
