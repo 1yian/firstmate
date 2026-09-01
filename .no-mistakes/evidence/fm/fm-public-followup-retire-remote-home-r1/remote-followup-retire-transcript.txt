@@ -1,0 +1,6 @@
+registered work_home_path=<>
+deliver: delivered pf-remote-evidence request=req-remote-evidence platform=discord chunks=1
+thread req-remote-evidence is still OPEN: hand it on with 'rechain ...' or close it with 'retire pf-remote-evidence --reason ...'
+remote link after deliver: CLEARED
+retire: retired pf-remote-evidence reason=manual end-to-end evidence
+final state: registration=REMOVED retirement_receipt=PRESENT
