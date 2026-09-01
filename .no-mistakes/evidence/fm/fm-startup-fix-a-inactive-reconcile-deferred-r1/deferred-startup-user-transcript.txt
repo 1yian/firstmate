@@ -1,0 +1,19 @@
+$ fm-startup-network.sh start --locked 1 --harvest-pid 84458
+start returned; waiting explicitly for detached publication...
+
+$ fm-startup-network.sh report
+completed off the startup path in 1s: GitHub authentication, dead-secondmate relaunch, secondmate convergence, pending handoff delivery, project clone refresh with its drift reporting, and inactive terminal-outcome reconciliation.
+(silent - no problems found)
+TIMINGS - where the deferred network checks spent their time (ms):
+  phase       gh-auth                                    start=+0       elapsed=1501
+  stage       network-checks probe_sweeps                start=+1       elapsed=624
+  slowest: phase gh-auth 1501ms, stage network-checks probe_sweeps 624ms
+
+$ persisted wake queue
+1788305096	1	check	inactive-reconcile-diagnostic:invalid-secondmate-home	inactive terminal outcomes remain unreconciled: invalid .fm-secondmate-home marker
+
+$ fm-wake-drain.sh (captain-facing output)
+1788305096	1	check	inactive-reconcile-diagnostic:invalid-secondmate-home	inactive terminal outcomes remain unreconciled: invalid .fm-secondmate-home marker
+
+$ durable acknowledgement instruction
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 87435.1788305096.8B5SRX
