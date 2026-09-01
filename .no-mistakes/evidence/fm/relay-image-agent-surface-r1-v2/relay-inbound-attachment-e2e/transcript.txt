@@ -1,0 +1,6 @@
+Command: bin/fm-x-poll.sh (fake Relay transport, real poll executable)
+Wake output: x-mention req-GDxWuyZ
+Persisted inbox: /Users/kunchen/.no-mistakes/evidence/01M1E5JEMWXDA914KASGR2A807/relay-inbound-attachment-e2e/home/state/x-inbox/req-GDxWuyZ.json
+Observed URL calls: https://relay.test/connector/poll
+Payload preservation: exact
+Third-party media fetches by poll: 0

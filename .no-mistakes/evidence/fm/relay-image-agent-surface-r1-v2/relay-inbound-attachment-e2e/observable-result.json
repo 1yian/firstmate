@@ -1,0 +1,35 @@
+{
+  "wake": "x-mention req-GDxWuyZ",
+  "request_id": "req-GDxWuyZ",
+  "text": "any idea what is going on here?",
+  "top_level_media": {
+    "images": [],
+    "attachments": []
+  },
+  "thread_starter": {
+    "author_handle": "@reporter",
+    "kind": "thread_starter",
+    "text": "the upload keeps failing",
+    "images": [
+      {
+        "type": "photo",
+        "url": "https://cdn.discordapp.com/attachments/1012345678900020080/1234567891233211234/IMG_2718.png?ex=65d903de&is=65c68ede&hm=2481f30d"
+      },
+      {
+        "type": "photo",
+        "url": "https://cdn.discordapp.com/attachments/1012345678900020080/1234567891233211235/IMG_2717.png?ex=65d903de&is=65c68ede&hm=2481f30e"
+      }
+    ],
+    "attachments": [
+      {
+        "filename": "trace.log",
+        "content_type": "text/plain",
+        "url": "https://cdn.discordapp.com/attachments/1012345678900020080/1234567891233211236/trace.log"
+      }
+    ]
+  },
+  "observed_poll_calls": [
+    "https://relay.test/connector/poll"
+  ],
+  "third_party_downloads_by_poll": 0
+}
