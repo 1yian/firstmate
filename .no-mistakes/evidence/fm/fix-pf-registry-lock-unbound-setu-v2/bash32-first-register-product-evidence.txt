@@ -1,0 +1,15 @@
+--- CLI stdout ---
+registered pf-empty-locks main/work-empty-locks generation=1 platform=discord
+--- persisted registration record ---
+obligation_id=pf-empty-locks
+relation_id=rel-code
+work_home=main
+work_home_path=
+work_id=work-empty-locks
+generation=1
+platform=discord
+request_id=req-empty-locks
+state=open
+followup_expires_at=2026-08-06T10:00:00Z
+request_context_b64=eyJyZXF1ZXN0X2lkIjoicmVxLWVtcHR5LWxvY2tzIiwicGxhdGZvcm0iOiJkaXNjb3JkIiwiY29udGV4dF9iaW5kaW5nIjp7InZlcnNpb24iOiJjdHgxIiwidmFsdWUiOiJjdHgxX3JlcS1lbXB0eS1sb2NrcyJ9LCJwdWJsaWNfc2FmZV9zdW1tYXJ5IjoiZmlyc3QgcmVnaXN0ZXIgd2l0aCBhbiBlbXB0eSBsb2NrIGxpc3QiLCJyZWNlaXZlZF9hdCI6IjIwMjYtMDctMzBUMTA6MDA6MDBaIiwiZm9sbG93dXBfZXhwaXJlc19hdCI6IjIwMjYtMDgtMDZUMTA6MDA6MDBaIiwicmVzZXJ2YXRpb25fZXhwaXJlc19hdCI6IjIwMjYtMDgtMDZUMTA6MDA6MDBaIn0=
+ok - first register succeeds with an empty lock list under /bin/bash

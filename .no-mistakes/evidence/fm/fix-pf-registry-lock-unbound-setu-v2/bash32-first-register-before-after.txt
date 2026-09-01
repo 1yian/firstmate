@@ -1,0 +1,7 @@
+Environment: GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+
+Before fix (base 6c1d2db194cb20e08232ba2fa2c414592f724b44), exit=1:
+not ok - first register under /bin/bash with an empty lock list failed (exit 1): /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M1D5EFTRVSBA58DVG0M7B3GJ/bin/.fm-public-followup.base-test.sh: line 142: PF_REGISTRY_LOCK_IDS[@]: unbound variable
+
+After fix (target c139a02451dde54eaa3ee64c9f55bc963cdae144), exit=0:
+ok - first register succeeds with an empty lock list under /bin/bash

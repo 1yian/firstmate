@@ -1,0 +1,1 @@
+not ok - first register under /bin/bash with an empty lock list failed (exit 1): /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M1D5EFTRVSBA58DVG0M7B3GJ/bin/.fm-public-followup.base-test.sh: line 142: PF_REGISTRY_LOCK_IDS[@]: unbound variable
