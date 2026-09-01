@@ -1,0 +1,22 @@
+FirstMate wake drain: bounded presentation-lock end-to-end transcript
+
+$ FM_STATUS_PRESENTATION_LOCK_TIMEOUT=1 bin/fm-wake-drain.sh  # queue lock held by pid 37800
+WAKE DRAIN SKIPPED: queue lock remains held by live pid 37800 after 1s; retry on the next drain.
+Durable queue rows after skipped pass: 1
+
+$ FM_STATUS_PRESENTATION_LOCK_TIMEOUT=1 bin/fm-wake-drain.sh  # status lock held by pid 41895
+1788301350	1	signal	task.status	signal: /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M1FGAHY8FABW1NYTQAAXWY5X/.manual-presentation-lock.dCLmeZ/state/task.status
+STATUS PRESENTATION SKIPPED: lock remains held by live pid 41895 after 1s; retry on the next drain.
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 37666.1788301350.kyFfzj
+Durable queue rows after skipped status presentation: 1
+
+$ FM_STATUS_PRESENTATION_LOCK_TIMEOUT=1 bin/fm-wake-drain.sh  # holder released; next pass
+1788301350	1	signal	task.status	signal: /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M1FGAHY8FABW1NYTQAAXWY5X/.manual-presentation-lock.dCLmeZ/state/task.status
+wake annotation: latest wake-EVENT observed at drain, not current state: task.status: needs-decision [key=fixture]: retried presentation is visible
+OPEN DECISIONS (still open, folded from the durable status logs - not just the latest line):
+task [key=fixture] needs-decision: retried presentation is visible
+OPEN DECISIONS: close one by answering it: bin/fm-send.sh <task> --resolve-key <key> '<answer>'
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 37666.1788301350.kyFfzj
+
+$ bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 37666.1788301350.kyFfzj
+Durable queue rows after acknowledgement: 0
