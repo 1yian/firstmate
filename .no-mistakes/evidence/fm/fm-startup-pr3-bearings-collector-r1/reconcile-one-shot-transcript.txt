@@ -1,0 +1,29 @@
+$ fm-secondmate-reconcile.sh request --snapshot snapshot.json
+requested: /Users/kunchen/.no-mistakes/evidence/01M1FKRE24BZPG7DEE6NMVWAYN/reconcile-demo-home/state/reconcile-notify/request-QXKH2u.json
+
+$ inspect durable request queue
+/Users/kunchen/.no-mistakes/evidence/01M1FKRE24BZPG7DEE6NMVWAYN/reconcile-demo-home/state/reconcile-notify/request-QXKH2u.json
+{
+  "schema": "fm-fleet-snapshot.v1",
+  "mismatch": {
+    "id": "demo-mate",
+    "reconcile_inventory": {
+      "kind": "orphan_in_flight",
+      "ids": [
+        "stale-task"
+      ]
+    }
+  }
+}
+
+$ fm-secondmate-reconcile.sh process-requests
+processed: 1 deferred: 0
+
+$ queued requests remaining
+0
+$ delivered durable inbox records
+1
+$ delivered instruction body
+[fm-from-firstmate]⁣delivery=03944df686b227dd A fleet snapshot found that your home's backlog and task metadata disagreed.
+
+Please check your current books and, if they still disagree, reconcile them to match reality. Nothing outside your home has been changed, and no reply is expected.
