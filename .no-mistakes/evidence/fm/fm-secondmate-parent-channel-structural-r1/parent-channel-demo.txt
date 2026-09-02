@@ -1,0 +1,15 @@
+$ child ledger contains a captain-facing decision; the mate model does not append to the parent
+needs-decision [key=route]: choose north or south
+$ sweep at t=1000 (inside grace period)
+[parent channel still empty]
+$ child updates the same open decision; sweep at t=1030
+[parent channel still empty]
+$ child updates again; sweep at t=1061 (past original opening threshold)
+blocked [key=mirror-5-child-route]: mirror: child=child decision route (opened at line 1) open past 60s without an answer or a captain hold: latest recommendation is west mode=no-mistakes yolo=off
+$ child resolves explicitly; next sweep closes the parent decision
+blocked [key=mirror-5-child-route]: mirror: child=child decision route (opened at line 1) open past 60s without an answer or a captain hold: latest recommendation is west mode=no-mistakes yolo=off
+resolved [key=mirror-5-child-route]: mirror: child=child decision route (opened at line 1) closed
+$ child records a terminal outcome; next sweep delivers it immediately
+blocked [key=mirror-5-child-route]: mirror: child=child decision route (opened at line 1) open past 60s without an answer or a captain hold: latest recommendation is west mode=no-mistakes yolo=off
+resolved [key=mirror-5-child-route]: mirror: child=child decision route (opened at line 1) closed
+done [key=mirror-5-child-l190]: mirror: child=child implementation shipped mode=no-mistakes yolo=off

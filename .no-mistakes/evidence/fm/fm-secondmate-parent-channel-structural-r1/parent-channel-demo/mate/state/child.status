@@ -1,0 +1,5 @@
+needs-decision [key=route]: choose north or south
+needs-decision [key=route]: choose east or west
+blocked [key=route]: latest recommendation is west
+resolved [key=route]: captain chose west
+done: implementation shipped

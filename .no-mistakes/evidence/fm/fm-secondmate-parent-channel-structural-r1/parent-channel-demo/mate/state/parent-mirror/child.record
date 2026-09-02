@@ -1,0 +1,15 @@
+schema=fm-parent-mirror.v1
+offset=219
+ident=strong:16777235:622666201:1788388862.966593069
+incarnation=demo-one
+terminal_line=
+terminal_offset=
+terminal_first_seen=
+terminal_reported=0
+tail=0
+orphan=0
+context_pr=
+context_mode=no-mistakes
+context_yolo=off
+context_report=0
+line_count=5

@@ -1,0 +1,8 @@
+window=firstmate:fm-child
+worktree=/Users/kunchen/.no-mistakes/evidence/01M1GNCKDYFTYJ7WNEGZAHA4VJ/parent-channel-demo/mate/projects/child
+project=demo
+harness=codex
+kind=ship
+mode=no-mistakes
+yolo=off
+spawn_gen=demo-one
