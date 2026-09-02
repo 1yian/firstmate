@@ -1,0 +1,13 @@
+END-USER CHECK: lost keyless done, with no queue row
+Command: FM_STATE_OVERRIDE=<state> bin/fm-wake-drain.sh
+
+STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+keyless-3346 done: PR https://example.test/3346 checks green
+
+END-USER CHECK: immediate repeat of unchanged state
+Command: FM_STATE_OVERRIDE=<state> bin/fm-wake-drain.sh
+[no output]
+
+END-USER CHECK: branch-handled terminal status
+Command: fm-branch-outcome.sh append ..., then fm-wake-drain.sh
+[no output]
