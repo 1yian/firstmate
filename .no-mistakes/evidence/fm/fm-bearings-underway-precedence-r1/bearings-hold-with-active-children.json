@@ -1,0 +1,86 @@
+{
+  "schema": "fm-bearings.v1",
+  "home": "fm-bearings.aKKuiY/underway-hold-parent",
+  "generated": "2026-07-11T18:00:00Z",
+  "prs": "not_requested (run: /bearings include PRs)",
+  "in_flight": [
+    {
+      "id": "busy-hold/child-a",
+      "kind": "ship",
+      "state": "working",
+      "repo": "sample",
+      "doing": "harness busy (claude-hook)"
+    },
+    {
+      "id": "busy-hold/child-b",
+      "kind": "ship",
+      "state": "working",
+      "repo": "sample",
+      "doing": "harness busy (claude-hook)"
+    }
+  ],
+  "secondmates": [
+    {
+      "id": "busy-hold",
+      "state": "captain_decision",
+      "doing": "Choose release route",
+      "provenance": "structured-home",
+      "freshness": "fresh",
+      "age_seconds": 0,
+      "contradiction": false,
+      "reason": "-"
+    }
+  ],
+  "secondmate_reconcile": [
+    {
+      "id": "busy-hold",
+      "spawn_gen": null,
+      "host": null,
+      "kind": null,
+      "ids": []
+    }
+  ],
+  "decisions_open": [
+    {
+      "id": "busy-hold/release-call",
+      "key": "release-call",
+      "verb": "captain-hold",
+      "summary": "Choose release route: pick route A or B",
+      "owner": "busy-hold"
+    }
+  ],
+  "landed": [],
+  "gates": [],
+  "reports": [],
+  "recorded_prs": [],
+  "omitted": [
+    {
+      "surface": "backlog item bodies",
+      "reveal": "--fields bodies"
+    },
+    {
+      "surface": "task paths",
+      "reveal": "--fields paths"
+    },
+    {
+      "surface": "watch/steer actions",
+      "reveal": "--fields actions"
+    },
+    {
+      "surface": "healthy endpoint detail",
+      "reveal": "--fields endpoints"
+    },
+    {
+      "surface": "full scout-report inventory",
+      "reveal": "--all-reports"
+    },
+    {
+      "surface": "superseded or prose-deferred queued items",
+      "reveal": "--all-queued"
+    },
+    {
+      "surface": "live PR discovery + checks",
+      "reveal": "--include-prs"
+    }
+  ]
+}
