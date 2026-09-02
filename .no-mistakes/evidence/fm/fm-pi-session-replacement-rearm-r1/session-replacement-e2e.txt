@@ -1,0 +1,7 @@
+SCENARIO=same-process /new during blocked actionable delivery
+OLD_ACCEPTED_WAKE_REPLAYED=false
+MID_DELIVERY_WAKE_COUNT=1
+REPLACEMENT_LIVE_ARM_COUNT=1
+REPLACEMENT_TOTAL_ARM_GENERATIONS=3
+WAKE_SURFACE="⁣FIRSTMATE_OP: v1 watcher: FIRSTMATE WATCHER WAKE: signal: replacement-successor actionable outcome\n\nRun bin/fm-wake-drain.sh first and handle the queued wake. Watcher continuity is extension-owned."
+ok - Pi session replacement auto-arms and carries its in-flight actionable close
