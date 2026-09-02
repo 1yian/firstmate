@@ -1,0 +1,318 @@
+$ bin/fm-captain-hold.sh --help
+fm-captain-hold.sh - deterministic mechanics for tasks held for the captain.
+
+The semantic policy is owned once by
+.agents/skills/captain-hold-lifecycle/SKILL.md. This script never reads
+report, visual-review, chat, or terminal prose to guess whether the captain
+owes an answer. The invoking agent decides what is genuinely waiting on the
+captain; this script supplies guarded creation, a durable record of what the
+captain actually said, the investigation completion gate, and the one
+keyed-answer intake every channel feeds.
+
+There is no separate decision type. A captain call is an ordinary backlog
+task held for the captain (`tasks-axi hold <id> --kind captain`), and its
+identity is simply the task id. Older installs created derived
+`<origin>-decision-<key>` identities through bin/fm-decision-hold.sh; those
+rows are already plain task ids, so they keep working here unchanged, and
+the legacy inputs noted below resolve them without a migration.
+All backlog mutations run in the active FM_HOME, which keeps main-home and
+secondmate-home ownership aligned with the work that discovered the call.
+
+Usage:
+  fm-captain-hold.sh hold <task-id> --reason <reason> \
+    [--title <title>] [--repo <repo>] [--origin <origin-id>] [--until YYYY-MM-DD]
+  fm-captain-hold.sh answer <task-id> --decision-file <path> [--release]
+  fm-captain-hold.sh answers [<legacy-origin> | --any-origin] --source <provenance>   (keyed answers on stdin)
+  fm-captain-hold.sh bind <source-id> [<legacy-origin> | --any-origin]
+  fm-captain-hold.sh unbind <source-id>
+  fm-captain-hold.sh binding <source-id>
+  fm-captain-hold.sh complete <origin-id> (--none | <task-id>...)
+  fm-captain-hold.sh verify <origin-id>
+  fm-captain-hold.sh open <task-id>
+  fm-captain-hold.sh recover-retain <state/task-id.backlog-retain>
+  fm-captain-hold.sh diverged
+
+`hold` places an existing task under an active captain hold, or creates the
+task first when no work item exists to hold (--title required to create; the
+optional --origin records provenance in the new task's body and supplies the
+default repo from that origin's metadata). Prefer holding the work item the
+question gates over minting a new row. Repeating `hold` with the same id is
+idempotent; a task already closed is refused rather than reopened. `--until`
+records the captain's own deferral date through `tasks-axi hold --until`, so
+a "revisit later" answer is stored as a date instead of a live card.
+
+`answer` records the captain's exact words and closes the call in the same
+act. It requires a non-empty captain decision file of at most 8192 bytes,
+writes a resolution block at the top of the task body (the previous body is
+preserved below the block and archived through tasks-axi --archive-body),
+then closes the task with `tasks-axi done` - or, with `--release`, lifts the
+hold with `tasks-axi unhold` so a captain-gated WORK item resumes instead of
+closing. An exact retry is idempotent only when its requested close mode
+matches the newest record; a changed decision or a mode mismatch is rejected.
+A re-held task may record a new answer on top. On a task already closed outside this script,
+`answer` records the missing resolution block (the old `repair` path) only
+when the task still carries the captain-hold provenance tasks-axi preserves
+through a close, so an ordinary finished task cannot be dressed up as an
+answered captain call. A hold that expired by date (`--until` in the past) is
+still answerable: the surviving hold annotations, not tasks-axi's live
+`held:` bit, prove the captain owned it.
+
+ONE KEYED-ANSWER INTAKE, FED BY EVERY CHANNEL.
+"A keyed answer closes its matching captain-held task" is a single
+capability, owned here and nowhere else. `answers` reads
+`<task-id>\t<answer>\t<label>[\t<mode>]` lines on stdin and closes each named
+task through the very same `answer` path above, so every guard applies
+identically no matter which channel the answer arrived on. The key IS the
+task id - no identity arithmetic. The optional fourth field selects the close:
+empty or `done` completes the task, `release` lifts the hold so held work
+resumes; anything else is skipped. A key that names no task, a task that is
+not held for the captain, or a task already closed is reported as `skipped:`
+and feeds nothing. A replayed delivery whose answer digest and requested
+close mode both match the newest record is reported `closed:` and is a no-op;
+a mode mismatch is skipped. The command exits nonzero when any key was
+skipped. `--source` is provenance text recorded in the
+durable decision, never a behavior switch: this command has no per-channel
+branch and no knowledge of chat, review decks, or any transport.
+Legacy input: an optional positional origin (or a stored concrete-origin
+binding) makes a key that names no task fall back to the old
+`<origin>-decision-<key>` identity, so an in-flight pre-collapse channel
+keeps closing its rows; `--any-origin` and the stored `(any)` marker mean
+what an absent origin means and are accepted for the same reason.
+
+A channel's ONLY job is to turn whatever it received into those keyed lines
+and pipe them here. It must never map keys to tasks, build decision records,
+choose a close mode beyond what its card declared, or close anything itself.
+
+`bind`, `unbind`, and `binding` record that a captured-answer SOURCE feeds
+this intake, for any channel whose answers arrive detached from their origin
+(a process-event source id, for example). The binding is a private record
+under `state/decision-bindings/`; a source with no binding feeds nothing, so
+this whole path is opt-in per source and an unbound source behaves as if it
+did not exist. `bind` deliberately does not require the source to exist yet,
+so a channel can be bound BEFORE it is armed. The optional second argument
+exists only for legacy pre-collapse records and callers: a concrete origin is
+stored verbatim and used as the composition fallback above, and
+`--any-origin` stores the same `(any)` marker a plain `bind <source-id>`
+stores. `binding` prints the stored value verbatim and `answers` accepts it,
+so the process-event runner's feed seam is unchanged.
+
+`complete` is the shared investigation and visual-review completion gate.
+It attests, in the origin task's metadata, the reviewed inventory of
+captain-held tasks that carry the origin's unresolved captain calls.
+`--none` is an explicit semantic attestation that the just-reviewed surface
+has no unresolved captain call, and is refused while the origin still has an
+open keyed status decision. With a non-empty inventory, every listed task is
+verified durable (actively captain-held, or closed with a recorded answer),
+the inventory is unioned idempotently into the metadata, and every still-open
+keyed status decision is transferred to its durable owner with a
+`captain-held [key=...]` status close naming the inventory. Later review
+passes may add ids. A post-teardown visual review can complete against the
+surviving report and tasks without recreating task state.
+`verify` is read-only and is called by scout teardown, so teardown cannot
+erase a source before this gate has succeeded: every recorded inventory
+entry must still be durable and no keyed status decision may be open.
+Metadata compatibility: the attestation keeps the historical
+`decisions_reviewed=1` and `decision_keys=` keys, and an inventory entry that
+names no existing task resolves through the legacy `<origin>-decision-<entry>`
+identity, so pre-collapse metadata written by fm-decision-hold.sh verifies
+unchanged. An entry that exists as a task id is always that task.
+
+`open` is the read-only predicate a MECHANICAL closer asks before it may
+retire a task's row: is this task still an open captain call? It exits 0 when
+it is, 1 when it is not, and 2 when the answer cannot be established, so a
+caller that must never close a live call can treat "cannot tell" as its own
+case instead of as a no. It prints nothing on 0 or 1 and mutates nothing. The
+policy prefers holding the very work item a question gates, so the row a
+cleanup is about to close is routinely the captain's own call; this predicate
+is how that cleanup finds out. It is not a second closing rule: `answer`
+remains the only act that closes a captain call.
+
+`recover-retain` is what cleanup uses instead of closing. The work record that
+discovered the call is going away, so recovery records the finished work's
+deliverable in the task body and returns the row to Queued - nothing is
+working on it any more, and a captain call reads as the captain's own only
+while it is queued and held. The hold, and the requirement that only `answer`
+closes it, are untouched. Recovery refuses an unanswered task that is not an
+open captain call, and re-recording the same deliverable is a no-op. Every
+refusal here is loud and leaves the call intact, because teardown reaches
+recovery only on the path where its alternative would have been to close the
+captain's own question. There is no standalone retention command: it had no
+in-repo caller and could queue live work while leaving its worker metadata in
+place, presenting it as an ownerless Captain's Call and violating the
+meta/backlog invariant in bin/fm-backlog-transition-lib.sh.
+All `hold`, `answer`, and `recover-retain` mutations serialize on the task
+metadata lock. Teardown records replayable retention before cleanup, marks
+cleanup complete afterward, releases its lock, and lets `recover-retain`
+acquire that lock as the sole owner while it retains the current row and
+removes the record. If `answer --release` won first, recovery preserves the
+recorded answer and lifted hold but still returns the ownerless row to Queued
+before removing the worker record.
+
+`diverged` is the read-only guard over the seam between the two records of
+one captain call. See "record divergence" beside command_diverged below.
+
+Resolution records: the block written into the body names this script, the
+decision digest, and a `Resolution mode:` of answered, released, or repaired.
+Records written by the retired fm-decision-hold.sh (routed, declined,
+answered, repaired) are recognized everywhere a record is read, so nothing
+already closed needs rewriting.
+
+$ bin/fm-captain-hold.sh retain sample-task --note finished
+fm-captain-hold.sh - deterministic mechanics for tasks held for the captain.
+
+The semantic policy is owned once by
+.agents/skills/captain-hold-lifecycle/SKILL.md. This script never reads
+report, visual-review, chat, or terminal prose to guess whether the captain
+owes an answer. The invoking agent decides what is genuinely waiting on the
+captain; this script supplies guarded creation, a durable record of what the
+captain actually said, the investigation completion gate, and the one
+keyed-answer intake every channel feeds.
+
+There is no separate decision type. A captain call is an ordinary backlog
+task held for the captain (`tasks-axi hold <id> --kind captain`), and its
+identity is simply the task id. Older installs created derived
+`<origin>-decision-<key>` identities through bin/fm-decision-hold.sh; those
+rows are already plain task ids, so they keep working here unchanged, and
+the legacy inputs noted below resolve them without a migration.
+All backlog mutations run in the active FM_HOME, which keeps main-home and
+secondmate-home ownership aligned with the work that discovered the call.
+
+Usage:
+  fm-captain-hold.sh hold <task-id> --reason <reason> \
+    [--title <title>] [--repo <repo>] [--origin <origin-id>] [--until YYYY-MM-DD]
+  fm-captain-hold.sh answer <task-id> --decision-file <path> [--release]
+  fm-captain-hold.sh answers [<legacy-origin> | --any-origin] --source <provenance>   (keyed answers on stdin)
+  fm-captain-hold.sh bind <source-id> [<legacy-origin> | --any-origin]
+  fm-captain-hold.sh unbind <source-id>
+  fm-captain-hold.sh binding <source-id>
+  fm-captain-hold.sh complete <origin-id> (--none | <task-id>...)
+  fm-captain-hold.sh verify <origin-id>
+  fm-captain-hold.sh open <task-id>
+  fm-captain-hold.sh recover-retain <state/task-id.backlog-retain>
+  fm-captain-hold.sh diverged
+
+`hold` places an existing task under an active captain hold, or creates the
+task first when no work item exists to hold (--title required to create; the
+optional --origin records provenance in the new task's body and supplies the
+default repo from that origin's metadata). Prefer holding the work item the
+question gates over minting a new row. Repeating `hold` with the same id is
+idempotent; a task already closed is refused rather than reopened. `--until`
+records the captain's own deferral date through `tasks-axi hold --until`, so
+a "revisit later" answer is stored as a date instead of a live card.
+
+`answer` records the captain's exact words and closes the call in the same
+act. It requires a non-empty captain decision file of at most 8192 bytes,
+writes a resolution block at the top of the task body (the previous body is
+preserved below the block and archived through tasks-axi --archive-body),
+then closes the task with `tasks-axi done` - or, with `--release`, lifts the
+hold with `tasks-axi unhold` so a captain-gated WORK item resumes instead of
+closing. An exact retry is idempotent only when its requested close mode
+matches the newest record; a changed decision or a mode mismatch is rejected.
+A re-held task may record a new answer on top. On a task already closed outside this script,
+`answer` records the missing resolution block (the old `repair` path) only
+when the task still carries the captain-hold provenance tasks-axi preserves
+through a close, so an ordinary finished task cannot be dressed up as an
+answered captain call. A hold that expired by date (`--until` in the past) is
+still answerable: the surviving hold annotations, not tasks-axi's live
+`held:` bit, prove the captain owned it.
+
+ONE KEYED-ANSWER INTAKE, FED BY EVERY CHANNEL.
+"A keyed answer closes its matching captain-held task" is a single
+capability, owned here and nowhere else. `answers` reads
+`<task-id>\t<answer>\t<label>[\t<mode>]` lines on stdin and closes each named
+task through the very same `answer` path above, so every guard applies
+identically no matter which channel the answer arrived on. The key IS the
+task id - no identity arithmetic. The optional fourth field selects the close:
+empty or `done` completes the task, `release` lifts the hold so held work
+resumes; anything else is skipped. A key that names no task, a task that is
+not held for the captain, or a task already closed is reported as `skipped:`
+and feeds nothing. A replayed delivery whose answer digest and requested
+close mode both match the newest record is reported `closed:` and is a no-op;
+a mode mismatch is skipped. The command exits nonzero when any key was
+skipped. `--source` is provenance text recorded in the
+durable decision, never a behavior switch: this command has no per-channel
+branch and no knowledge of chat, review decks, or any transport.
+Legacy input: an optional positional origin (or a stored concrete-origin
+binding) makes a key that names no task fall back to the old
+`<origin>-decision-<key>` identity, so an in-flight pre-collapse channel
+keeps closing its rows; `--any-origin` and the stored `(any)` marker mean
+what an absent origin means and are accepted for the same reason.
+
+A channel's ONLY job is to turn whatever it received into those keyed lines
+and pipe them here. It must never map keys to tasks, build decision records,
+choose a close mode beyond what its card declared, or close anything itself.
+
+`bind`, `unbind`, and `binding` record that a captured-answer SOURCE feeds
+this intake, for any channel whose answers arrive detached from their origin
+(a process-event source id, for example). The binding is a private record
+under `state/decision-bindings/`; a source with no binding feeds nothing, so
+this whole path is opt-in per source and an unbound source behaves as if it
+did not exist. `bind` deliberately does not require the source to exist yet,
+so a channel can be bound BEFORE it is armed. The optional second argument
+exists only for legacy pre-collapse records and callers: a concrete origin is
+stored verbatim and used as the composition fallback above, and
+`--any-origin` stores the same `(any)` marker a plain `bind <source-id>`
+stores. `binding` prints the stored value verbatim and `answers` accepts it,
+so the process-event runner's feed seam is unchanged.
+
+`complete` is the shared investigation and visual-review completion gate.
+It attests, in the origin task's metadata, the reviewed inventory of
+captain-held tasks that carry the origin's unresolved captain calls.
+`--none` is an explicit semantic attestation that the just-reviewed surface
+has no unresolved captain call, and is refused while the origin still has an
+open keyed status decision. With a non-empty inventory, every listed task is
+verified durable (actively captain-held, or closed with a recorded answer),
+the inventory is unioned idempotently into the metadata, and every still-open
+keyed status decision is transferred to its durable owner with a
+`captain-held [key=...]` status close naming the inventory. Later review
+passes may add ids. A post-teardown visual review can complete against the
+surviving report and tasks without recreating task state.
+`verify` is read-only and is called by scout teardown, so teardown cannot
+erase a source before this gate has succeeded: every recorded inventory
+entry must still be durable and no keyed status decision may be open.
+Metadata compatibility: the attestation keeps the historical
+`decisions_reviewed=1` and `decision_keys=` keys, and an inventory entry that
+names no existing task resolves through the legacy `<origin>-decision-<entry>`
+identity, so pre-collapse metadata written by fm-decision-hold.sh verifies
+unchanged. An entry that exists as a task id is always that task.
+
+`open` is the read-only predicate a MECHANICAL closer asks before it may
+retire a task's row: is this task still an open captain call? It exits 0 when
+it is, 1 when it is not, and 2 when the answer cannot be established, so a
+caller that must never close a live call can treat "cannot tell" as its own
+case instead of as a no. It prints nothing on 0 or 1 and mutates nothing. The
+policy prefers holding the very work item a question gates, so the row a
+cleanup is about to close is routinely the captain's own call; this predicate
+is how that cleanup finds out. It is not a second closing rule: `answer`
+remains the only act that closes a captain call.
+
+`recover-retain` is what cleanup uses instead of closing. The work record that
+discovered the call is going away, so recovery records the finished work's
+deliverable in the task body and returns the row to Queued - nothing is
+working on it any more, and a captain call reads as the captain's own only
+while it is queued and held. The hold, and the requirement that only `answer`
+closes it, are untouched. Recovery refuses an unanswered task that is not an
+open captain call, and re-recording the same deliverable is a no-op. Every
+refusal here is loud and leaves the call intact, because teardown reaches
+recovery only on the path where its alternative would have been to close the
+captain's own question. There is no standalone retention command: it had no
+in-repo caller and could queue live work while leaving its worker metadata in
+place, presenting it as an ownerless Captain's Call and violating the
+meta/backlog invariant in bin/fm-backlog-transition-lib.sh.
+All `hold`, `answer`, and `recover-retain` mutations serialize on the task
+metadata lock. Teardown records replayable retention before cleanup, marks
+cleanup complete afterward, releases its lock, and lets `recover-retain`
+acquire that lock as the sole owner while it retains the current row and
+removes the record. If `answer --release` won first, recovery preserves the
+recorded answer and lifted hold but still returns the ownerless row to Queued
+before removing the worker record.
+
+`diverged` is the read-only guard over the seam between the two records of
+one captain call. See "record divergence" beside command_diverged below.
+
+Resolution records: the block written into the body names this script, the
+decision digest, and a `Resolution mode:` of answered, released, or repaired.
+Records written by the retired fm-decision-hold.sh (routed, declined,
+answered, repaired) are recognized everywhere a record is read, so nothing
+already closed needs rewriting.
+[exit status: 2]
