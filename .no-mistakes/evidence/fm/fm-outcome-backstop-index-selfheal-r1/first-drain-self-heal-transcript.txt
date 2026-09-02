@@ -1,0 +1,11 @@
+GNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)
+$ verify fresh non-Pi-style home before first drain
+ready marker before: absent
+$ FM_STATE_OVERRIDE=<fresh-state> bin/fm-wake-drain.sh
+STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+fresh done: first-drain recovery is visible
+ready marker after: 1
+generated task index: fm-branch-outcome-index-v1	1	0	-
+$ verify genuine malformed-store fault
+STATUS OUTCOME BACKSTOP SKIPPED: bounded outcome indexes could not be rebuilt because the outcome store is unsafe; repair it before relying on drain recovery.
+ready marker after fault: absent
