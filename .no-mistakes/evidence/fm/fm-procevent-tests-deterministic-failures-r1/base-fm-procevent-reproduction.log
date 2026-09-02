@@ -1,0 +1,3 @@
+ok - no configured source means no generated state and no process
+not ok - reconcile never claimed the registered source
+base exit status: 1

@@ -1,0 +1,15 @@
+Symlinked FM_HOME: /Users/kunchen/.no-mistakes/evidence/01M1FQDXYGREMNENJKYBFM0EF5/.manual-fixture/homes-link/operator
+Physical FM_HOME:  /Users/kunchen/.no-mistakes/evidence/01M1FQDXYGREMNENJKYBFM0EF5/.manual-fixture/homes/operator
+
+$ fm-procevent.sh register lavish manual-symlink -- /bin/sh -c ...
+registered: manual-symlink (lavish)
+
+$ fm-procevent.sh start manual-symlink
+not-autohandled: manual-symlink (left for the handler; still unacknowledged)
+captured: /Users/kunchen/.no-mistakes/evidence/01M1FQDXYGREMNENJKYBFM0EF5/.manual-fixture/homes/operator/state/procevent-inbox/manual-symlink.1.result
+
+Durable result (physical state path):
+payload from symlinked home
+
+Published wake payload:
+check: procevent lavish manual-symlink 1

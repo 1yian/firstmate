@@ -1,0 +1,3 @@
+ok - arm binds, refuses duplicates, and retire cleans up
+not ok - the winning concurrent arm did not produce an outcome
+base exit status: 1
