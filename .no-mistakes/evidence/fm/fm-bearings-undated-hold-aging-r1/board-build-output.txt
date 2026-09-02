@@ -1,0 +1,4 @@
+board: /Users/kunchen/.no-mistakes/evidence/01M1GENG7DW7JZB4G175VSW66H/board-home/.lavish/bearings-board.html
+served: /Users/kunchen/.no-mistakes/evidence/01M1GENG7DW7JZB4G175VSW66H/board-home/.lavish/bearings-board.html
+bound: lavish-d0b8fbf9a7f73dad
+armed: lavish-d0b8fbf9a7f73dad

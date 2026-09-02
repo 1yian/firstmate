@@ -1,0 +1,64 @@
+{
+  "schema": "fm-bearings.v1",
+  "home": "fm-bearings.2hnOiS/evidence-undated-aging",
+  "generated": "2026-07-11T18:00:00Z",
+  "prs": "not_requested (run: /bearings include PRs)",
+  "in_flight": [],
+  "secondmates": [],
+  "secondmate_reconcile": [],
+  "decisions_open": [
+    {
+      "id": "recent-call",
+      "key": "recent-call",
+      "verb": "captain-hold",
+      "summary": "Recent genuine call: choose a sample route",
+      "owner": "(main)"
+    }
+  ],
+  "landed": [],
+  "gates": [
+    {
+      "id": "aged-call",
+      "title": "Aged genuine call",
+      "blocked_by": "-",
+      "reason": "held 40d: choose a sample route",
+      "owner": "(main)"
+    }
+  ],
+  "reports": [],
+  "recorded_prs": [],
+  "omitted": [
+    {
+      "surface": "backlog item bodies",
+      "reveal": "--fields bodies"
+    },
+    {
+      "surface": "task paths",
+      "reveal": "--fields paths"
+    },
+    {
+      "surface": "watch/steer actions",
+      "reveal": "--fields actions"
+    },
+    {
+      "surface": "healthy endpoint detail",
+      "reveal": "--fields endpoints"
+    },
+    {
+      "surface": "full scout-report inventory",
+      "reveal": "--all-reports"
+    },
+    {
+      "surface": "superseded or prose-deferred queued items",
+      "reveal": "--all-queued"
+    },
+    {
+      "surface": "captain holds marked deferred, superseded, or aged: 2",
+      "reveal": "--all-decisions"
+    },
+    {
+      "surface": "live PR discovery + checks",
+      "reveal": "--include-prs"
+    }
+  ]
+}
