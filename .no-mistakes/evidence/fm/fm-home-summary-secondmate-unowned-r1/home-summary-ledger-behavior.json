@@ -1,0 +1,212 @@
+{
+  "evidence_contract": "Observable output from bin/fm-fleet-snapshot.sh --secondmate-home-summary",
+  "scenarios": {
+    "secondmate_only_clean_backlog": {
+      "schema": "fm-secondmate-home-summary.v1",
+      "generated": "2026-09-02T06:48:00Z",
+      "generated_epoch": 1788331680,
+      "home": "/Users/kunchen/.no-mistakes/evidence/01M1GDQZTMD8MV4H6MA6YN9Q29/home-summary-fixture.8zLvAV",
+      "valid": true,
+      "reason": null,
+      "invalidity": {
+        "kind": null,
+        "ids": []
+      },
+      "state": "no_active_work",
+      "active_children": [],
+      "decisions_open": [],
+      "holds": [],
+      "queued": [],
+      "landed": [],
+      "endpoints": [
+        {
+          "id": "mate",
+          "state": "working",
+          "source": "status-log",
+          "endpoint": {
+            "target": "firstmate:fm-mate",
+            "exists": true,
+            "agent_alive": "alive",
+            "status": "alive",
+            "observed_at": "2026-09-02T06:48:00Z",
+            "freshness": "fresh"
+          }
+        }
+      ],
+      "counts": {
+        "active_children": 0,
+        "decisions_open": 0,
+        "holds": 0,
+        "queued": 0,
+        "landed": 0,
+        "endpoints": 1
+      },
+      "omitted": []
+    },
+    "terminal_secondmate_in_flight": {
+      "schema": "fm-secondmate-home-summary.v1",
+      "generated": "2026-09-02T06:48:00Z",
+      "generated_epoch": 1788331680,
+      "home": "/Users/kunchen/.no-mistakes/evidence/01M1GDQZTMD8MV4H6MA6YN9Q29/home-summary-fixture.8zLvAV",
+      "valid": true,
+      "reason": null,
+      "invalidity": {
+        "kind": null,
+        "ids": []
+      },
+      "state": "no_active_work",
+      "active_children": [],
+      "decisions_open": [],
+      "holds": [],
+      "queued": [],
+      "landed": [],
+      "endpoints": [
+        {
+          "id": "mate",
+          "state": "done",
+          "source": "status-log",
+          "endpoint": {
+            "target": "firstmate:fm-mate",
+            "exists": true,
+            "agent_alive": "alive",
+            "status": "alive",
+            "observed_at": "2026-09-02T06:48:00Z",
+            "freshness": "fresh"
+          }
+        }
+      ],
+      "counts": {
+        "active_children": 0,
+        "decisions_open": 0,
+        "holds": 0,
+        "queued": 0,
+        "landed": 0,
+        "endpoints": 1
+      },
+      "omitted": []
+    },
+    "ordinary_unowned_ship": {
+      "schema": "fm-secondmate-home-summary.v1",
+      "generated": "2026-09-02T06:48:01Z",
+      "generated_epoch": 1788331681,
+      "home": "/Users/kunchen/.no-mistakes/evidence/01M1GDQZTMD8MV4H6MA6YN9Q29/home-summary-fixture.8zLvAV",
+      "valid": false,
+      "reason": "live child state has no in-flight backlog item: unowned-ship=parked",
+      "invalidity": {
+        "kind": "unowned_current",
+        "ids": [
+          "unowned-ship"
+        ]
+      },
+      "state": "captain_decision",
+      "active_children": [],
+      "decisions_open": [
+        {
+          "id": "unowned-ship",
+          "key": "unowned-ship",
+          "verb": "needs-decision",
+          "summary": "choose a route",
+          "reason": null,
+          "source": "status"
+        }
+      ],
+      "holds": [],
+      "queued": [],
+      "landed": [],
+      "endpoints": [
+        {
+          "id": "mate",
+          "state": "done",
+          "source": "status-log",
+          "endpoint": {
+            "target": "firstmate:fm-mate",
+            "exists": true,
+            "agent_alive": "alive",
+            "status": "alive",
+            "observed_at": "2026-09-02T06:48:01Z",
+            "freshness": "fresh"
+          }
+        },
+        {
+          "id": "unowned-ship",
+          "state": "parked",
+          "source": "status-log",
+          "endpoint": {
+            "target": "firstmate:fm-unowned-ship",
+            "exists": true,
+            "agent_alive": "not_checked",
+            "status": "unknown",
+            "observed_at": "2026-09-02T06:48:01Z",
+            "freshness": "fresh"
+          }
+        }
+      ],
+      "counts": {
+        "active_children": 0,
+        "decisions_open": 1,
+        "holds": 0,
+        "queued": 0,
+        "landed": 0,
+        "endpoints": 2
+      },
+      "omitted": []
+    },
+    "ordinary_terminal_ship": {
+      "schema": "fm-secondmate-home-summary.v1",
+      "generated": "2026-09-02T06:48:01Z",
+      "generated_epoch": 1788331681,
+      "home": "/Users/kunchen/.no-mistakes/evidence/01M1GDQZTMD8MV4H6MA6YN9Q29/home-summary-fixture.8zLvAV",
+      "valid": false,
+      "reason": "in-flight backlog item has terminal child state: terminal-ship=done",
+      "invalidity": {
+        "kind": "terminal_in_flight",
+        "ids": [
+          "terminal-ship"
+        ]
+      },
+      "state": "no_active_work",
+      "active_children": [],
+      "decisions_open": [],
+      "holds": [],
+      "queued": [],
+      "landed": [],
+      "endpoints": [
+        {
+          "id": "mate",
+          "state": "done",
+          "source": "status-log",
+          "endpoint": {
+            "target": "firstmate:fm-mate",
+            "exists": true,
+            "agent_alive": "alive",
+            "status": "alive",
+            "observed_at": "2026-09-02T06:48:01Z",
+            "freshness": "fresh"
+          }
+        },
+        {
+          "id": "terminal-ship",
+          "state": "done",
+          "source": "status-log",
+          "endpoint": {
+            "target": "firstmate:fm-terminal-ship",
+            "exists": true,
+            "agent_alive": "not_checked",
+            "status": "unknown",
+            "observed_at": "2026-09-02T06:48:01Z",
+            "freshness": "fresh"
+          }
+        }
+      ],
+      "counts": {
+        "active_children": 0,
+        "decisions_open": 0,
+        "holds": 0,
+        "queued": 0,
+        "landed": 0,
+        "endpoints": 2
+      },
+      "omitted": []
+    }
+  }
+}
