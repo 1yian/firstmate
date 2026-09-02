@@ -1,0 +1,6 @@
+ok - Pi session transitions auto-arm through a generation owner across /new /resume /fork/reload, stale callbacks, and quit
+ok - Pi session replacement auto-arms and carries its in-flight actionable close
+ok - Pi replacement replays a streaming follow-up before consumption
+ok - Pi replacement receives actionable closes after retirement timeout
+ok - Pi replacement handoff tokens stay unique across fresh modules
+ok - Pi replacement persistence failure still stops its arm child

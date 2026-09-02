@@ -1,0 +1,3 @@
+ok - a settled branch turn without a durable outcome falls back and releases its grant for main replay
+ok - provider-error latches cool down, re-probe once with backoff, and recover through a durable report
+ok - selection changes preserve in-flight transcript ownership and reset provider-error streaks
