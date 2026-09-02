@@ -1,0 +1,14 @@
+Bearings PR3 end-to-end behavior evidence
+
+ok - remote ledgers collect concurrently under one budget, reuse aged cache, and cancel wedged collectors
+ok - a mixed-version remote fallback is bounded before validation
+ok - default output is bounded, local-only, and marks omitted surfaces
+ok - TOON and JSON are parity representations of the same model
+ok - reconcile requests stop oversized streams at the capture bound
+ok - reconcile requests require exactly one snapshot document
+ok - reconcile requests coalesce per target and retire independently after delivery
+ok - Bearings records locally, returns before a delayed remote queue, and supervision delivers later
+ok - watcher-carried status append publishes the real home summary
+ok - live watcher cadence bounds publication staleness without signals
+ok - fleet snapshot consumes the published local ledger by default
+ok - writer kill and replacement preserve an atomic JSON ledger
