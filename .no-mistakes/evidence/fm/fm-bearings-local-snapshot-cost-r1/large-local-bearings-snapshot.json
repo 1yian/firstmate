@@ -1,0 +1,116 @@
+{
+  "schema": "fm-bearings.v1",
+  "home": "fm-bearings.QUhyDl/large-local-snapshot",
+  "generated": "2026-07-11T18:00:00Z",
+  "prs": "not_requested (run: /bearings include PRs)",
+  "in_flight": [
+    {
+      "id": "local-1",
+      "kind": "ship",
+      "state": "unknown",
+      "doing": "harness state unavailable (unknown missing)"
+    },
+    {
+      "id": "local-2",
+      "kind": "ship",
+      "state": "unknown",
+      "doing": "harness state unavailable (unknown missing)"
+    },
+    {
+      "id": "local-3",
+      "kind": "ship",
+      "state": "unknown",
+      "doing": "harness state unavailable (unknown missing)"
+    },
+    {
+      "id": "local-4",
+      "kind": "ship",
+      "state": "unknown",
+      "doing": "harness state unavailable (unknown missing)"
+    },
+    {
+      "id": "local-5",
+      "kind": "ship",
+      "state": "unknown",
+      "doing": "harness state unavailable (unknown missing)"
+    }
+  ],
+  "secondmates": [],
+  "secondmate_reconcile": [],
+  "decisions_open": [],
+  "landed": [
+    {
+      "id": "history-99",
+      "what": "Historical completed item 99",
+      "artifact": "https://github.com/acme/firstmate/pull/99",
+      "owner": "(main)"
+    },
+    {
+      "id": "history-98",
+      "what": "Historical completed item 98",
+      "artifact": "https://github.com/acme/firstmate/pull/98",
+      "owner": "(main)"
+    },
+    {
+      "id": "history-97",
+      "what": "Historical completed item 97",
+      "artifact": "https://github.com/acme/firstmate/pull/97",
+      "owner": "(main)"
+    },
+    {
+      "id": "history-96",
+      "what": "Historical completed item 96",
+      "artifact": "https://github.com/acme/firstmate/pull/96",
+      "owner": "(main)"
+    },
+    {
+      "id": "history-95",
+      "what": "Historical completed item 95",
+      "artifact": "https://github.com/acme/firstmate/pull/95",
+      "owner": "(main)"
+    },
+    {
+      "id": "history-94",
+      "what": "Historical completed item 94",
+      "artifact": "https://github.com/acme/firstmate/pull/94",
+      "owner": "(main)"
+    }
+  ],
+  "gates": [],
+  "reports": [],
+  "recorded_prs": [],
+  "omitted": [
+    {
+      "surface": "backlog item bodies",
+      "reveal": "--fields bodies"
+    },
+    {
+      "surface": "task paths",
+      "reveal": "--fields paths"
+    },
+    {
+      "surface": "watch/steer actions",
+      "reveal": "--fields actions"
+    },
+    {
+      "surface": "healthy endpoint detail",
+      "reveal": "--fields endpoints"
+    },
+    {
+      "surface": "full scout-report inventory",
+      "reveal": "--all-reports"
+    },
+    {
+      "surface": "superseded or prose-deferred queued items",
+      "reveal": "--all-queued"
+    },
+    {
+      "surface": "landed per-home capped at 6 for 1 home(s)",
+      "reveal": "--all-landed"
+    },
+    {
+      "surface": "live PR discovery + checks",
+      "reveal": "--include-prs"
+    }
+  ]
+}

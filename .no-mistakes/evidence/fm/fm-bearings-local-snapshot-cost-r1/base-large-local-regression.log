@@ -1,0 +1,2 @@
+not ok - five local current-state reads exceeded the local composition target (7s)
+base_commit_test_exit=1 (nonzero expected; old serial implementation exceeds target)

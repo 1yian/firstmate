@@ -1,0 +1,2 @@
+evidence - elapsed_seconds=2 synthetic_backlog_rows=305 in_flight=5 landed_visible=6 serial_sha256=e95621240a81331d083d1d500951e2d31c389079cd5db0d537cc57554ccddf27 parallel_sha256=e95621240a81331d083d1d500951e2d31c389079cd5db0d537cc57554ccddf27 schema=fm-bearings.v1
+ok - large local snapshot stays under five seconds with byte-identical serial and concurrent projections
