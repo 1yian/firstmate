@@ -1,0 +1,27 @@
+ok - report-only unresolved captain call is reproduced and completion refuses before loss
+ok - the completion gate attests captain-held inventory and transfers open status decisions
+ok - answer records the captain's words, closes idempotently, and releases routed work
+ok - release frees held work with the captain's words recorded and the body preserved
+ok - a deferred captain call leaves the live Captain's Call until its date and stays answerable
+ok - an out-of-band close is recordable with the captain's word and nothing else
+ok - ended visual review follows the same captain-hold completion owner
+ok - resolved findings and decision-like prose do not create captain-held tasks
+ok - terminal single-owner stale status decisions do not block empty inventory
+ok - main-home and secondmate-home captain calls remain correctly routed
+ok - a bound channel's captured answers close their captain-held tasks at answer time
+ok - a channel source with no decision binding closes nothing
+ok - legacy identities, metadata, bindings, and the shim keep working
+ok - the chat channel feeds the same keyed-answer intake a captured review does
+ok - completion and verification validate origins before constructing paths
+ok - a status resolution over a still-open captain-held task is signalled, not closed
+ok - a captain call with no routed work, a verified transfer, an open decision, and an answered call all stay silent
+ok - cleanup leaves a captain-held work item open with its deliverable, and only an answer closes it
+ok - cleanup retains captain calls in the configured backlog
+ok - captain hold creation serializes with teardown
+ok - retention serializes with a concurrent captain answer
+ok - bootstrap recovers a kill between reopen and record removal
+ok - bootstrap recovers a kill during destructive cleanup
+ok - stale retention recovery does not mutate a replacement incarnation
+ok - reported cleanup failure preserves a recoverable captain call
+ok - released answer completes retention recovery without restoring the hold
+ok - cleanup fails closed when the captain hold cannot be read

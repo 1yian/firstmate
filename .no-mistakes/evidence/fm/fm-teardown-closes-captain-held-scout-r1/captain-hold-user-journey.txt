@@ -1,0 +1,46 @@
+=== End-user state after scout teardown ===
+teardown sample-captain-call complete (window firstmate:fm-sample-captain-call, worktree /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M1G7ZPW86X7PE3704PBFT1RW/.captain-hold-evidence.95sYsX/home/projects/missing-sample-captain-call)
+Backlog: sample-captain-call stays open in /Users/kunchen/.no-mistakes/worktrees/52b07e9083e7/01M1G7ZPW86X7PE3704PBFT1RW/.captain-hold-evidence.95sYsX/home/data/backlog.md, still held for the captain with its deliverable recorded. Relay the question and close it only with bin/fm-captain-hold.sh answer.
+task:
+  id: sample-captain-call
+  title: Choose attachment delivery
+  state: queued
+  blocked: no
+  blocked_by: none
+  held: yes
+  hold_reason: captain must choose inline or by-reference attachments
+  hold_kind: captain
+  hold_until: "-"
+  kind: scout
+  repo: sample
+  priority: "-"
+  created: 2026-09-01
+  closed: "-"
+  deps: none
+  links: none
+  body: "Deliverable of the finished work: report data/sample-captain-call/report.md"
+=== Durable transition records after successful teardown ===
+backlog-close: absent
+backlog-retain: absent
+meta: absent
+=== Bearings captain-call projection ===
+{"id":"sample-captain-call","verb":"captain-hold","reason":null}
+=== End-user state after captain records an answer ===
+task:
+  id: sample-captain-call
+  title: Choose attachment delivery
+  state: done
+  blocked: no
+  blocked_by: none
+  held: no
+  hold_reason: captain must choose inline or by-reference attachments
+  hold_kind: captain
+  hold_until: "-"
+  kind: scout
+  repo: sample
+  priority: "-"
+  created: "-"
+  closed: 2026-09-01
+  deps: none
+  links: none
+  body: "Resolution recorded by fm-captain-hold.\nDecision digest: a2b53e1c1ecbf691dad5ba28267c2f66e5dcf4f9422f3c8271aad33c97fa6918\nResolution mode: answered\n\nCaptain decision:\nShip attachments by reference.\n\nDeliverable of the finished work: report data/sample-captain-call/report.md"
