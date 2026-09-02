@@ -1,0 +1,25 @@
+schema: fm-bearings.v1
+home: fm-bearings.bqO12f/underway-evidence-parent
+generated: "2026-07-11T18:00:00Z"
+prs: "not_requested (run: /bearings include PRs)"
+in_flight[2]{id,kind,state,repo,doing}:
+  busy-hold/child-a,ship,working,sample,harness busy (claude-hook)
+  busy-hold/child-b,ship,working,sample,harness busy (claude-hook)
+secondmates[1]{id,state,doing,provenance,freshness,age_seconds,contradiction,reason}:
+  busy-hold,captain_decision,Choose release route,structured-home,fresh,0,false,"-"
+secondmate_reconcile[1]{id,spawn_gen,host,kind,ids}:
+  busy-hold,null,null,null,"[]"
+decisions_open[1]{id,key,verb,summary,owner}:
+  busy-hold/release-call,release-call,captain-hold,"Choose release route: pick route A or B",busy-hold
+landed: []
+gates: []
+reports: []
+recorded_prs: []
+omitted[7]{surface,reveal}:
+  backlog item bodies,"--fields bodies"
+  task paths,"--fields paths"
+  watch/steer actions,"--fields actions"
+  healthy endpoint detail,"--fields endpoints"
+  full scout-report inventory,"--all-reports"
+  superseded or prose-deferred queued items,"--all-queued"
+  live PR discovery + checks,"--include-prs"
