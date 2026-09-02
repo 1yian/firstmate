@@ -1,0 +1,43 @@
+=== Remote worker brief (end-user surface) ===
+When this work reaches its promised terminal outcome, report it as typed data
+(never as a sentence for someone to parse) by running exactly:
+
+  /private/var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T/fm-public-followup.ODCTky/remote-root/bin/fm-public-followup-emit.sh \
+    --stage-in /private/var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T/fm-public-followup.ODCTky/evidence-remote-remote-mini-default \
+    --obligation pf-evidence \
+    --relation rel-code \
+    --source-home secondmate:mini-default \
+    --work-id work-evidence \
+    --generation 1 \
+    --outcome report-ready \
+    --deliverable report_path=<value> \
+    --outcome-text '<one bounded public-safe sentence>'
+
+Do not post anything publicly yourself and do not look for the public thread:
+the home that owes that reply is on another machine and owns it. Leave the
+result exactly where the command above puts it; that home collects it over the
+same route it reaches you on, and nothing here needs a path back to it.
+
+=== Worker runs the printed route-aware command ===
+$   /private/var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T/fm-public-followup.ODCTky/remote-root/bin/fm-public-followup-emit.sh \
+    --stage-in /private/var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T/fm-public-followup.ODCTky/evidence-remote-remote-mini-default \
+    --obligation pf-evidence \
+    --relation rel-code \
+    --source-home secondmate:mini-default \
+    --work-id work-evidence \
+    --generation 1 \
+    --outcome report-ready \
+    --deliverable report_path=data/work-evidence/report.md \
+    --outcome-text 'The remote lane finished its investigation.'
+6192d0b6dae35f16c598c13b5ac698ab7735818ae07734b2a45d5e9a0494da6b
+staged outbox entries before collection: 1
+
+=== Owning home runs consume ===
+ready pf-evidence req-evidence discord
+owning-loop state: ready
+staged outbox entries after collection: 0
+
+=== Owning home consumes while route is unreachable ===
+unreached pf-unreachable: the work home mini-default never answered, so its terminal result stays retained there for reconciliation
+consume exit: 1
+owning-loop state: pending-work
