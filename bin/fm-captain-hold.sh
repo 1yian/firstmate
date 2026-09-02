@@ -376,8 +376,36 @@ resolve_entry() {  # <origin-or-empty> <entry>; prints the resolved id or fails
   fail "no captain-held task $entry in $FM_HOME/data/backlog.md"
 }
 
+body_hold_set_date() {  # <decoded-task-body>
+  printf '%s\n' "$1" \
+    | sed -n 's/^Captain hold set: \([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\)$/\1/p' \
+    | head -1
+}
+
+write_hold_set_stamp() {  # <task-id> <shown-body> <date>
+  local id=$1 body=$2 hold_set=$3 new_body tmp
+  body=$(decode_shown_value "$body") \
+    || fail "could not decode the existing body for $id"
+  [ -z "$(body_hold_set_date "$body")" ] || return 0
+  new_body=$(printf 'Captain hold set: %s' "$hold_set")
+  if [ -n "$body" ]; then
+    new_body=$(printf '%s\n\n%s' "$new_body" "$body")
+  fi
+  tmp=$(umask 077; mktemp "${TMPDIR:-/tmp}/fm-captain-hold-stamp.XXXXXX") \
+    || fail "cannot stage the hold-set stamp"
+  if ! printf '%s\n' "$new_body" > "$tmp"; then
+    rm -f -- "$tmp"
+    fail "cannot stage the hold-set stamp for $id"
+  fi
+  if ! tasks_axi update "$id" --body-file "$tmp" >/dev/null; then
+    rm -f -- "$tmp"
+    fail "could not record the hold-set stamp on $id"
+  fi
+  rm -f -- "$tmp"
+}
+
 command_hold() {
-  local id=${1:-} title='' reason='' repo='' origin='' until='' show state existing_title body='' hold_kind
+  local id=${1:-} title='' reason='' repo='' origin='' until='' show state existing_title body='' hold_kind hold_set
   [ "$#" -ge 1 ] || { usage >&2; exit 2; }
   shift
   while [ "$#" -gt 0 ]; do
@@ -403,6 +431,12 @@ command_hold() {
       *) fail "--until must be a YYYY-MM-DD date: $until" ;;
     esac
   fi
+  hold_set=${FM_CAPTAIN_HOLD_NOW:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}
+  hold_set=${hold_set%%T*}
+  case "$hold_set" in
+    [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) : ;;
+    *) fail "FM_CAPTAIN_HOLD_NOW must begin with a YYYY-MM-DD date" ;;
+  esac
   require_tasks_axi
   if show=$(task_show "$id"); then
     state=$(show_field "$show" state)
@@ -441,6 +475,10 @@ command_hold() {
   show=$(task_show "$id") || fail "task $id disappeared while holding it"
   hold_kind=$(show_field_value "$show" hold_kind)
   [ "$hold_kind" = captain ] || fail "task $id did not retain its captain hold"
+  write_hold_set_stamp "$id" "$(show_field "$show" body)" "$hold_set"
+  show=$(task_show "$id") || fail "task $id disappeared while recording its hold-set stamp"
+  [ -n "$(body_hold_set_date "$(show_field_value "$show" body)")" ] \
+    || fail "task $id did not retain its hold-set stamp"
   printf '%s\n' "$id"
 }
 
