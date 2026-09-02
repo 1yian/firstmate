@@ -1,0 +1,6 @@
+Public interface: bin/fm-bearings-snapshot.sh --json
+Fixture: 300 completed backlog rows, 5 local in-flight workers, each local no-mistakes status read delayed by 1 second
+Concurrent elapsed_seconds: 3.388 (required: < 5.000)
+Serial/concurrent projection: byte-identical with fixed observation timestamp
+Observed fm-bearings.v1 response excerpt:
+{"schema":"fm-bearings.v1","generated":"2026-07-11T18:00:00Z","in_flight_count":5,"in_flight_ids":["local-1","local-2","local-3","local-4","local-5"]}
