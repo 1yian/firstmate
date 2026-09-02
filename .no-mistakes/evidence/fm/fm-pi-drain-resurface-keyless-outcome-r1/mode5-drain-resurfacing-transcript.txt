@@ -1,0 +1,14 @@
+Mode 5 drain resurfacing — end-user CLI transcript
+
+$ printf keyless done status; fm-wake-drain.sh
+STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+issue-3346 done: PR https://example.test/3346 checks green
+
+$ fm-wake-drain.sh  # unchanged second drain is idempotently silent
+[stdout bytes: 0]
+
+$ append handled outcome; fm-wake-drain.sh  # already-processed completion stays silent
+[stdout bytes: 0]
+
+$ printf routine status; fm-wake-drain.sh  # routine progress stays silent
+[stdout bytes: 0]
