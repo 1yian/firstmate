@@ -1,0 +1,73 @@
+{
+  "verification": "Real bin/fm-bearings-snapshot.sh projection at 2026-07-15T12:00:00Z",
+  "default_14_days": {
+    "captains_call": [
+      {
+        "id": "recent-call",
+        "key": "recent-call",
+        "verb": "captain-hold",
+        "summary": "Choose today's release route: choose canary or full rollout",
+        "owner": "(main)"
+      }
+    ],
+    "charted_next": [
+      {
+        "id": "aged-call",
+        "title": "Choose the old rollout route",
+        "blocked_by": "-",
+        "reason": "held 14d: choose blue or green rollout",
+        "owner": "(main)"
+      }
+    ],
+    "omitted": [
+      {
+        "surface": "captain holds marked deferred, superseded, or aged: 2",
+        "reveal": "--all-decisions"
+      }
+    ]
+  },
+  "all_decisions": {
+    "captains_call": [
+      {
+        "id": "parked-hold",
+        "key": "parked-hold",
+        "verb": "captain-hold",
+        "summary": "Parked roadmap idea: awaiting captain go; do not auto-dispatch",
+        "owner": "(main)"
+      },
+      {
+        "id": "aged-call",
+        "key": "aged-call",
+        "verb": "captain-hold",
+        "summary": "Choose the old rollout route: choose blue or green rollout",
+        "owner": "(main)"
+      },
+      {
+        "id": "recent-call",
+        "key": "recent-call",
+        "verb": "captain-hold",
+        "summary": "Choose today's release route: choose canary or full rollout",
+        "owner": "(main)"
+      }
+    ]
+  },
+  "configured_30_days": {
+    "captains_call": [
+      {
+        "id": "aged-call",
+        "key": "aged-call",
+        "verb": "captain-hold",
+        "summary": "Choose the old rollout route: choose blue or green rollout",
+        "owner": "(main)"
+      },
+      {
+        "id": "recent-call",
+        "key": "recent-call",
+        "verb": "captain-hold",
+        "summary": "Choose today's release route: choose canary or full rollout",
+        "owner": "(main)"
+      }
+    ],
+    "charted_next": []
+  }
+}
