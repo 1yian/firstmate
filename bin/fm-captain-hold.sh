@@ -600,6 +600,7 @@ command_answer() {
         || fail "task $id records this answer with mode released; a closed task cannot replay that release"
       [ "$release" = 0 ] \
         || fail "task $id records this answer with mode ${recorded_mode:-unknown}; --release cannot reopen a closed task"
+      remove_interrupted_answer_stamp "$id"
       printf 'answered: %s\n' "$id"
       return 0
     fi
@@ -659,6 +660,7 @@ command_answer() {
       || fail "task $id records a different captain decision with mode ${recorded_mode:-unknown}"
     [ "$recorded_mode" = released ] && [ "$release" = 1 ] \
       || fail "task $id records this answer with mode ${recorded_mode:-unknown}; replay requires matching --release"
+    remove_interrupted_answer_stamp "$id"
     printf 'released: %s\n' "$id"
     return 0
   fi
