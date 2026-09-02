@@ -1,0 +1,8 @@
+LATCH NOTE: ⛵ Supervision branch paused after repeated provider errors; main will handle wakes while it cools down.
+04:59.999 cooldown wake -> main (branch attempts=4)
+05:00.000 first probe accepted; concurrent wake -> main (branch attempts=5)
+10:00.000 wake after failed probe -> main (10-minute backoff active)
+15:00.000 recovery probe accepted
+RECOVERY NOTE: ⛵ Supervision branch recovered after a successful cooldown probe.
+POST-RECOVERY: one provider error did not re-latch; following wake reported durably (attempts=8, fallbacks=5)
+ok - provider-error latches cool down, re-probe once with backoff, and recover through a durable report
