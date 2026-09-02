@@ -1,0 +1,12 @@
+=== Before retire ===
+route: - mini-default - remote lane (host: remote-mac; root: /private/var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T/fm-public-followup.NierA8/remote-root; home: /private/var/folders/5x/4nqprlbx0518k3ybcb1sz6gr0000gn/T/fm-public-followup.NierA8/reviewer-remote-retire-remote-mini-default; scope: relay work; projects: firstmate; added 2026-08-02)
+recorded work_home_path: <>
+remote task link: x_request=req-demo
+=== End-user command ===
+retired pf-demo reason=remote work complete
+=== After retire ===
+remote task link: cleared
+open registration: removed
+retirement receipt:
+reason=remote work complete
+retired_at=2026-08-24T02:40:00Z
