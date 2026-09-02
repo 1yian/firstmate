@@ -1,0 +1,29 @@
+fm-test-run: coverage guard: 25 of 164 portable serial scripts have no measured duration hint (max 15%)
+fm-test-run: refresh the hints from a green run's timing artifacts: docs/fm-test-portable-shards.md
+tests/fm-unhinted-drift-evidence-01.test.sh
+tests/fm-unhinted-drift-evidence-02.test.sh
+tests/fm-unhinted-drift-evidence-03.test.sh
+tests/fm-unhinted-drift-evidence-04.test.sh
+tests/fm-unhinted-drift-evidence-05.test.sh
+tests/fm-unhinted-drift-evidence-06.test.sh
+tests/fm-unhinted-drift-evidence-07.test.sh
+tests/fm-unhinted-drift-evidence-08.test.sh
+tests/fm-unhinted-drift-evidence-09.test.sh
+tests/fm-unhinted-drift-evidence-10.test.sh
+tests/fm-unhinted-drift-evidence-11.test.sh
+tests/fm-unhinted-drift-evidence-12.test.sh
+tests/fm-unhinted-drift-evidence-13.test.sh
+tests/fm-unhinted-drift-evidence-14.test.sh
+tests/fm-unhinted-drift-evidence-15.test.sh
+tests/fm-unhinted-drift-evidence-16.test.sh
+tests/fm-unhinted-drift-evidence-17.test.sh
+tests/fm-unhinted-drift-evidence-18.test.sh
+tests/fm-unhinted-drift-evidence-19.test.sh
+tests/fm-unhinted-drift-evidence-20.test.sh
+tests/fm-unhinted-drift-evidence-21.test.sh
+tests/fm-unhinted-drift-evidence-22.test.sh
+tests/fm-unhinted-drift-evidence-23.test.sh
+tests/fm-unhinted-drift-evidence-24.test.sh
+tests/fm-unhinted-drift-evidence-25.test.sh
+
+exit_code=1

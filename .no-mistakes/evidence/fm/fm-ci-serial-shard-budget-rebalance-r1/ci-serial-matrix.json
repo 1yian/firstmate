@@ -1,0 +1,13 @@
+{
+  "job_name": "Behavior portable serial ${{ matrix.shard }}",
+  "timeout_minutes": 20,
+  "matrix_shards": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "fail_fast": false,
+  "lane_env": "portable-serial-${{ matrix.shard }}of${{ strategy.job-total }}"
+}

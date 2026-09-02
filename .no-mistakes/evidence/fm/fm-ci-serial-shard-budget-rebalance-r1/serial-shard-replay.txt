@@ -1,0 +1,18 @@
+Portable serial shard replay against three green CI timing-artifact runs
+Current executable interface: bin/fm-test-run.sh --list --lane portable-serial-<k>of5
+Unchanged CI timeout: 20.00 min (1,200,000 ms)
+
+run 33558082172: original 4-shard script totals = 11.63m, 13.68m, 19.28m, 17.11m
+run 33558082172: replayed 5-shard totals        = 12.25m, 11.99m, 12.54m, 12.34m, 12.45m
+run 33558082172: worst replay shard             = 12.54m (62.7% of cap; 59.5% runtime headroom)
+
+run 33523597838: original 4-shard script totals = 11.68m, 12.46m, 19.67m, 15.18m
+run 33523597838: replayed 5-shard totals        = 11.84m, 11.30m, 12.07m, 11.74m, 11.93m
+run 33523597838: worst replay shard             = 12.07m (60.3% of cap; 65.7% runtime headroom)
+
+run 33463326167: original 4-shard script totals = 11.33m, 14.52m, 17.33m, 17.09m
+run 33463326167: replayed 5-shard totals        = 11.96m, 12.22m, 11.54m, 12.49m, 11.92m
+run 33463326167: worst replay shard             = 12.49m (62.5% of cap; 60.1% runtime headroom)
+
+Worst across all replayed runs: run 33558082172, shard 3, 12.54m, 62.7% of cap, 59.5% runtime headroom.
+Coverage check: every current shard script had a real timing in every source run.
