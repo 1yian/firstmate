@@ -1,0 +1,78 @@
+$ FM_BEARINGS_NOW=2026-07-25T00:00:00Z bin/fm-bearings-snapshot.sh
+schema: fm-bearings.v1
+home: /fm-bearings-evidence.EkWfrw
+generated: "2026-07-25T00:00:00Z"
+prs: "not_requested (run: /bearings include PRs)"
+in_flight: []
+secondmates: []
+secondmate_reconcile: []
+decisions_open[1]{id,key,verb,summary,owner}:
+  recent-hold,recent-hold,captain-hold,"Choose the launch color: choose blue or green",(main)
+landed: []
+gates[2]{id,title,blocked_by,reason,owner}:
+  aged-hold,Choose the release route,"-","held 24d: choose route A or B",(main)
+  legacy-hold,Legacy unstamped route call,"-","held 40d: choose legacy route",(main)
+reports: []
+recorded_prs: []
+omitted[8]{surface,reveal}:
+  backlog item bodies,"--fields bodies"
+  task paths,"--fields paths"
+  watch/steer actions,"--fields actions"
+  healthy endpoint detail,"--fields endpoints"
+  full scout-report inventory,"--all-reports"
+  superseded or prose-deferred queued items,"--all-queued"
+  "captain holds marked deferred, superseded, or aged: 4","--all-decisions"
+  live PR discovery + checks,"--include-prs"
+
+$ FM_BEARINGS_NOW=2026-07-25T00:00:00Z bin/fm-bearings-snapshot.sh --all-decisions
+schema: fm-bearings.v1
+home: /fm-bearings-evidence.EkWfrw
+generated: "2026-07-25T00:00:00Z"
+prs: "not_requested (run: /bearings include PRs)"
+in_flight: []
+secondmates: []
+secondmate_reconcile: []
+decisions_open[5]{id,key,verb,summary,owner}:
+  parked-hold,parked-hold,captain-hold,"Parked backlog call: parked for later",(main)
+  aged-hold,aged-hold,captain-hold,"Choose the release route: choose route A or B",(main)
+  parked-aged-hold,parked-aged-hold,captain-hold,"Old parked backlog call: not urgent",(main)
+  recent-hold,recent-hold,captain-hold,"Choose the launch color: choose blue or green",(main)
+  legacy-hold,legacy-hold,captain-hold,"Legacy unstamped route call: choose legacy route",(main)
+landed: []
+gates: []
+reports: []
+recorded_prs: []
+omitted[7]{surface,reveal}:
+  backlog item bodies,"--fields bodies"
+  task paths,"--fields paths"
+  watch/steer actions,"--fields actions"
+  healthy endpoint detail,"--fields endpoints"
+  full scout-report inventory,"--all-reports"
+  superseded or prose-deferred queued items,"--all-queued"
+  live PR discovery + checks,"--include-prs"
+
+$ FM_SNAPSHOT_UNDATED_HOLD_AGE_DAYS=30 FM_BEARINGS_NOW=2026-07-25T00:00:00Z bin/fm-bearings-snapshot.sh
+schema: fm-bearings.v1
+home: /fm-bearings-evidence.EkWfrw
+generated: "2026-07-25T00:00:00Z"
+prs: "not_requested (run: /bearings include PRs)"
+in_flight: []
+secondmates: []
+secondmate_reconcile: []
+decisions_open[2]{id,key,verb,summary,owner}:
+  aged-hold,aged-hold,captain-hold,"Choose the release route: choose route A or B",(main)
+  recent-hold,recent-hold,captain-hold,"Choose the launch color: choose blue or green",(main)
+landed: []
+gates[1]{id,title,blocked_by,reason,owner}:
+  legacy-hold,Legacy unstamped route call,"-","held 40d: choose legacy route",(main)
+reports: []
+recorded_prs: []
+omitted[8]{surface,reveal}:
+  backlog item bodies,"--fields bodies"
+  task paths,"--fields paths"
+  watch/steer actions,"--fields actions"
+  healthy endpoint detail,"--fields endpoints"
+  full scout-report inventory,"--all-reports"
+  superseded or prose-deferred queued items,"--all-queued"
+  "captain holds marked deferred, superseded, or aged: 3","--all-decisions"
+  live PR discovery + checks,"--include-prs"

@@ -1,0 +1,46 @@
+$ FM_CAPTAIN_HOLD_NOW=2026-07-14T12:00:00Z bin/fm-captain-hold.sh hold wrapper-call --reason "choose north or south"
+wrapper-call
+
+$ tasks-axi show wrapper-call --full
+task:
+  id: wrapper-call
+  title: Choose wrapper route
+  state: queued
+  blocked: no
+  blocked_by: none
+  held: yes
+  hold_reason: choose north or south
+  hold_kind: captain
+  hold_until: "-"
+  kind: captain
+  repo: sample
+  priority: "-"
+  created: 2026-09-02
+  closed: "-"
+  deps: none
+  links: none
+  body: "Captain hold set: 2026-07-14T12:00:00Z"
+
+$ FM_BEARINGS_NOW=2026-07-28T12:00:00Z bin/fm-bearings-snapshot.sh
+schema: fm-bearings.v1
+home: /fm-captain-wrapper-evidence.lCvCYu
+generated: "2026-07-28T12:00:00Z"
+prs: "not_requested (run: /bearings include PRs)"
+in_flight: []
+secondmates: []
+secondmate_reconcile: []
+decisions_open: []
+landed: []
+gates[1]{id,title,blocked_by,reason,owner}:
+  wrapper-call,Choose wrapper route,"-","held 14d: choose north or south",(main)
+reports: []
+recorded_prs: []
+omitted[8]{surface,reveal}:
+  backlog item bodies,"--fields bodies"
+  task paths,"--fields paths"
+  watch/steer actions,"--fields actions"
+  healthy endpoint detail,"--fields endpoints"
+  full scout-report inventory,"--all-reports"
+  superseded or prose-deferred queued items,"--all-queued"
+  "captain holds marked deferred, superseded, or aged: 1","--all-decisions"
+  live PR discovery + checks,"--include-prs"
