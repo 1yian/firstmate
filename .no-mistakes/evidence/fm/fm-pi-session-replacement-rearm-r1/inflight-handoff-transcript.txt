@@ -1,0 +1,2 @@
+{"liveReplacementArmPids":["79008"],"carriedSuccessorOutcomeDeliveries":1,"settledOldOutcomeReplays":0,"cleanupFailureAlerts":1,"automaticArmRetained":true}
+ok - Pi session replacement auto-arms and carries its in-flight actionable close

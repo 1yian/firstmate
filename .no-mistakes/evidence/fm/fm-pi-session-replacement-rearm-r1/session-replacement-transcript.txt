@@ -1,0 +1,9 @@
+{"transition":"new","retiredPid":"57097","replacementPid":"57240","liveArmPids":["57240"],"automaticArm":true}
+{"transition":"resume","retiredPid":"57240","replacementPid":"57338","liveArmPids":["57338"],"automaticArm":true}
+{"transition":"fork","retiredPid":"57338","replacementPid":"57411","liveArmPids":["57411"],"automaticArm":true}
+{"transition":"reload","retiredPid":"57411","replacementPid":"58049","liveArmPids":["58049"],"automaticArm":true}
+{"transition":"resume","retiredPid":"59151","replacementPid":"59501","liveArmPids":["59501"],"automaticArm":true}
+{"transition":"fork","retiredPid":"59501","replacementPid":"60081","liveArmPids":["60081"],"automaticArm":true}
+{"transition":"new","retiredPid":"60081","replacementPid":"60840","liveArmPids":["60840"],"automaticArm":true}
+{"transition":"resume","retiredPid":"60840","replacementPid":"61352","liveArmPids":["61352"],"automaticArm":true}
+ok - Pi session transitions auto-arm through a generation owner across /new /resume /fork/reload, stale callbacks, and quit
