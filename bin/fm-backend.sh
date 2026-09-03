@@ -383,6 +383,29 @@ fm_backend_endpoint_atom_valid() {  # <value>
   esac
 }
 
+# fm_backend_orca_worktree_id_valid: a real Orca worktree id is
+# "<repo-id>::<absolute-path>" (verified live), so it legitimately contains ':'
+# and '/', which the strict endpoint-atom validator forbids. Accept either the
+# simple atom form (used by fixtures) or the real two-part form: an atom-valid
+# repo id, then an absolute path free of newline/tab/CR. This is what lets real
+# Orca task and secondmate-home teardown validate instead of being refused.
+fm_backend_orca_worktree_id_valid() {  # <value>
+  local v=$1 repo path
+  fm_backend_endpoint_atom_valid "$v" && return 0
+  case "$v" in *::*) ;; *) return 1 ;; esac
+  repo=${v%%::*}
+  path=${v#*::}
+  fm_backend_endpoint_atom_valid "$repo" || return 1
+  case "$path" in
+    /*) ;;
+    *) return 1 ;;
+  esac
+  case "$path" in
+    *$'\n'*|*$'\r'*|*$'\t'*) return 1 ;;
+  esac
+  return 0
+}
+
 fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
   local meta=$1 id=$2 backend_count backend window worktree project binding_count binding
   local session pane recorded_session workspace tab terminal worktree_id surface
@@ -503,7 +526,7 @@ fm_backend_validate_task_endpoint() {  # <meta-file> <task-id>
       }
       if [ "$window" != "fm-$id" ] \
         || ! fm_backend_endpoint_atom_valid "$terminal" \
-        || ! fm_backend_endpoint_atom_valid "$worktree_id"; then
+        || ! fm_backend_orca_worktree_id_valid "$worktree_id"; then
         echo "REFUSED: Orca endpoint metadata for task $id is malformed or inconsistent; preserving task state." >&2
         return 1
       fi
@@ -773,6 +796,40 @@ fm_backend_worktree_path() {  # <backend> <worktree-id>
   case "$backend" in
     orca) fm_backend_orca_worktree_path "$@" ;;
     *) echo "error: backend '$backend' does not own task worktrees" >&2; return 1 ;;
+  esac
+}
+
+# fm_backend_home_create: create a backend-managed worktree to host a secondmate
+# home. Only a worktree-owning backend (orca) implements this; session-provider
+# backends (tmux/herdr/zellij/cmux) host a secondmate in an ordinary directory
+# supplied by the caller and never reach here.
+fm_backend_home_create() {  # <backend> <project-path> <name>
+  local backend=$1
+  shift
+  fm_backend_source "$backend" || return 1
+  case "$backend" in
+    orca) fm_backend_orca_home_create "$@" ;;
+    *) echo "error: backend '$backend' does not create managed secondmate homes" >&2; return 1 ;;
+  esac
+}
+
+fm_backend_home_terminal_create() {  # <backend> <home-path> <title>
+  local backend=$1
+  shift
+  fm_backend_source "$backend" || return 1
+  case "$backend" in
+    orca) fm_backend_orca_home_terminal_create "$@" ;;
+    *) echo "error: backend '$backend' does not create managed secondmate homes" >&2; return 1 ;;
+  esac
+}
+
+fm_backend_home_remove() {  # <backend> <home-path>
+  local backend=$1
+  shift
+  fm_backend_source "$backend" || return 1
+  case "$backend" in
+    orca) fm_backend_orca_home_remove "$@" ;;
+    *) echo "error: backend '$backend' does not own managed secondmate homes" >&2; return 1 ;;
   esac
 }
 
