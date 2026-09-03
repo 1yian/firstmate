@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # bin/backends/orca.sh - the Orca terminal session-provider adapter.
 #
-# Orca owns both the task worktree and the terminal endpoint. Escape key support
-# remains unsupported until Orca exposes a terminal-send primitive for it.
+# Orca owns both the task worktree and the terminal endpoint. Escape and Ctrl-U
+# are delivered as their raw --text control bytes (verified live); see
+# fm_backend_orca_send_key.
 #
 # Target string shape: the Orca terminal id accepted by `orca terminal ...`.
 
@@ -318,7 +319,9 @@ const handle = process.argv[1];
 let tl, wp;
 try { tl = JSON.parse(process.env.FM_ORCA_TL || ""); }
 catch (e) { process.stdout.write("liveness=unreadable state=none"); process.exit(0); }
+if (tl && tl.ok === false) { process.stdout.write("liveness=unreadable state=none"); process.exit(0); }
 try { wp = JSON.parse(process.env.FM_ORCA_WP || "{}"); } catch (e) { wp = {}; }
+if (wp && wp.ok === false) wp = {};
 const terms = (tl.result && tl.result.terminals) || [];
 const t = terms.find(x => x && x.handle === handle);
 if (!t) { process.stdout.write("liveness=missing state=none"); process.exit(0); }

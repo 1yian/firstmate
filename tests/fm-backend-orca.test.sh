@@ -1515,6 +1515,72 @@ test_agent_state_classifies_liveness() {
   pass "fm_backend_orca_agent_state: missing/alive/dead/ambiguous from terminal+worktree signals"
 }
 
+test_agent_state_unreadable_on_terminal_list_error() {
+  local out
+  # An exit-0 {ok:false} from `orca terminal list` must read unreadable, NEVER
+  # missing: fm-bootstrap's session-start liveness sweep respawns a `missing`
+  # secondmate WITHOUT killing the endpoint, so a false `missing` from a
+  # transient list error would put a second live agent in the same home.
+  orca_agent_snapshot_case as-unreadable \
+    '{"ok":false,"error":{"code":"runtime_unavailable","message":"runtime unavailable"}}' \
+    '{"result":{"worktrees":[]}}'
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_agent_state term-a' "$ROOT" )
+  [ "$out" = unreadable ] || fail "an ok:false terminal list must read unreadable, got '$out'"
+  [ "$out" != missing ] || fail "an ok:false terminal list must never read missing (would duplicate a live agent)"
+  pass "fm_backend_orca_agent_state: an exit-0 ok:false terminal list reads unreadable, never missing"
+}
+
+test_seed_acquire_orca_home_creates_managed_worktree() {
+  local base out
+  orca_case seed-acquire
+  base="$CASE_DIR/orca-homes"
+  # repo show -> id; project setups (base already set, so no setup-update);
+  # worktree create -> the leased Orca-managed home.
+  printf '{"ok":true,"result":{"repo":{"id":"repo-seed"}}}\n' > "$RESP/1.out"
+  printf '{"ok":true,"result":{"setups":[{"id":"repo-seed","worktreeBasePath":"%s"}]}}\n' "$base" > "$RESP/2.out"
+  printf '{"ok":true,"result":{"worktree":{"id":"repo-seed::%s/2ndmate-smz1","path":"%s/2ndmate-smz1"}}}\n' "$base" "$base" > "$RESP/3.out"
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" FM_ORCA_HOME_BASE="$base" \
+    FM_ROOT_OVERRIDE="$ROOT" FM_HOME="$CASE_DIR/home" \
+    bash -c '. "$0/bin/fm-home-seed.sh" validate; set +eu; acquire_orca_home smz1' "$ROOT" )
+  [ "$out" = "$base/2ndmate-smz1" ] || fail "acquire_orca_home should print the leased home path, got '$out'"
+  assert_contains "$(cat "$LOG")" $'orca\x1fworktree\x1fcreate\x1f--repo\x1fid:repo-seed\x1f--name\x1f2ndmate-smz1\x1f--no-parent\x1f--setup\x1fskip\x1f--json' \
+    "acquire_orca_home did not create the Orca-managed home worktree"
+  pass "acquire_orca_home: leases an Orca-managed firstmate worktree at the external base"
+}
+
+test_seed_remove_orca_home_releases_via_worktree_rm() {
+  local home abs
+  orca_case seed-remove
+  home="$CASE_DIR/orca-homes/2ndmate-rmz"
+  mkdir -p "$home"
+  abs=$(cd "$home" && pwd -P)
+  printf '{"ok":true,"result":{"worktree":{"removed":true}}}\n' > "$RESP/1.out"
+  PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    FM_ROOT_OVERRIDE="$CASE_DIR/root" FM_HOME="$CASE_DIR/home" \
+    bash -c '. "$0/bin/fm-home-seed.sh" validate; set +eu; seed_remove_orca_home "$1"' "$ROOT" "$home"
+  expect_code 0 $? "seed_remove_orca_home should succeed on an ok Orca removal"
+  assert_contains "$(cat "$LOG")" $'orca\x1fworktree\x1frm\x1f--worktree\x1fpath:'"$abs"$'\x1f--force\x1f--json' \
+    "seed_remove_orca_home did not release the leased home via orca worktree rm by path"
+  pass "seed_remove_orca_home: rolls a leased Orca home back via orca worktree rm by path"
+}
+
+test_seed_refuses_orca_requested_home() {
+  local out status
+  orca_case seed-refuse-requested
+  # On the orca backend a secondmate home is leased-only: an explicit path is
+  # refused up front, before any Orca worktree is provisioned.
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" FM_BACKEND=orca \
+    FM_HOME="$CASE_DIR/home" FM_STATE_OVERRIDE="$CASE_DIR/state" FM_DATA_OVERRIDE="$CASE_DIR/data" \
+    "$ROOT/bin/fm-home-seed.sh" refz "$CASE_DIR/wanted-home" --no-projects 2>&1 )
+  status=$?
+  [ "$status" -ne 0 ] || fail "orca seed should refuse an explicitly requested home"
+  assert_contains "$out" "a secondmate home must be leased with '-'" \
+    "orca requested-home refusal did not name the leased-only rule"
+  [ ! -s "$LOG" ] || fail "a refused orca requested home must provision no Orca worktree"
+  pass "fm-home-seed.sh --backend orca: refuses an explicit requested home before provisioning"
+}
+
 test_capture_reads_terminal_tail_json
 test_capture_falls_back_to_text_fields
 test_capture_fails_on_orca_error_json
@@ -1545,6 +1611,10 @@ test_home_remove_releases_home_by_path
 test_worktree_id_for_path_resolves_id
 test_busy_state_maps_working_done_blocked
 test_agent_state_classifies_liveness
+test_agent_state_unreadable_on_terminal_list_error
+test_seed_acquire_orca_home_creates_managed_worktree
+test_seed_remove_orca_home_releases_via_worktree_rm
+test_seed_refuses_orca_requested_home
 test_json_get_ignores_undocumented_terminal_id_shapes
 test_worktree_and_terminal_helpers_parse_json
 test_worktree_create_removes_worktree_when_path_missing
