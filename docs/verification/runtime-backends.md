@@ -715,6 +715,23 @@ result.runtime.state=ready
 `orca worktree create` returned `result.worktree.id` and `result.worktree.path`.
 Speculative bare ids and nested terminal fields were deliberately rejected.
 
+### Worktree primary-terminal reuse
+
+Verified on 2026-09-03 against `/usr/local/bin/orca` with Orca app bundle 1.4.195 on macOS arm64.
+`orca worktree create` creates the worktree AND its first (primary/startup) terminal by default, but the handle it returns depends on the runtime.
+`orca worktree create --help` documents `result.agentTerminalHandle` (with `--agent`) and `result.startupTerminal.handle` (older runtimes; neither for folder-based repos).
+The 1.4.195 runtime under `--setup skip` without `--agent` returned NO terminal field in the create result at all, yet the worktree's first terminal was present in `orca terminal list` immediately, keyed by `worktreeId`.
+
+```sh
+orca worktree create --repo id:<repo> --name <tmp> --no-parent --setup skip --json   # result had no startupTerminal/agentTerminalHandle/terminal
+orca terminal list --json                                                          # exactly one terminal with worktreeId=<created id>
+```
+
+So `fm_backend_orca_json_get worktree-terminal-handle` reads the documented create-result shapes (`result.terminal`, `result.startupTerminal.handle`, `result.agentTerminalHandle`), and when the create result omits the handle, `fm_backend_orca_worktree_create` recovers the worktree's own primary terminal from `orca terminal list` (the sole live terminal for that `worktreeId`).
+fm-spawn reuses that handle instead of calling `orca terminal create`, so a spawned agent runs in the worktree's primary tab rather than a second tab beside an idle startup tab.
+The live guard `tests/fm-orca-primary-terminal-live-e2e.test.sh` (opt-in via `FM_ORCA_PRIMARY_TERMINAL_LIVE_E2E=1`) creates a disposable worktree against the real runtime and asserts the reused handle is the worktree's sole live terminal; it observed `harness: Orca 1.4.195` and passed.
+Refresh this entry by re-running that guard after each Orca upgrade.
+
 Secondmate parity was verified live against the same runtime.
 A secondmate home is an Orca-managed worktree created outside the repo with `orca worktree create --no-parent --setup skip`, given a terminal with `orca terminal create`, and released with `orca worktree rm --worktree path:<abs> --force`.
 Escape and Ctrl-U are delivered as their raw `--text` control bytes (`\033` and `\025`), distinct from `--interrupt`, which is Ctrl-C.
@@ -728,7 +745,7 @@ tests/fm-backend.test.sh
 tests/fm-bootstrap.test.sh
 ```
 
-The fake-Orca suite covers readiness, registration, create response parsing, metadata routing, popup-safe submit, path-matched release refusal, the secondmate home lease and rollback, Escape/Ctrl-U and rendered-read shaping, native busy/idle, and the recovery-grade agent_state classifier.
+The fake-Orca suite covers readiness, registration, create response parsing (including the documented primary-terminal shapes and the `orca terminal list` startup-terminal discovery), primary-terminal reuse on spawn, metadata routing, popup-safe submit, path-matched release refusal, the secondmate home lease and rollback, Escape/Ctrl-U and rendered-read shaping, native busy/idle, and the recovery-grade agent_state classifier.
 
 ## cmux
 

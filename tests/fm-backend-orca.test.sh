@@ -397,6 +397,11 @@ test_json_get_ignores_undocumented_terminal_id_shapes() {
   printf '1\n' > "$RESP/1.exit"
   printf '{"ok":true,"result":{"repo":{"id":"repo-123"}}}\n' > "$RESP/2.out"
   printf '{"ok":true,"result":{"worktree":{"id":"wt-123","path":"/tmp/orca-wt","terminal":{"handle":"term-nested"}}}}\n' > "$RESP/3.out"
+  # The create result carries only the undocumented result.worktree.terminal, so
+  # the parse yields no handle and the worktree's startup terminal is looked up
+  # from `orca terminal list`; return a list with no matching worktree so that
+  # discovery also yields nothing and the helper omits the terminal field.
+  printf '{"ok":true,"result":{"terminals":[{"handle":"term-other","worktreeId":"wt-999","connected":true}]}}\n' > "$RESP/4.out"
   out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
     bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_worktree_create /repo/path fm-task' "$ROOT" )
   wt_id=${out%%$'\t'*}
@@ -415,7 +420,12 @@ test_worktree_and_terminal_helpers_parse_json() {
   printf '1\n' > "$RESP/1.exit"
   printf '{"ok":true,"result":{"repo":{"id":"repo-123"}}}\n' > "$RESP/2.out"
   printf '{"ok":true,"result":{"worktree":{"id":"wt-123","path":"/tmp/orca-wt"}}}\n' > "$RESP/3.out"
-  printf '{"ok":true,"result":{"terminal":{"handle":"term-123"}}}\n' > "$RESP/4.out"
+  # No terminal handle in the create result, so worktree_create looks up the
+  # startup terminal from `orca terminal list`; return no matching worktree so
+  # discovery yields nothing and the separate terminal_create primitive is
+  # exercised as the fallback below.
+  printf '{"ok":true,"result":{"terminals":[]}}\n' > "$RESP/4.out"
+  printf '{"ok":true,"result":{"terminal":{"handle":"term-123"}}}\n' > "$RESP/5.out"
   out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
     bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_worktree_create /repo/path fm-task' "$ROOT" )
   wt_id=${out%%$'\t'*}
@@ -434,6 +444,111 @@ test_worktree_and_terminal_helpers_parse_json() {
   assert_contains "$(cat "$LOG")" $'orca\x1f''terminal'$'\x1f''create'$'\x1f''--worktree'$'\x1f''id:wt-123'$'\x1f''--title'$'\x1f''fm-task'$'\x1f''--json' \
     "terminal helper did not create a titled terminal for the worktree"
   pass "Orca lifecycle helpers: register repo, create worktree, create terminal, parse stable ids"
+}
+
+test_json_get_reads_documented_primary_terminal_shapes() {
+  local out
+  # `orca worktree create --help` documents result.startupTerminal.handle (older
+  # runtimes / --agent) as the first-terminal handle it returns.
+  out=$( printf '{"ok":true,"result":{"startupTerminal":{"handle":"term-startup"}}}\n' | \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_json_get worktree-terminal-handle' "$ROOT" )
+  [ "$out" = term-startup ] || fail "worktree-terminal-handle should read result.startupTerminal.handle, got '$out'"
+  # ...and result.agentTerminalHandle (a documented scalar handle, with --agent).
+  out=$( printf '{"ok":true,"result":{"agentTerminalHandle":"term-agent"}}\n' | \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_json_get worktree-terminal-handle' "$ROOT" )
+  [ "$out" = term-agent ] || fail "worktree-terminal-handle should read result.agentTerminalHandle, got '$out'"
+  # The existing explicit root terminal object still works.
+  out=$( printf '{"ok":true,"result":{"terminal":{"handle":"term-explicit"}}}\n' | \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_json_get worktree-terminal-handle' "$ROOT" )
+  [ "$out" = term-explicit ] || fail "worktree-terminal-handle should read result.terminal.handle, got '$out'"
+  # An undocumented shape (result.worktree.terminal) stays ignored.
+  out=$( printf '{"ok":true,"result":{"worktree":{"terminal":{"handle":"term-nested"}}}}\n' | \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_json_get worktree-terminal-handle' "$ROOT" 2>/dev/null )
+  [ -z "$out" ] || fail "worktree-terminal-handle should ignore undocumented result.worktree.terminal, got '$out'"
+  pass "fm_backend_orca_json_get: reads documented primary-terminal shapes, ignores undocumented ones"
+}
+
+test_worktree_startup_terminal_discovers_primary_terminal() {
+  local out status
+  # The sole live terminal keyed to the worktree is reused.
+  orca_case startup-terminal-one
+  printf '{"ok":true,"result":{"terminals":[{"handle":"term-primary","worktreeId":"wt-abc","connected":true,"orphaned":false},{"handle":"term-elsewhere","worktreeId":"wt-other","connected":true}]}}\n' > "$RESP/1.out"
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_worktree_startup_terminal wt-abc' "$ROOT" )
+  [ "$out" = term-primary ] || fail "discovery should return the worktree's own terminal, got '$out'"
+  assert_contains "$(cat "$LOG")" $'orca\x1f''terminal'$'\x1f''list'$'\x1f''--json' \
+    "discovery did not list terminals"
+
+  # No terminal for the worktree -> empty, and a non-zero status so the caller
+  # falls back to creating one.
+  orca_case startup-terminal-none
+  printf '{"ok":true,"result":{"terminals":[{"handle":"term-elsewhere","worktreeId":"wt-other","connected":true}]}}\n' > "$RESP/1.out"
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_worktree_startup_terminal wt-abc' "$ROOT" )
+  status=$?
+  [ -z "$out" ] || fail "discovery should print nothing when no terminal matches, got '$out'"
+  [ "$status" -ne 0 ] || fail "discovery should fail when no terminal matches"
+
+  # Ambiguous: several live terminals for the worktree -> empty (safe fallback).
+  orca_case startup-terminal-ambiguous
+  printf '{"ok":true,"result":{"terminals":[{"handle":"term-1","worktreeId":"wt-abc","connected":true},{"handle":"term-2","worktreeId":"wt-abc","connected":true}]}}\n' > "$RESP/1.out"
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_worktree_startup_terminal wt-abc' "$ROOT" )
+  [ -z "$out" ] || fail "discovery should stay empty when the worktree has multiple live terminals, got '$out'"
+
+  # A single live terminal among an orphaned sibling still resolves to the live one.
+  orca_case startup-terminal-orphan-sibling
+  printf '{"ok":true,"result":{"terminals":[{"handle":"term-dead","worktreeId":"wt-abc","orphaned":true},{"handle":"term-live","worktreeId":"wt-abc","connected":true,"orphaned":false}]}}\n' > "$RESP/1.out"
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_worktree_startup_terminal wt-abc' "$ROOT" )
+  [ "$out" = term-live ] || fail "discovery should prefer the sole live terminal over an orphaned sibling, got '$out'"
+
+  # Orca read error -> empty, fail closed.
+  orca_case startup-terminal-error
+  printf '{"ok":false,"error":{"code":"x","message":"list failed"}}\n' > "$RESP/1.out"
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_worktree_startup_terminal wt-abc' "$ROOT" )
+  [ -z "$out" ] || fail "discovery should print nothing on Orca error JSON, got '$out'"
+  pass "fm_backend_orca_worktree_startup_terminal: reuses the sole live worktree terminal, stays empty otherwise"
+}
+
+test_spawn_reuses_worktree_primary_terminal_via_discovery() {
+  local proj wt data state config id out log
+  id="orcaprimaryz5"
+  proj="$TMP_ROOT/primary-reuse-project"
+  wt="$TMP_ROOT/primary-reuse-wt"
+  data="$TMP_ROOT/primary-reuse-data"
+  state="$TMP_ROOT/primary-reuse-state"
+  config="$TMP_ROOT/primary-reuse-config"
+  fm_git_worktree "$proj" "$wt" "fm/$id"
+  mkdir -p "$data/$id" "$state" "$config"
+  printf 'brief\n' > "$data/$id/brief.md"
+  touch "$state/.last-watcher-beat"
+  orca_case primary-reuse
+  log="$LOG"
+  printf '1\n' > "$RESP/1.exit"
+  printf '{"ok":true,"result":{"repo":{"id":"repo-primary"}}}\n' > "$RESP/2.out"
+  # The create result carries NO terminal handle (verified live: Orca 1.x under
+  # --setup skip without --agent), so spawn must discover the worktree's own
+  # startup terminal from `orca terminal list` and reuse it - never open a second
+  # tab with `orca terminal create`.
+  printf '{"ok":true,"result":{"worktree":{"id":"wt-primary","path":"%s"}}}\n' "$wt" > "$RESP/3.out"
+  printf '{"ok":true,"result":{"terminals":[{"handle":"term-primary","worktreeId":"wt-primary","connected":true,"orphaned":false}]}}\n' > "$RESP/4.out"
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    FM_ROOT_OVERRIDE="$ROOT" FM_STATE_OVERRIDE="$state" FM_DATA_OVERRIDE="$data" FM_CONFIG_OVERRIDE="$config" \
+    FM_PROJECTS_OVERRIDE="$TMP_ROOT/unused-projects" FM_SPAWN_NO_GUARD=1 \
+    "$ROOT/bin/fm-spawn.sh" "$id" "$proj" claude --mode no-mistakes --yolo off --backend orca 2>&1 )
+  expect_code 0 $? "fm-spawn.sh --backend orca should reuse the discovered primary terminal"$'\n'"$out"
+  assert_grep "terminal=term-primary" "$state/$id.meta" "meta should record the discovered primary terminal handle"
+  assert_grep "orca_worktree_id=wt-primary" "$state/$id.meta" "meta missing Orca worktree id"
+  assert_contains "$(cat "$log")" $'orca\x1f''terminal'$'\x1f''list'$'\x1f''--json' \
+    "spawn should list terminals to discover the worktree's primary terminal"
+  assert_not_contains "$(cat "$log")" $'orca\x1f''terminal'$'\x1f''create' \
+    "spawn must reuse the worktree's primary terminal, not create a second tab"
+  assert_contains "$(cat "$log")" $'orca\x1f''terminal'$'\x1f''send'$'\x1f''--terminal'$'\x1f''term-primary' \
+    "spawn should launch the harness in the discovered primary terminal"
+  rm -rf "/tmp/fm-$id"
+  pass "fm-spawn.sh --backend orca: reuses the worktree's primary terminal via discovery, no second tab"
 }
 
 test_worktree_create_removes_worktree_when_path_missing() {
@@ -651,7 +766,10 @@ test_spawn_removes_orca_worktree_when_terminal_create_fails() {
   printf '1\n' > "$RESP/1.exit"
   printf '{"ok":true,"result":{"repo":{"id":"repo-terminal-fail"}}}\n' > "$RESP/2.out"
   printf '{"ok":true,"result":{"worktree":{"id":"wt-terminal-fail","path":"%s"}}}\n' "$wt" > "$RESP/3.out"
-  printf '1\n' > "$RESP/4.exit"
+  # No startup terminal to reuse (empty terminal list), so spawn falls back to
+  # creating one, which then fails.
+  printf '{"ok":true,"result":{"terminals":[]}}\n' > "$RESP/4.out"
+  printf '1\n' > "$RESP/5.exit"
   out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
     FM_ROOT_OVERRIDE="$ROOT" FM_STATE_OVERRIDE="$state" FM_DATA_OVERRIDE="$data" FM_CONFIG_OVERRIDE="$config" \
     FM_PROJECTS_OVERRIDE="$TMP_ROOT/unused-projects" FM_SPAWN_NO_GUARD=1 \
@@ -684,8 +802,12 @@ test_spawn_preserves_orca_metadata_when_abort_cleanup_fails() {
   printf '1\n' > "$RESP/1.exit"
   printf '{"ok":true,"result":{"repo":{"id":"repo-cleanup-fail"}}}\n' > "$RESP/2.out"
   printf '{"ok":true,"result":{"worktree":{"id":"wt-cleanup-fail","path":"%s"}}}\n' "$wt" > "$RESP/3.out"
-  printf '1\n' > "$RESP/4.exit"
+  # Empty terminal list: no startup terminal to reuse, so spawn creates one
+  # (response 5, failing), then abort cleanup's worktree removal (response 6)
+  # also fails.
+  printf '{"ok":true,"result":{"terminals":[]}}\n' > "$RESP/4.out"
   printf '1\n' > "$RESP/5.exit"
+  printf '1\n' > "$RESP/6.exit"
   out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
     FM_ROOT_OVERRIDE="$ROOT" FM_STATE_OVERRIDE="$state" FM_DATA_OVERRIDE="$data" FM_CONFIG_OVERRIDE="$config" \
     FM_PROJECTS_OVERRIDE="$TMP_ROOT/unused-projects" FM_SPAWN_NO_GUARD=1 \
@@ -717,7 +839,9 @@ test_spawn_releases_orca_resources_when_metadata_write_fails() {
   printf '1\n' > "$RESP/1.exit"
   printf '{"ok":true,"result":{"repo":{"id":"repo-meta-fail"}}}\n' > "$RESP/2.out"
   printf '{"ok":true,"result":{"worktree":{"id":"wt-meta-fail","path":"%s"}}}\n' "$wt" > "$RESP/3.out"
-  printf '{"ok":true,"result":{"terminal":{"handle":"term-meta-fail"}}}\n' > "$RESP/4.out"
+  # Empty terminal list: no startup terminal to reuse, so spawn creates one.
+  printf '{"ok":true,"result":{"terminals":[]}}\n' > "$RESP/4.out"
+  printf '{"ok":true,"result":{"terminal":{"handle":"term-meta-fail"}}}\n' > "$RESP/5.out"
   out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
     FM_ROOT_OVERRIDE="$ROOT" FM_STATE_OVERRIDE="$state" FM_DATA_OVERRIDE="$data" FM_CONFIG_OVERRIDE="$config" \
     FM_PROJECTS_OVERRIDE="$TMP_ROOT/unused-projects" FM_SPAWN_NO_GUARD=1 \
@@ -1616,7 +1740,10 @@ test_seed_acquire_orca_home_creates_managed_worktree
 test_seed_remove_orca_home_releases_via_worktree_rm
 test_seed_refuses_orca_requested_home
 test_json_get_ignores_undocumented_terminal_id_shapes
+test_json_get_reads_documented_primary_terminal_shapes
 test_worktree_and_terminal_helpers_parse_json
+test_worktree_startup_terminal_discovers_primary_terminal
+test_spawn_reuses_worktree_primary_terminal_via_discovery
 test_worktree_create_removes_worktree_when_path_missing
 test_spawn_preserves_orca_metadata_when_pathless_worktree_cleanup_fails
 test_spawn_writes_orca_metadata_and_launches_harness
