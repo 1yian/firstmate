@@ -298,6 +298,76 @@ fm_backend_orca_worktree_id_for_path() {  # <path>
   printf '%s' "$id"
 }
 
+# --- native agent status (busy/idle + recovery-grade liveness) ---------------
+#
+# Orca's agent-status hooks post working|done|blocked to the runtime (the
+# authoritative vocabulary, taken from Orca's own hook source), surfaced per
+# worktree in `worktree ps agents[].state`. `terminal list` maps a task's
+# terminal handle to its worktree and carries connected/orphaned/agentIdentity.
+# A firstmate task owns exactly one terminal in one worktree, so at most one
+# agent is correlated; if several are present the most-active state wins.
+
+# fm_backend_orca_agent_snapshot: prints "liveness=<alive|dead|missing|ambiguous|unreadable> state=<working|done|blocked|none>".
+fm_backend_orca_agent_snapshot() {  # <terminal-handle>
+  local terminal=$1 tlist wps
+  fm_backend_orca_tool_check || { printf 'liveness=unreadable state=none'; return 0; }
+  tlist=$(orca terminal list --json 2>/dev/null) || { printf 'liveness=unreadable state=none'; return 0; }
+  wps=$(orca worktree ps --json 2>/dev/null || printf '{}')
+  FM_ORCA_TL="$tlist" FM_ORCA_WP="$wps" node -e '
+const handle = process.argv[1];
+let tl, wp;
+try { tl = JSON.parse(process.env.FM_ORCA_TL || ""); }
+catch (e) { process.stdout.write("liveness=unreadable state=none"); process.exit(0); }
+try { wp = JSON.parse(process.env.FM_ORCA_WP || "{}"); } catch (e) { wp = {}; }
+const terms = (tl.result && tl.result.terminals) || [];
+const t = terms.find(x => x && x.handle === handle);
+if (!t) { process.stdout.write("liveness=missing state=none"); process.exit(0); }
+const wtId = t.worktreeId || "";
+const rank = { working: 3, blocked: 2, done: 1 };
+let best = "none", bestRank = 0, hasAgent = false;
+for (const w of ((wp.result && wp.result.worktrees) || [])) {
+  if ((w.worktreeId || "") !== wtId) continue;
+  for (const a of (w.agents || [])) {
+    hasAgent = true;
+    const r = rank[a.state] || 0;
+    if (r > bestRank) { bestRank = r; best = a.state; }
+  }
+}
+if (t.agentIdentity) hasAgent = true;
+const down = (t.orphaned === true) || (t.connected === false);
+let liveness;
+if (hasAgent) liveness = "alive";
+else if (down) liveness = "dead";
+else liveness = "ambiguous";
+process.stdout.write("liveness=" + liveness + " state=" + best);
+' "$terminal"
+}
+
+# fm_backend_orca_busy_state: native busy/idle. working -> busy; done or blocked
+# -> idle (an agent between turns or parked on a prompt is not mid-turn);
+# anything unresolved -> unknown, so the caller falls back to the harness
+# adapter's own lifecycle record.
+fm_backend_orca_busy_state() {  # <terminal-handle>
+  case "$(fm_backend_orca_agent_snapshot "$1")" in
+    *"state=working"*) printf 'busy' ;;
+    *"state=done"*|*"state=blocked"*) printf 'idle' ;;
+    *) printf 'unknown' ;;
+  esac
+}
+
+# fm_backend_orca_agent_state: recovery-grade endpoint classifier (see the
+# shared vocabulary in bin/fm-backend.sh). Only `dead` and `missing` license
+# recovery; a connected terminal with no attributable agent stays `ambiguous`.
+fm_backend_orca_agent_state() {  # <terminal-handle>
+  case "$(fm_backend_orca_agent_snapshot "$1")" in
+    *"liveness=missing"*) printf 'missing' ;;
+    *"liveness=dead"*) printf 'dead' ;;
+    *"liveness=alive"*) printf 'alive' ;;
+    *"liveness=unreadable"*) printf 'unreadable' ;;
+    *) printf 'ambiguous' ;;
+  esac
+}
+
 # fm_backend_orca_capture: a bounded RENDERED-screen read of the live terminal.
 # --screen is required: Orca's default stream mode returns accumulated output
 # with repaints stacked into fragments (its own read docs call the default

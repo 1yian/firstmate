@@ -1435,6 +1435,86 @@ test_worktree_id_for_path_resolves_id() {
   pass "fm_backend_orca_worktree_id_for_path: resolves an Orca worktree id from its path"
 }
 
+# Helper: run a classifier with a fake terminal-list (RESP/1) + worktree-ps (RESP/2).
+orca_agent_snapshot_case() {  # <case> <terminals-json> <worktrees-json>
+  orca_case "$1"
+  printf '%s\n' "$2" > "$RESP/1.out"
+  printf '%s\n' "$3" > "$RESP/2.out"
+}
+
+test_busy_state_maps_working_done_blocked() {
+  local out
+  # working -> busy
+  orca_agent_snapshot_case busy-working \
+    '{"result":{"terminals":[{"handle":"term-b","worktreeId":"wt-b","connected":true,"orphaned":false}]}}' \
+    '{"result":{"worktrees":[{"worktreeId":"wt-b","agents":[{"state":"working"}]}]}}'
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_busy_state term-b' "$ROOT" )
+  [ "$out" = busy ] || fail "working should map to busy, got '$out'"
+  # done -> idle
+  orca_agent_snapshot_case busy-done \
+    '{"result":{"terminals":[{"handle":"term-b","worktreeId":"wt-b","connected":true,"orphaned":false}]}}' \
+    '{"result":{"worktrees":[{"worktreeId":"wt-b","agents":[{"state":"done"}]}]}}'
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_busy_state term-b' "$ROOT" )
+  [ "$out" = idle ] || fail "done should map to idle, got '$out'"
+  # blocked -> idle (parked, not mid-turn)
+  orca_agent_snapshot_case busy-blocked \
+    '{"result":{"terminals":[{"handle":"term-b","worktreeId":"wt-b","connected":true,"orphaned":false}]}}' \
+    '{"result":{"worktrees":[{"worktreeId":"wt-b","agents":[{"state":"blocked"}]}]}}'
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_busy_state term-b' "$ROOT" )
+  [ "$out" = idle ] || fail "blocked should map to idle, got '$out'"
+  # no correlated agent -> unknown (fall back to harness lifecycle)
+  orca_agent_snapshot_case busy-none \
+    '{"result":{"terminals":[{"handle":"term-b","worktreeId":"wt-b","connected":true,"orphaned":false}]}}' \
+    '{"result":{"worktrees":[]}}'
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_busy_state term-b' "$ROOT" )
+  [ "$out" = unknown ] || fail "no agent should map to unknown, got '$out'"
+  pass "fm_backend_orca_busy_state: working->busy, done/blocked->idle, none->unknown"
+}
+
+test_agent_state_classifies_liveness() {
+  local out
+  # missing: handle absent from the live inventory
+  orca_agent_snapshot_case as-missing \
+    '{"result":{"terminals":[{"handle":"other","worktreeId":"wt-o"}]}}' \
+    '{"result":{"worktrees":[]}}'
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_agent_state term-a' "$ROOT" )
+  [ "$out" = missing ] || fail "absent handle should be missing, got '$out'"
+  # alive: agent reported for the worktree
+  orca_agent_snapshot_case as-alive \
+    '{"result":{"terminals":[{"handle":"term-a","worktreeId":"wt-a","connected":true,"orphaned":false}]}}' \
+    '{"result":{"worktrees":[{"worktreeId":"wt-a","agents":[{"state":"done"}]}]}}'
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_agent_state term-a' "$ROOT" )
+  [ "$out" = alive ] || fail "a reported agent (any state) should be alive, got '$out'"
+  # alive via agentIdentity even with no worktree-ps agent
+  orca_agent_snapshot_case as-alive-identity \
+    '{"result":{"terminals":[{"handle":"term-a","worktreeId":"wt-a","connected":true,"orphaned":false,"agentIdentity":"claude"}]}}' \
+    '{"result":{"worktrees":[]}}'
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_agent_state term-a' "$ROOT" )
+  [ "$out" = alive ] || fail "agentIdentity should read alive, got '$out'"
+  # dead: present but orphaned/disconnected with no agent
+  orca_agent_snapshot_case as-dead \
+    '{"result":{"terminals":[{"handle":"term-a","worktreeId":"wt-a","connected":false,"orphaned":true}]}}' \
+    '{"result":{"worktrees":[]}}'
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_agent_state term-a' "$ROOT" )
+  [ "$out" = dead ] || fail "orphaned terminal with no agent should be dead, got '$out'"
+  # ambiguous: connected, no agent evidence -> does NOT license recovery
+  orca_agent_snapshot_case as-ambiguous \
+    '{"result":{"terminals":[{"handle":"term-a","worktreeId":"wt-a","connected":true,"orphaned":false}]}}' \
+    '{"result":{"worktrees":[]}}'
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_agent_state term-a' "$ROOT" )
+  [ "$out" = ambiguous ] || fail "connected terminal with no agent should be ambiguous, got '$out'"
+  pass "fm_backend_orca_agent_state: missing/alive/dead/ambiguous from terminal+worktree signals"
+}
+
 test_capture_reads_terminal_tail_json
 test_capture_falls_back_to_text_fields
 test_capture_fails_on_orca_error_json
@@ -1463,6 +1543,8 @@ test_home_create_skips_base_update_when_already_set
 test_home_terminal_create_targets_home_path
 test_home_remove_releases_home_by_path
 test_worktree_id_for_path_resolves_id
+test_busy_state_maps_working_done_blocked
+test_agent_state_classifies_liveness
 test_json_get_ignores_undocumented_terminal_id_shapes
 test_worktree_and_terminal_helpers_parse_json
 test_worktree_create_removes_worktree_when_path_missing

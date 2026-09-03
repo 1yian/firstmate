@@ -53,7 +53,7 @@ An ordinary metadata-routed `fm-send.sh` text steer becomes a durable steering-i
 On the typed plane, `fm-send.sh` verifies composer clearance through the fleet-wide classifier in `bin/fm-composer-lib.sh`, retrying Enter without retyping when a slash popup first fills an argument placeholder.
 The composer read is one bounded rendered-screen tail of the live terminal and never pages backward into scrollback, so a stale startup banner cannot compete with the bottom-anchored composer.
 A bare shell row is `unknown`, not an empty agent composer, and plain-text captures degrade a glyph row carrying trailing text to `unknown` rather than a false `pending`.
-The watcher has no native Orca busy signal, so each harness adapter's semantic lifecycle supplies worker state.
+The watcher reads a native busy/idle signal from Orca's agent status (`worktree ps agents[].state`: `working` is busy, `done`/`blocked` are idle), correlated to the task's terminal; when Orca cannot attribute an agent it returns unknown and each harness adapter's semantic lifecycle supplies worker state.
 Grok alone retains its isolated rendered-tail fallback.
 
 Cleanup keeps all shared Firstmate safety checks.
@@ -72,14 +72,14 @@ To keep the home-isolation invariant (a secondmate home may not live inside the 
 `bin/fm-spawn.sh --secondmate` reuses that seeded home worktree: it resolves the home's worktree id from its path and creates the agent terminal inside it with `orca terminal create --worktree path:<home>`, never a second worktree.
 Teardown releases the home with `orca worktree rm --worktree path:<home>` under the same landed-work and in-flight-work guards as any other secondmate, after resolving that the home is an Orca-managed worktree.
 The secondmate's own crewmates run on its inherited backend and take ordinary Orca task worktrees of their project repos.
-Orca has no recovery-grade agent-process classifier, so a dead Orca secondmate is not auto-respawned at session start; recover it explicitly with `bin/fm-spawn.sh <id> --secondmate`, which reuses the persistent home worktree and creates a fresh terminal in it.
+Orca has a recovery-grade agent-state classifier (terminal `orphaned`/`connected`/`agentIdentity` plus `worktree ps` state), so a dead or missing Orca secondmate is auto-respawned at session start and `bin/fm-control.sh <id> exit|relaunch` is supported; a connected terminal with no attributable agent stays `ambiguous` and never licenses recovery.
 
 ## Active limits
 
 - Orca is macOS-only and explicit-only.
 - The app must be running and report ready.
 - Secondmate homes require the leased (`-`) form and an external worktree base path; Orca cannot host a terminal in an arbitrary existing checkout.
-- There is no native busy or push-event signal, so worker state comes from each harness adapter's semantic lifecycle.
+- Native busy/idle and a recovery-grade agent-state come from Orca's agent status; there is no native terminal push-event stream, so the watcher polls (the same fallback as tmux/zellij/cmux) rather than waiting on a pushed transition.
 - Orca exposes no stable CLI version or protocol marker, so readiness is the compatibility gate rather than a version floor.
 - Only the verified terminal-handle and worktree result fields are accepted; speculative response shapes are rejected.
 
