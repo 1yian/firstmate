@@ -50,10 +50,21 @@ process.exit(1);
 }
 
 fm_backend_orca_json_get() {  # <field> ; fields: worktree-id worktree-path terminal-handle worktree-terminal-handle repo-id
-  # Terminal handles are accepted only from verified terminal result shapes:
-  # result.terminal or a root terminal object with .handle. Undocumented
-  # result.id and result.worktree.terminal shapes are ignored until a real Orca
-  # smoke run proves them.
+  # Terminal handles are accepted only from verified shapes.
+  #  - terminal-handle (from `orca terminal create`): result.terminal or a root
+  #    terminal object with .handle.
+  #  - worktree-terminal-handle (the worktree's primary/startup terminal from
+  #    `orca worktree create`): result.terminal, result.startupTerminal.handle,
+  #    or result.agentTerminalHandle. `orca worktree create --help` documents
+  #    the last two as the first-terminal handle it returns
+  #    (agentTerminalHandle with --agent; startupTerminal.handle on older
+  #    runtimes; neither for folder-based repos).
+  # Undocumented result.id and result.worktree.terminal shapes are ignored until
+  # a real Orca smoke run proves them. Some runtimes return NO terminal handle in
+  # the create result at all (verified live, Orca 1.x under --setup skip without
+  # --agent); in that case the worktree's first terminal still exists and is
+  # recovered by fm_backend_orca_worktree_startup_terminal from `orca terminal
+  # list`, not from this parse.
   local field=$1
   node -e '
 const fs = require("fs");
@@ -80,7 +91,7 @@ let v = "";
 if (field === "worktree-id") v = wt.id || wt.worktreeId || r.worktreeId || "";
 if (field === "worktree-path") v = wt.path || (wt.git && wt.git.path) || r.path || "";
 if (field === "terminal-handle") v = handle(explicitTerm || r) || "";
-if (field === "worktree-terminal-handle") v = handle(explicitTerm) || "";
+if (field === "worktree-terminal-handle") v = handle(explicitTerm) || handle(r.startupTerminal) || handle(r.agentTerminalHandle) || "";
 if (field === "repo-id") v = repo.id || repo.repoId || r.repoId || "";
 if (!v) process.exit(1);
 process.stdout.write(String(v));
@@ -151,8 +162,46 @@ fm_backend_orca_worktree_create() {  # <project-path> <name>
     fi
     return 2
   }
+  # When the create result carried no terminal handle, recover the worktree's
+  # own primary/startup terminal from `orca terminal list` so the caller reuses
+  # that first tab instead of opening a second one beside it. An empty result
+  # here is a safe fallback: the caller then creates a terminal, the prior
+  # behavior.
+  if [ -z "$terminal" ]; then
+    terminal=$(fm_backend_orca_worktree_startup_terminal "$wt_id" 2>/dev/null || true)
+  fi
   printf '%s\t%s' "$wt_id" "$wt_path"
   [ -z "$terminal" ] || printf '\t%s' "$terminal"
+}
+
+# fm_backend_orca_worktree_startup_terminal: the handle of a worktree's existing
+# primary/startup terminal, discovered from `orca terminal list`. `orca worktree
+# create` creates the worktree AND its first terminal by default (verified live,
+# Orca 1.x: the create result carries no terminal handle under --setup skip
+# without --agent, but that first terminal is present in `orca terminal list`
+# immediately, keyed by worktreeId). Reusing it is what keeps a spawned agent in
+# the worktree's primary tab instead of landing in a second tab beside an idle
+# startup tab. Prints the sole live terminal for <worktree-id>; prints nothing
+# when the terminal set is absent or ambiguous, so the caller falls back to
+# creating one.
+fm_backend_orca_worktree_startup_terminal() {  # <worktree-id>
+  local worktree_id=${1:-} out
+  [ -n "$worktree_id" ] || return 1
+  fm_backend_orca_tool_check || return 1
+  out=$(orca terminal list --json 2>/dev/null) || return 1
+  printf '%s' "$out" | node -e '
+const fs = require("fs");
+const wt = process.argv[1];
+let data;
+try { data = JSON.parse(fs.readFileSync(0, "utf8")); } catch (e) { process.exit(1); }
+if (data.ok === false) process.exit(1);
+const terms = (data.result && data.result.terminals) || [];
+const mine = terms.filter(t => t && t.worktreeId === wt && t.handle);
+const live = mine.filter(t => t.connected !== false && t.orphaned !== true);
+const pick = live.length === 1 ? live[0] : (mine.length === 1 ? mine[0] : null);
+if (!pick) process.exit(1);
+process.stdout.write(String(pick.handle));
+' "$worktree_id"
 }
 
 fm_backend_orca_terminal_create() {  # <worktree-id> <title>
