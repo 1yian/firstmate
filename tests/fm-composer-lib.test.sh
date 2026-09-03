@@ -428,6 +428,46 @@ test_strict_blank_row_divergence() {
   pass "strict posture: blank and unidentified rows are unknown, never injectable empty"
 }
 
+# The POSITIVE bare-shell detector Orca's exited-to-shell recovery depends on.
+# It must be a positive match on a real shell prompt, distinct from the
+# classifier's `unknown` (which also covers unreadable captures and dialogs).
+test_row_is_shell_prompt_positive_and_negative() {
+  local r
+  for r in 'user@host cwd %' 'kunchen@mac firstmate $ ' '$ ' '% ' '> ' '#'; do
+    fm_composer_row_is_shell_prompt "$r" \
+      || fail "row '$r' should read as a shell prompt"
+  done
+  # A value ending in a glyph with no separating space is NOT a prompt.
+  for r in 'downloading 100%' 'some text' 'a=b' ''; do
+    fm_composer_row_is_shell_prompt "$r" \
+      && fail "row '$r' must NOT read as a shell prompt"
+  done
+  pass "fm_composer_row_is_shell_prompt: leading and trailing prompt glyphs match; non-prompt rows are rejected"
+}
+
+test_screen_is_bare_shell_positive_and_negative() {
+  local out
+  # Positive: no agent composer + a trailing-glyph shell prompt as the last row.
+  fm_composer_screen_is_bare_shell "$CAPS_PLAIN" $'earlier output\nyian@Yians-MacBook-Pro dev-tooling %' \
+    || fail "a bare login-shell prompt screen must read as a bare shell"
+  # Positive: a bare `$ ` prompt.
+  fm_composer_screen_is_bare_shell "$CAPS_PLAIN" $'kunchen@mac firstmate $ ' \
+    || fail "a bare dollar prompt screen must read as a bare shell"
+  # Negative: a live AGENT composer (bordered) is never a bare shell.
+  fm_composer_screen_is_bare_shell "$CAPS_PLAIN" $'  \xe2\x95\xad\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xae\n  \xe2\x94\x82 \xe2\x9d\xaf hi \xe2\x94\x82\n  \xe2\x95\xb0\xe2\x94\x80\xe2\x94\x80\xe2\x94\x80\xe2\x95\xaf' \
+    && fail "a live agent composer must NOT read as a bare shell"
+  # Negative: a bare agent glyph row (empty composer) is not a shell.
+  fm_composer_screen_is_bare_shell "$CAPS_PLAIN" $'\xe2\x9d\xaf ' \
+    && fail "a bare agent-glyph composer must NOT read as a bare shell"
+  # Negative: an empty/unreadable screen is `unknown` but has no shell prompt,
+  # so it must NOT be treated as a safe-to-clear bare shell.
+  fm_composer_screen_is_bare_shell "$CAPS_PLAIN" '' \
+    && fail "an empty screen must NOT read as a bare shell (unknown != bare shell)"
+  fm_composer_screen_is_bare_shell "$CAPS_PLAIN" $'Working on a large edit...' \
+    && fail "a busy-output screen with no prompt must NOT read as a bare shell"
+  pass "fm_composer_screen_is_bare_shell: positive on a real shell prompt only; agent composers and promptless unknowns are rejected"
+}
+
 test_bare_wrap_region_classifies() {
   # Long typed input wraps below the glyph row; the cursor rides the wrapped
   # continuation. The region is IDENTIFIED (glyph row + contiguous non-blank,
@@ -623,6 +663,8 @@ test_matrix_grok_titled_bottom_border
 test_matrix_kimi_bordered_shell_glyph_box
 test_matrix_claude_inside_zellij_ansi_dump
 test_strict_blank_row_divergence
+test_row_is_shell_prompt_positive_and_negative
+test_screen_is_bare_shell_positive_and_negative
 test_bare_wrap_region_classifies
 test_contiguous_transcript_reanchors_on_live_prompt
 test_lower_dead_shell_invalidates_cursorless_candidate

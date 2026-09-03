@@ -943,7 +943,9 @@ fm_backend_target_exists() {  # <backend> <target> [expected-label]
 # classifier. Orca correlates its terminal handle to Orca's native agent status
 # (worktree ps state + terminal orphaned/connected/agentIdentity), returning
 # `dead`/`missing` only on strong evidence and `ambiguous` for a connected
-# terminal with no attributable agent. Zellij and cmux remain unverified: their
+# terminal with no attributable agent, except a positively-proven exited-to-shell
+# wedge (agent gone, PTY at a bare login shell) which reads recovery-grade `dead`
+# (see bin/backends/orca.sh). Zellij and cmux remain unverified: their
 # secondmate ghost-tab and agent-process recovery paths are not validated.
 fm_backend_agent_state() {  # <backend> <target>
   local backend=$1 target=$2

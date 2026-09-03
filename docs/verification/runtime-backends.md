@@ -739,13 +739,44 @@ Captures use `orca terminal read --screen` for the rendered screen the classifie
 Native busy/idle folds `orca worktree ps` agent state (`working` -> busy, `done` or `blocked` -> idle, trusted for BUSY alongside herdr), and a recovery-grade `agent_state` classifier folds terminal `orphaned`/`connected`/`agentIdentity` with worktree ps state into `alive`/`dead`/`missing`/`ambiguous` (conservative), unlocking secondmate auto-recovery and control-plane exit/relaunch.
 Orca surfaces no terminal agent-status push events to orchestration check, so it stays on the poll fallback at parity with tmux, zellij, and cmux.
 
+### Exited-to-shell wedge recovery
+
+Verified on 2026-09-03 against `/usr/local/bin/orca` with Orca app bundle 1.4.195 on macOS arm64.
+When an agent process dies (e.g. the Orca renderer is killed mid-turn) its PTY falls back to the interactive login shell, leaving the terminal connected, not orphaned, with no `agentIdentity` and no `worktree ps` agent state - a shape the cheap snapshot conservatively calls `ambiguous`, which used to require a manual `orca terminal close`.
+`fm_backend_orca_agent_state` now escalates that ambiguous case to a positive exited-to-shell probe: all of connected, not orphaned, no `agentIdentity`, empty `worktree ps` agent state, AND a positive bare-shell-prompt match on the rendered screen (`fm_composer_screen_is_bare_shell`, never the generic `unknown`), across two reads a settle apart.
+Only that full conjunction classifies as recovery-grade `dead`; every other connected-no-agent case stays `ambiguous` (no recovery).
+A disposable worktree whose terminal ran NO agent (a bare login shell) was snapshot-ambiguous yet classified `dead` by the probe, so the existing dead/missing recovery/relaunch path clears and relaunches it.
+
+```sh
+# create a disposable worktree, leave its terminal at a bare login shell (no agent)
+orca worktree create --repo id:<repo> --name <tmp> --no-parent --setup skip --json
+orca terminal read --terminal <handle> --screen --json   # renders `user@host cwd %`
+# snapshot stays ambiguous; agent_state escalates to dead via the bare-shell probe
+```
+
+The live guard `tests/fm-orca-exited-to-shell-live-e2e.test.sh` (opt-in via `FM_ORCA_EXITED_TO_SHELL_LIVE_E2E=1`) drives this end to end against the real runtime; it observed `harness: Orca 1.4.195` and passed.
+Refresh this entry by re-running that guard after each Orca upgrade.
+
+### Idempotent worktree removal
+
+Verified on 2026-09-03 against the same runtime.
+`orca worktree rm` on an already-gone worktree exits NON-ZERO (1) and still returns a structured `code=selector_not_found` body.
+Because teardown's goal (the worktree is gone) is already met, `fm_backend_orca_remove_worktree` and `fm_backend_orca_home_remove` treat ONLY that code as idempotent success while every other `ok:false` still fails closed; the JSON body is authoritative over the process exit code, so a non-zero exit with no parseable body still fails closed.
+
+```sh
+orca worktree rm --worktree "id:nonexistent-repo::/tmp/does-not-exist" --force --json
+# -> exit 1, {"ok":false,"error":{"code":"selector_not_found", ...}}
+# fm_backend_orca_remove_worktree of an absent worktree returns 0 (idempotent)
+```
+
 ```sh
 tests/fm-backend-orca.test.sh
 tests/fm-backend.test.sh
 tests/fm-bootstrap.test.sh
 ```
 
-The fake-Orca suite covers readiness, registration, create response parsing (including the documented primary-terminal shapes and the `orca terminal list` startup-terminal discovery), primary-terminal reuse on spawn, metadata routing, popup-safe submit, path-matched release refusal, the secondmate home lease and rollback, Escape/Ctrl-U and rendered-read shaping, native busy/idle, and the recovery-grade agent_state classifier.
+The fake-Orca suite covers readiness, registration, create response parsing (including the documented primary-terminal shapes and the `orca terminal list` startup-terminal discovery), primary-terminal reuse on spawn, metadata routing, popup-safe submit, path-matched release refusal, the secondmate home lease and rollback, Escape/Ctrl-U and rendered-read shaping, native busy/idle, the recovery-grade agent_state classifier including the exited-to-shell conjunction (positive, every single-deviation negative, and the two-read persistence guard), and the idempotent selector_not_found removal for both worktree and home release (with the non-absent and body-less-non-zero-exit cases still failing closed).
+The bare-shell primitives `fm_composer_row_is_shell_prompt` and `fm_composer_screen_is_bare_shell` are pinned portably in `tests/fm-composer-lib.test.sh`.
 
 ## cmux
 

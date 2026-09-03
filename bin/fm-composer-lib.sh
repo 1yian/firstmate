@@ -1290,6 +1290,53 @@ EOF
   esac
 }
 
+# fm_composer_row_is_shell_prompt: 0 when <row> is an interactive shell prompt -
+# either a bare leading shell glyph (zsh's partial-line `%` marker or an empty
+# `$ `/`% ` prompt) or a prompt line whose final token is a shell prompt glyph
+# separated from the prompt text by whitespace (`user@host cwd %`). The glyph
+# set is FM_COMPOSER_SHELL_PROMPT_GLYPHS, declared once, so `100%` (no separating
+# space before the glyph) is correctly rejected. This is a POSITIVE shell-prompt
+# signal, distinct from the classifier's `unknown`, which also covers unreadable
+# captures, trust dialogs, and ambiguous glyph rows.
+fm_composer_row_is_shell_prompt() {  # <row>
+  local row=$1 glyph last prev
+  fm_composer_normalize_trim_var row
+  [ -n "$row" ] || return 1
+  # Bare leading shell glyph (possibly followed by text typed at the shell).
+  fm_composer_leading_shell_glyph_var glyph "$row" && return 0
+  # Trailing prompt glyph: the last char is a shell glyph preceded by whitespace,
+  # the shape of a real prompt (`... %`) rather than a value ending in the glyph.
+  last=${row: -1}
+  _fm_composer_is_prompt_glyph "$last" "$FM_COMPOSER_SHELL_PROMPT_GLYPHS" || return 1
+  prev=${row%?}
+  case "$prev" in
+    *[[:space:]]) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# fm_composer_screen_is_bare_shell: 0 ONLY when <screen> positively shows an
+# interactive login shell where an agent used to be - the "exited to a bare
+# shell" wedge a crashed or exited agent leaves. Two independent conditions must
+# both hold:
+#   1. the shared classifier finds NO agent composer (verdict `unknown`, never a
+#      proven `empty`/`pending`), so a live agent's composer can never match; and
+#   2. the LAST non-empty rendered row is positively a shell prompt.
+# `unknown` alone is insufficient (it also covers unreadable captures, trust
+# dialogs, and garbled rows), so the shell-prompt row in condition 2 is the
+# safety keystone that makes this a POSITIVE match rather than an inference from
+# absence. A caller must never treat a bare `unknown` as safe-to-clear.
+fm_composer_screen_is_bare_shell() {  # <caps> <screen>
+  local caps=$1 screen=$2 last='' line
+  [ "$(fm_composer_classify_screen "$caps" "$screen")" = unknown ] || return 1
+  while IFS= read -r line; do
+    case "$line" in *[![:space:]]*) last=$line ;; esac
+  done <<EOF
+$screen
+EOF
+  fm_composer_row_is_shell_prompt "$last"
+}
+
 # fm_composer_submit_retry_core: the ONE verify-and-retry-Enter submit loop
 # for the cursor-less backends (cmux, orca, zellij), parameterised by the
 # adapter's send-key and composer-state functions. The caller has already

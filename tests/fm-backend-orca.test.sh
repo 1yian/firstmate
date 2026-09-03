@@ -27,12 +27,25 @@ if [ "${1:-}" = status ] && [ "${FM_ORCA_STATUS_RESPONSE:-ready}" != sequence ];
   printf '{"ok":true,"result":{"runtime":{"reachable":true,"state":"ready"}}}\n'
   exit 0
 fi
+# Subcommand-dispatch mode (FM_ORCA_BYCMD): respond by "<verb>-<subverb>" (e.g.
+# terminal-list, worktree-ps, terminal-read) rather than call count, so the same
+# response is returned on every repeat. This is what the two-read exited-to-shell
+# probe needs: it re-reads terminal list, worktree ps, and terminal read twice.
+# Real Orca emits a structured JSON body AND a non-zero exit together for an
+# expected `ok:false` (e.g. an already-gone worktree exits 1 with a
+# selector_not_found body), so cat the .out FIRST, then apply the .exit code.
+if [ -n "${FM_ORCA_BYCMD:-}" ]; then
+  key="${1:-}"; [ -n "${2:-}" ] && key="${1}-${2}"
+  [ -f "$RESP/$key.out" ] && cat "$RESP/$key.out"
+  if [ -f "$RESP/$key.exit" ]; then exit "$(cat "$RESP/$key.exit")"; fi
+  exit 0
+fi
 n=$next
 echo "$n" > "$COUNT_FILE"
+[ -f "$RESP/$n.out" ] && cat "$RESP/$n.out"
 if [ -f "$RESP/$n.exit" ]; then
   exit "$(cat "$RESP/$n.exit")"
 fi
-[ -f "$RESP/$n.out" ] && cat "$RESP/$n.out"
 exit 0
 SH
   chmod +x "$fb/orca"
@@ -369,6 +382,67 @@ test_remove_worktree_rejects_orca_error_json() {
   [ "$status" -ne 0 ] || fail "remove_worktree should fail on Orca ok:false JSON"
   assert_contains "$out" "worktree not found" "remove_worktree should surface the Orca removal error"
   pass "fm_backend_orca_remove_worktree: fails closed on ok:false JSON"
+}
+
+# Idempotent removal: an already-gone worktree returns
+# `ok:false code=selector_not_found`, and teardown's goal (the worktree is gone)
+# is already met, so that ONE code is success. Every other ok:false still fails
+# closed (the test above keeps that green with a different code).
+# Real `orca worktree rm` on an already-gone worktree exits NON-ZERO (1) and
+# still returns a structured code=selector_not_found body (verified live), so the
+# fixture pins exit 1 with the body and the JSON body must decide.
+test_remove_worktree_treats_selector_not_found_as_success() {
+  local out status
+  orca_case remove-already-gone
+  printf '{"ok":false,"error":{"code":"selector_not_found","message":"selector_not_found"}}\n' > "$RESP/1.out"
+  printf '1\n' > "$RESP/1.exit"
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_remove_worktree wt-gone' "$ROOT" 2>&1 )
+  status=$?
+  [ "$status" -eq 0 ] || fail "an already-gone worktree (exit 1 + selector_not_found) must be idempotent success, got exit $status: $out"
+  assert_contains "$(cat "$LOG")" $'orca\x1fworktree\x1frm\x1f--worktree\x1fid:wt-gone\x1f--force\x1f--json' \
+    "remove_worktree should still invoke orca worktree rm"
+  pass "fm_backend_orca_remove_worktree: treats selector_not_found (already gone, exit 1) as idempotent success"
+}
+
+# A non-zero exit with no parseable body must still fail closed: an already-gone
+# target only reads success through the structured absent-code body.
+test_remove_worktree_fails_closed_on_nonzero_exit_without_body() {
+  local out status
+  orca_case remove-nonzero-empty
+  printf '1\n' > "$RESP/1.exit"
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_remove_worktree wt-x' "$ROOT" 2>&1 )
+  status=$?
+  [ "$status" -ne 0 ] || fail "a non-zero exit with no body must fail closed, not be read as already-gone"
+  pass "fm_backend_orca_remove_worktree: a non-zero exit with no structured body fails closed"
+}
+
+test_home_remove_treats_selector_not_found_as_success() {
+  local home out status
+  orca_case home-remove-already-gone
+  home="$CASE_DIR/orca-homes/2ndmate-gone"
+  printf '{"ok":false,"error":{"code":"selector_not_found","message":"selector_not_found"}}\n' > "$RESP/1.out"
+  printf '1\n' > "$RESP/1.exit"
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_home_remove "$1"' "$ROOT" "$home" 2>&1 )
+  status=$?
+  [ "$status" -eq 0 ] || fail "an already-gone home (exit 1 + selector_not_found) must be idempotent success, got exit $status: $out"
+  pass "fm_backend_orca_home_remove: treats selector_not_found (already gone, exit 1) as idempotent success"
+}
+
+test_home_remove_fails_closed_on_other_error() {
+  local home out status
+  orca_case home-remove-busy
+  home="$CASE_DIR/orca-homes/2ndmate-busy"
+  printf '{"ok":false,"error":{"code":"worktree_busy","message":"worktree busy"}}\n' > "$RESP/1.out"
+  printf '1\n' > "$RESP/1.exit"
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_home_remove "$1"' "$ROOT" "$home" 2>&1 )
+  status=$?
+  [ "$status" -ne 0 ] || fail "home_remove must still fail closed on a non-absent ok:false error"
+  assert_contains "$out" "worktree busy" "home_remove should surface the non-absent Orca error"
+  pass "fm_backend_orca_home_remove: still fails closed on every ok:false other than selector_not_found"
 }
 
 test_worktree_path_resolves_id() {
@@ -1080,6 +1154,44 @@ test_teardown_preserves_metadata_when_orca_remove_error_json() {
   pass "fm-teardown.sh backend=orca: preserves metadata on remove ok:false JSON"
 }
 
+# End-to-end idempotency: when the worktree is already gone, `orca worktree rm`
+# returns selector_not_found; teardown must complete cleanly (records removed,
+# exit 0) rather than aborting, while the companion test above proves a
+# worktree-rm failure for any OTHER reason still aborts with records retained.
+test_teardown_treats_already_gone_orca_worktree_as_success() {
+  local proj wt data state config id out rc neutral
+  id="orcaalreadygonez3"
+  proj="$TMP_ROOT/already-gone-project"
+  wt="$TMP_ROOT/already-gone-wt"
+  data="$TMP_ROOT/already-gone-data"
+  state="$TMP_ROOT/already-gone-state"
+  config="$TMP_ROOT/already-gone-config"
+  mkdir -p "$data/$id" "$state" "$config"
+  printf 'report\n' > "$data/$id/report.md"
+  touch "$state/.last-watcher-beat"
+  fm_write_meta "$state/$id.meta" \
+    "window=fm-$id" "endpoint_task_id=$id" "terminal=term-already-gone" "worktree=$wt" "project=$proj" \
+    "harness=claude" "kind=scout" "mode=no-mistakes" "yolo=off" \
+    "backend=orca" "orca_worktree_id=wt-already-gone" \
+    "decisions_reviewed=1" "decision_keys="
+  orca_case already-gone-teardown
+  printf '{"ok":true,"result":{}}\n' > "$RESP/1.out"
+  printf '{"ok":false,"error":{"code":"selector_not_found","message":"selector_not_found"}}\n' > "$RESP/2.out"
+  printf '1\n' > "$RESP/2.exit"
+  neutral=$(neutral_fm_root "$CASE_DIR/neutral")
+  set +e
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" \
+    FM_ROOT_OVERRIDE="$neutral" FM_STATE_OVERRIDE="$state" FM_DATA_OVERRIDE="$data" FM_CONFIG_OVERRIDE="$config" \
+    "$ROOT/bin/fm-teardown.sh" "$id" 2>&1 )
+  rc=$?
+  set -e
+  expect_code 0 "$rc" "Orca teardown should succeed when the worktree is already gone (selector_not_found)"$'\n'"$out"
+  assert_contains "$(cat "$LOG")" $'orca\x1fworktree\x1frm\x1f--worktree\x1fid:wt-already-gone\x1f--force\x1f--json' \
+    "teardown should still attempt the Orca worktree removal"
+  assert_absent "$state/$id.meta" "idempotent already-gone teardown should remove task metadata"
+  pass "fm-teardown.sh backend=orca: an already-gone worktree (selector_not_found) tears down cleanly"
+}
+
 test_scout_teardown_refuses_orca_missing_report_when_path_missing() {
   local proj wt data state config id out rc neutral
   id="orcanoreportz4"
@@ -1655,6 +1767,86 @@ test_agent_state_unreadable_on_terminal_list_error() {
   pass "fm_backend_orca_agent_state: an exit-0 ok:false terminal list reads unreadable, never missing"
 }
 
+# Helper: fm_backend_orca_agent_state under FM_ORCA_BYCMD mode with three
+# repeatable reads (terminal list / worktree ps / terminal read screen). The
+# settle is zeroed so the two-read exited-to-shell probe runs instantly.
+orca_agent_state_bycmd() {  # <case> <terminal-list-json> <worktree-ps-json> <terminal-read-json>
+  orca_case "$1"
+  printf '%s\n' "$2" > "$RESP/terminal-list.out"
+  printf '%s\n' "$3" > "$RESP/worktree-ps.out"
+  printf '%s\n' "$4" > "$RESP/terminal-read.out"
+  PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" FM_ORCA_BYCMD=1 FM_ORCA_EXITED_SHELL_SETTLE=0 \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_agent_state term-a' "$ROOT"
+}
+
+# The wedge a crashed/exited agent leaves: connected terminal, no agent, PTY
+# fell back to a bare login shell. This must recover (dead) ONLY on the full
+# bare-shell conjunction; every single deviation must stay alive/dead/ambiguous
+# and NEVER wrongly recover a live agent.
+test_agent_state_exited_to_shell_recovers_only_on_full_conjunction() {
+  local out
+  local TL_OK='{"result":{"terminals":[{"handle":"term-a","worktreeId":"wt-a","connected":true,"orphaned":false}]}}'
+  local WP_EMPTY='{"result":{"worktrees":[]}}'
+  local READ_SHELL='{"ok":true,"result":{"terminal":{"tail":["earlier output","yian@Yians-MacBook-Pro dev-tooling %"]}}}'
+  # Positive: connected + no agentIdentity + empty ps + bare shell screen -> dead.
+  out=$(orca_agent_state_bycmd ets-positive "$TL_OK" "$WP_EMPTY" "$READ_SHELL")
+  [ "$out" = dead ] || fail "full bare-shell conjunction should recover as dead, got '$out'"
+  # Deviation: agentIdentity present -> alive; the shell probe is never reached.
+  out=$(orca_agent_state_bycmd ets-identity \
+    '{"result":{"terminals":[{"handle":"term-a","worktreeId":"wt-a","connected":true,"orphaned":false,"agentIdentity":"pi"}]}}' \
+    "$WP_EMPTY" "$READ_SHELL")
+  [ "$out" = alive ] || fail "agentIdentity present must stay alive even at a shell prompt, got '$out'"
+  # Deviation: a live worktree-ps agent state -> alive.
+  out=$(orca_agent_state_bycmd ets-ps "$TL_OK" \
+    '{"result":{"worktrees":[{"worktreeId":"wt-a","agents":[{"state":"working"}]}]}}' "$READ_SHELL")
+  [ "$out" = alive ] || fail "a live worktree-ps agent must stay alive, got '$out'"
+  # Deviation: orphaned terminal -> ordinary dead (the disconnected-PTY path,
+  # not the bare-shell probe), still recovery-eligible.
+  out=$(orca_agent_state_bycmd ets-orphaned \
+    '{"result":{"terminals":[{"handle":"term-a","worktreeId":"wt-a","connected":true,"orphaned":true}]}}' \
+    "$WP_EMPTY" "$READ_SHELL")
+  [ "$out" = dead ] || fail "an orphaned terminal is ordinary dead, got '$out'"
+  # Deviation: the rendered screen is a live AGENT composer, not a shell ->
+  # ambiguous, no recovery. This is the false-recovery guard.
+  out=$(orca_agent_state_bycmd ets-composer "$TL_OK" "$WP_EMPTY" \
+    '{"ok":true,"result":{"terminal":{"tail":["  \u256d\u2500\u2500\u2500\u2500\u2500\u2500\u256e","  \u2502 \u276f hi \u2502","  \u2570\u2500\u2500\u2500\u2500\u2500\u2500\u256f"]}}}')
+  [ "$out" = ambiguous ] || fail "a live agent composer screen must stay ambiguous, got '$out'"
+  # Deviation: the rendered screen is unreadable (read error) -> ambiguous.
+  out=$(orca_agent_state_bycmd ets-unreadable "$TL_OK" "$WP_EMPTY" \
+    '{"ok":false,"error":{"code":"terminal_handle_stale","message":"stale"}}')
+  [ "$out" = ambiguous ] || fail "an unreadable screen must stay ambiguous (never recover on absence), got '$out'"
+  pass "fm_backend_orca_agent_state: exited-to-shell recovers as dead ONLY on the full bare-shell conjunction; every deviation stays alive/dead/ambiguous"
+}
+
+# The two-read settle: a bare shell must persist across BOTH reads. A shell on
+# read 1 that becomes a live composer on read 2 (agent startup/restart) must NOT
+# recover, so a momentary shell is never misread as a crash.
+test_agent_state_exited_to_shell_requires_two_read_persistence() {
+  local out
+  orca_case ets-persistence
+  cat > "$FB/orca" <<'SH'
+#!/usr/bin/env bash
+set -u
+RESP="${FM_ORCA_RESPONSES:?}"
+C="$RESP/.readcount"
+key="${1:-}"; [ -n "${2:-}" ] && key="${1}-${2}"
+case "$key" in
+  terminal-list) echo '{"result":{"terminals":[{"handle":"term-a","worktreeId":"wt-a","connected":true,"orphaned":false}]}}' ;;
+  worktree-ps) echo '{"result":{"worktrees":[]}}' ;;
+  terminal-read)
+    n=$(( $(cat "$C" 2>/dev/null || echo 0) + 1 )); echo "$n" > "$C"
+    if [ "$n" -le 1 ]; then echo '{"ok":true,"result":{"terminal":{"tail":["yian@host x %"]}}}'
+    else echo '{"ok":true,"result":{"terminal":{"tail":["  \u256d\u2500\u2500\u2500\u256e","  \u2502 \u276f hi \u2502","  \u2570\u2500\u2500\u2500\u256f"]}}}'; fi ;;
+  *) echo '{"ok":true,"result":{}}' ;;
+esac
+SH
+  chmod +x "$FB/orca"
+  out=$( PATH="$FB:$PATH" FM_ORCA_LOG="$LOG" FM_ORCA_RESPONSES="$RESP" FM_ORCA_EXITED_SHELL_SETTLE=0 \
+    bash -c '. "$0/bin/backends/orca.sh"; fm_backend_orca_agent_state term-a' "$ROOT" )
+  [ "$out" = ambiguous ] || fail "a bare shell on read 1 but a live composer on read 2 must NOT recover, got '$out'"
+  pass "fm_backend_orca_agent_state: exited-to-shell requires the bare shell to persist across the two-read settle"
+}
+
 test_seed_acquire_orca_home_creates_managed_worktree() {
   local base out
   orca_case seed-acquire
@@ -1726,6 +1918,10 @@ test_send_key_escape_and_ctrl_u
 test_kill_is_best_effort_close
 test_remove_worktree_refuses_empty_id
 test_remove_worktree_rejects_orca_error_json
+test_remove_worktree_treats_selector_not_found_as_success
+test_remove_worktree_fails_closed_on_nonzero_exit_without_body
+test_home_remove_treats_selector_not_found_as_success
+test_home_remove_fails_closed_on_other_error
 test_worktree_path_resolves_id
 test_dispatcher_sources_orca_and_routes_primitives
 test_home_create_uses_external_base_and_worktree_create
@@ -1736,6 +1932,8 @@ test_worktree_id_for_path_resolves_id
 test_busy_state_maps_working_done_blocked
 test_agent_state_classifies_liveness
 test_agent_state_unreadable_on_terminal_list_error
+test_agent_state_exited_to_shell_recovers_only_on_full_conjunction
+test_agent_state_exited_to_shell_requires_two_read_persistence
 test_seed_acquire_orca_home_creates_managed_worktree
 test_seed_remove_orca_home_releases_via_worktree_rm
 test_seed_refuses_orca_requested_home
@@ -1760,6 +1958,7 @@ test_scout_teardown_removes_orca_worktree_via_helper
 test_scout_teardown_refuses_orca_id_path_mismatch
 test_teardown_removes_orca_worktree_when_path_missing
 test_teardown_preserves_metadata_when_orca_remove_error_json
+test_teardown_treats_already_gone_orca_worktree_as_success
 test_scout_teardown_refuses_orca_missing_report_when_path_missing
 test_ship_teardown_refuses_orca_missing_worktree_path
 test_ship_teardown_removes_orca_worktree_when_id_path_matches

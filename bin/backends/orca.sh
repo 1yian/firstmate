@@ -124,6 +124,59 @@ fm_backend_orca_run_json() {
   printf '%s' "$out" | fm_backend_orca_json_ok
 }
 
+# fm_backend_orca_json_absent_or_ok: like fm_backend_orca_json_ok, but ALSO
+# treats a specific `ok:false` error code as success (exit 0), so an operation
+# whose goal is "the thing is gone" is idempotent when the thing is already
+# gone. Every OTHER `ok:false` still fails closed (exit 2), and invalid JSON
+# still fails (exit 2). The one absent-code carve-out is passed explicitly by
+# the caller so the widening is never implicit.
+#
+# The JSON body is authoritative over the process exit code, because Orca
+# returns exit 1 for a STRUCTURED `ok:false` too (verified live: `orca worktree
+# rm` on an already-gone worktree exits 1 with a well-formed
+# code=selector_not_found body). So a non-zero exit with no parseable body still
+# fails closed (FM_ORCA_CMD_RC), but a non-zero exit carrying the absent-code
+# body is idempotent success.
+fm_backend_orca_json_absent_or_ok() {  # <absent-code>  (reads FM_ORCA_CMD_RC)
+  FM_ORCA_ABSENT_CODE="$1" node -e '
+const fs = require("fs");
+const input = fs.readFileSync(0, "utf8").trim();
+const rc = parseInt(process.env.FM_ORCA_CMD_RC || "0", 10) || 0;
+if (!input) process.exit(rc === 0 ? 0 : 2);
+let data;
+try {
+  data = JSON.parse(input);
+} catch (err) {
+  console.error("invalid Orca JSON: " + err.message);
+  process.exit(2);
+}
+if (data.ok === false) {
+  const code = data.error && data.error.code;
+  if (code && code === process.env.FM_ORCA_ABSENT_CODE) process.exit(0);
+  const msg = data.error && (data.error.message || data.error.code);
+  if (msg) console.error(msg);
+  process.exit(2);
+}
+process.exit(0);
+'
+}
+
+# fm_backend_orca_run_json_ok_or_absent: run an Orca command whose success
+# condition is "gone", treating <absent-code> `ok:false` as idempotent success
+# while every other `ok:false` fails closed. The single audited implementation
+# shared by worktree removal (task teardown) and secondmate-home release.
+# Deliberately does NOT early-return on a non-zero process exit: Orca reports an
+# already-gone target as exit 1 with a structured body, so the body decides.
+fm_backend_orca_run_json_ok_or_absent() {  # <absent-code> <cmd...>
+  local absent=$1 out rc
+  shift
+  # errexit-safe capture: a bare `out=$(...)` would abort under `set -e` on the
+  # non-zero exit BEFORE rc is read, so the command runs inside an `if` and its
+  # code is captured explicitly. The JSON body then decides.
+  if out=$("$@"); then rc=0; else rc=$?; fi
+  printf '%s' "$out" | FM_ORCA_CMD_RC="$rc" fm_backend_orca_json_absent_or_ok "$absent"
+}
+
 fm_backend_orca_repo_ensure() {  # <project-path>
   local project=$1 out repo_id
   fm_backend_orca_tool_check || return 1
@@ -227,11 +280,20 @@ fm_backend_orca_send_literal() {  # <terminal-id> <text>
   fm_backend_orca_run_json orca terminal send --terminal "$terminal" --text "$text" --json
 }
 
+# `orca worktree rm` returns `ok:false code=selector_not_found` when the target
+# worktree is already gone. Teardown's goal is "the worktree is gone", which an
+# already-absent worktree has met, so that one code is idempotent success; every
+# other `ok:false` still fails closed. The identity guard runs BEFORE this call
+# (teardown verifies orca_worktree_id <-> path match), so selector_not_found here
+# means the verified-identity worktree is absent, not that Firstmate is guessing.
+FM_ORCA_WORKTREE_ABSENT_CODE=selector_not_found
+
 fm_backend_orca_remove_worktree() {  # <worktree-id>
   local worktree_id=${1:-}
   [ -n "$worktree_id" ] || { echo "error: missing Orca worktree id; cannot remove worktree" >&2; return 1; }
   fm_backend_orca_tool_check || return 1
-  fm_backend_orca_run_json orca worktree rm --worktree "id:$worktree_id" --force --json
+  fm_backend_orca_run_json_ok_or_absent "$FM_ORCA_WORKTREE_ABSENT_CODE" \
+    orca worktree rm --worktree "id:$worktree_id" --force --json
 }
 
 fm_backend_orca_worktree_path() {
@@ -330,7 +392,10 @@ fm_backend_orca_home_remove() {  # <home-path>
   local home=${1:-}
   [ -n "$home" ] || { echo "error: missing Orca home path; cannot remove home worktree" >&2; return 1; }
   fm_backend_orca_tool_check || return 1
-  fm_backend_orca_run_json orca worktree rm --worktree "path:$home" --force --json
+  # Same idempotent-removal contract as fm_backend_orca_remove_worktree: an
+  # already-gone home worktree is success, every other ok:false fails closed.
+  fm_backend_orca_run_json_ok_or_absent "$FM_ORCA_WORKTREE_ABSENT_CODE" \
+    orca worktree rm --worktree "path:$home" --force --json
 }
 
 # fm_backend_orca_worktree_id_for_path: resolve an Orca-managed worktree's id
@@ -407,17 +472,66 @@ fm_backend_orca_busy_state() {  # <terminal-handle>
   esac
 }
 
+# fm_backend_orca_agent_exited_to_shell: the positive "crashed/exited agent left
+# a bare login shell" detector. When an agent process dies (e.g. the Orca
+# renderer is killed mid-turn) its PTY falls back to the interactive login
+# shell, leaving the terminal connected:true, orphaned:false, no agentIdentity,
+# and no worktree-ps agent state - a shape the cheap snapshot conservatively
+# calls `ambiguous`. This probe adds the safety keystone the snapshot cannot
+# afford on every poll: a POSITIVE rendered-screen match that the terminal is
+# sitting at a bare shell prompt (fm_composer_screen_is_bare_shell, never the
+# generic `unknown`, which also covers unreadable captures and trust dialogs).
+#
+# All FIVE conditions must hold, and across TWO reads separated by a settle so a
+# momentary shell during agent startup/restart is never misread as a crash:
+#   1. snapshot liveness=ambiguous (connected:true, orphaned:false, no
+#      agentIdentity, worktree-ps agents empty), AND
+#   2. the rendered screen is positively a bare shell prompt.
+# Any other shape returns 1 (the caller then stays `ambiguous` - no recovery).
+# A positively-proven exited-to-shell is recovery-grade: the agent is
+# confidently gone, so fm_backend_orca_agent_state maps it to `dead` and the
+# existing recovery/relaunch and stale-wake paths handle it without any change,
+# while every non-shell connected-no-agent case still refuses recovery.
+FM_ORCA_EXITED_SHELL_SETTLE=${FM_ORCA_EXITED_SHELL_SETTLE:-2}
+
+fm_backend_orca_reads_bare_shell() {  # <terminal-handle> -> 0 on one positive read
+  local terminal=$1 screen
+  case "$(fm_backend_orca_agent_snapshot "$terminal")" in
+    *"liveness=ambiguous"*) : ;;
+    *) return 1 ;;
+  esac
+  screen=$(fm_backend_orca_composer_capture "$terminal") || return 1
+  fm_composer_screen_is_bare_shell "$(fm_backend_orca_composer_caps)" "$screen"
+}
+
+fm_backend_orca_agent_exited_to_shell() {  # <terminal-handle>
+  local terminal=$1
+  fm_backend_orca_reads_bare_shell "$terminal" || return 1
+  sleep "$FM_ORCA_EXITED_SHELL_SETTLE"
+  fm_backend_orca_reads_bare_shell "$terminal" || return 1
+  return 0
+}
+
 # fm_backend_orca_agent_state: recovery-grade endpoint classifier (see the
-# shared vocabulary in bin/fm-backend.sh). Only `dead` and `missing` license
-# recovery; a connected terminal with no attributable agent stays `ambiguous`.
+# shared vocabulary in bin/fm-backend.sh). `dead` and `missing` license
+# recovery. A connected terminal with no attributable agent is `ambiguous` and
+# never licenses recovery, EXCEPT the positively-proven exited-to-shell wedge
+# (fm_backend_orca_agent_exited_to_shell), which is a specific, safe form of
+# `dead`: a crashed/exited agent whose PTY fell back to a bare shell.
 fm_backend_orca_agent_state() {  # <terminal-handle>
   case "$(fm_backend_orca_agent_snapshot "$1")" in
-    *"liveness=missing"*) printf 'missing' ;;
-    *"liveness=dead"*) printf 'dead' ;;
-    *"liveness=alive"*) printf 'alive' ;;
-    *"liveness=unreadable"*) printf 'unreadable' ;;
-    *) printf 'ambiguous' ;;
+    *"liveness=missing"*) printf 'missing'; return 0 ;;
+    *"liveness=dead"*) printf 'dead'; return 0 ;;
+    *"liveness=alive"*) printf 'alive'; return 0 ;;
+    *"liveness=unreadable"*) printf 'unreadable'; return 0 ;;
   esac
+  # ambiguous: escalate to the positive exited-to-shell probe. A proven bare
+  # shell is recovery-grade `dead`; everything else stays `ambiguous`.
+  if fm_backend_orca_agent_exited_to_shell "$1"; then
+    printf 'dead'
+  else
+    printf 'ambiguous'
+  fi
 }
 
 # fm_backend_orca_capture: a bounded RENDERED-screen read of the live terminal.

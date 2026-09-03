@@ -72,7 +72,10 @@ To keep the home-isolation invariant (a secondmate home may not live inside the 
 `bin/fm-spawn.sh --secondmate` reuses that seeded home worktree: it resolves the home's worktree id from its path and creates the agent terminal inside it with `orca terminal create --worktree path:<home>`, never a second worktree.
 Teardown releases the home with `orca worktree rm --worktree path:<home>` under the same landed-work and in-flight-work guards as any other secondmate, after resolving that the home is an Orca-managed worktree.
 The secondmate's own crewmates run on its inherited backend and take ordinary Orca task worktrees of their project repos.
-Orca has a recovery-grade agent-state classifier (terminal `orphaned`/`connected`/`agentIdentity` plus `worktree ps` state), so a dead or missing Orca secondmate is auto-respawned at session start and `bin/fm-control.sh <id> exit|relaunch` is supported; a connected terminal with no attributable agent stays `ambiguous` and never licenses recovery.
+Orca has a recovery-grade agent-state classifier (terminal `orphaned`/`connected`/`agentIdentity` plus `worktree ps` state), so a dead or missing Orca secondmate is auto-respawned at session start and `bin/fm-control.sh <id> exit|relaunch` is supported.
+A connected terminal with no attributable agent stays `ambiguous` and never licenses recovery, with one positively-proven exception: a crashed or exited agent whose PTY has fallen back to a bare login shell (the exited-to-shell wedge).
+That exception is recognized only when all of connected, not orphaned, no `agentIdentity`, empty `worktree ps` agent state, and a positive bare-shell-prompt match on the rendered screen hold across two reads a settle apart; it then classifies as recovery-grade `dead` so the existing recovery/relaunch path can clear and relaunch it instead of wedging, while every other connected-no-agent case still stays `ambiguous`.
+The bare-shell match is a positive rendered-screen signal (`fm_composer_screen_is_bare_shell` in `bin/fm-composer-lib.sh`), never the generic `unknown` verdict, so an unreadable capture or a trust dialog never licenses recovery.
 
 ## Active limits
 
