@@ -1444,7 +1444,9 @@ ${context.command}
     if (!actingAsOwner(branchGeneration)) {
       try {
         created.session.dispose();
-      } catch {}
+      } catch (disposeError) {
+        void disposeError;
+      }
       throw new Error(
         "supervision session was replaced or lost lock ownership",
       );
@@ -1478,13 +1480,17 @@ ${context.command}
         if (buildRevision !== branchSelectionRevision) {
           try {
             created.session.dispose();
-          } catch {}
+          } catch (disposeError) {
+            void disposeError;
+          }
           continue;
         }
         if (!actingAsOwner(expectedGeneration)) {
           try {
             created.session.dispose();
-          } catch {}
+          } catch (disposeError) {
+            void disposeError;
+          }
           throw new Error(
             "supervision session was replaced or lost lock ownership",
           );
@@ -1769,6 +1775,16 @@ ${context.command}
   pi.on?.("agent_end", () => {
     mainStreaming = false;
   });
+  pi.registerMarkdownTransformer?.((markdown, { messageType, isStreaming }) => {
+    if (
+      messageType === "assistant" &&
+      isStreaming &&
+      processingAttempt?.dedicated &&
+      !processingAttempt.committed
+    )
+      return "";
+    return markdown;
+  });
   pi.on?.("message_start", (event) => {
     const message = event.message;
     if (message.role === "user") {
@@ -1800,9 +1816,8 @@ ${context.command}
         : { through, dedicated: !captainInputSinceAssistant, committed: false };
   });
   // Pi applies this replacement before SessionManager persistence and before
-  // interactive listeners receive the finalized message. Streaming tokens may
-  // have rendered transiently, but an uncommitted dedicated attempt leaves no
-  // stable or restored captain-facing text behind.
+  // interactive listeners receive the finalized message. The Markdown
+  // transformer hides the same provisional text while it is streaming.
   pi.on?.("message_end", (event) => {
     if (event.message.role !== "assistant") return;
     captainInputSinceAssistant = false;

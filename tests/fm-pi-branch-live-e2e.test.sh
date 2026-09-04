@@ -993,13 +993,11 @@ if [ "$status" -ne 0 ] || [ "$out" != "STREAM_OK" ]; then
 fi
 pass "real Pi SDK $PI_VERSION queues a streaming-time watcher wake without before_agent_start, keeps the successor chain, and surfaces consumption of both follow-ups"
 
-# Seventh probe: the vendor message-lifecycle contract dedicated processing
-# containment rests on. A real AgentSession streams a repeated prior answer
-# into stock inline and fullscreen InteractiveMode transcripts. A message_end
-# replacement removes that text before listeners finalize the row and before
-# SessionManager persistence. The streamed token is observable transiently;
-# this guard pins the honest boundary that the stable and restored transcript,
-# not in-flight terminal bytes, is quarantined.
+# Seventh probe: the vendor rendering and message-lifecycle contracts dedicated
+# processing containment rests on. A real AgentSession streams a repeated prior
+# answer through stock inline and fullscreen InteractiveMode transcripts. The
+# Markdown transformer suppresses it during streaming, then a message_end
+# replacement removes it before listeners finalize the row and persistence.
 containagentdir="$TMP_ROOT/contain-agent-dir"
 containsessions="$TMP_ROOT/contain-sessions"
 mkdir -p "$containagentdir" "$containsessions"
@@ -1041,6 +1039,7 @@ mkdirSync(agentDir, { recursive: true });
 mkdirSync(sessions, { recursive: true });
 
 const repeated = "The retry safe-stopped; diagnosis is underway.";
+let sawRepeatedUpdate = false;
 let releaseStream = () => {};
 const streamHeld = new Promise((release) => { releaseStream = release; });
 const chunk = (delta, finish) => `data: ${JSON.stringify({
@@ -1080,6 +1079,16 @@ const loader = new DefaultResourceLoader({
       let dedicated = false;
       pi.on("message_start", (event) => {
         if (event.message.role === "custom" && event.message.customType === "fm-branch-process") dedicated = true;
+      });
+      pi.on("message_update", (event) => {
+        if (
+          event.message.role === "assistant" &&
+          event.message.content.some((part) => part.type === "text" && part.text.includes(repeated))
+        ) sawRepeatedUpdate = true;
+      });
+      pi.registerMarkdownTransformer((markdown, { messageType, isStreaming }) => {
+        if (dedicated && messageType === "assistant" && isStreaming) return "";
+        return markdown;
       });
       pi.on("message_end", (event) => {
         if (!dedicated || event.message.role !== "assistant") return;
@@ -1150,10 +1159,10 @@ const run = session.sendCustomMessage({
   content: "Process the durable outcome.",
   display: false,
 }, { triggerTurn: true, deliverAs: "followUp" });
-await waitFor(
-  () => session.isStreaming && countRendered(inline) === inlineBaseline + 1 && countRendered(fullscreen) === fullscreenBaseline + 1,
-  "the repeated answer to render transiently",
-);
+await waitFor(() => session.isStreaming && sawRepeatedUpdate, "the repeated answer to stream");
+if (countRendered(inline) !== inlineBaseline || countRendered(fullscreen) !== fullscreenBaseline) {
+  throw new Error(`streaming transcript exposed repeated output: inline=${countRendered(inline)} fullscreen=${countRendered(fullscreen)}`);
+}
 releaseStream();
 await run;
 await waitFor(() => !session.isStreaming, "the containment turn to settle");
@@ -1175,4 +1184,4 @@ out=$(cat "$TMP_ROOT/contain-output")
 if [ "$status" -ne 0 ] || [ "$out" != "CONTAINMENT_OK" ]; then
   fail "real-SDK message containment guard failed against pi-coding-agent $PI_VERSION: $out"
 fi
-pass "real Pi SDK $PI_VERSION removes finalized dedicated text from inline/fullscreen transcripts and restored history after a transient streamed render"
+pass "real Pi SDK $PI_VERSION suppresses streaming dedicated text and removes it from finalized and restored transcripts"

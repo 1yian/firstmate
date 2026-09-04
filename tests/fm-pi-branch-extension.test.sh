@@ -509,6 +509,7 @@ const mainUserMessages = [];
 const mainTools = [];
 const renderers = new Map();
 const entryRenderers = new Map();
+const markdownTransformers = [];
 const mainEntries = [];
 const mainSessionManager = {
   getSessionFile: () => `${home}/main.jsonl`,
@@ -532,6 +533,9 @@ const pi = {
   },
   registerEntryRenderer(customType, renderer) {
     entryRenderers.set(customType, renderer);
+  },
+  registerMarkdownTransformer(transformer) {
+    markdownTransformers.push(transformer);
   },
   appendEntry(customType, data) {
     activeMainSession.getEntries().push({ type: "custom", customType, data });
@@ -1195,8 +1199,8 @@ test_captain_outcome_processing_turn_is_sequence_keyed_and_re_presented() {
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
     DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
-await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, sentToMain, mainEntries, mainTools, outcomeScript, defaultSessionCtx, home, piHandlers }; })()`);
-const { fire, dispatch, settle, sentToMain, mainEntries, mainTools, outcomeScript, defaultSessionCtx, home, piHandlers } = globalThis.__t;
+await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, sentToMain, mainEntries, mainTools, outcomeScript, defaultSessionCtx, home, piHandlers, markdownTransformers }; })()`);
+const { fire, dispatch, settle, sentToMain, mainEntries, mainTools, outcomeScript, defaultSessionCtx, home, piHandlers, markdownTransformers } = globalThis.__t;
 import { readFileSync, writeFileSync } from "node:fs";
 
 const requests = () => sentToMain.filter((sent) => sent.message.customType === "fm-branch-process");
@@ -1240,6 +1244,11 @@ const assistant = (content, stopReason = "stop") => ({
   timestamp: Date.now(),
 });
 const textOf = (message) => message.content.filter((part) => part.type === "text").map((part) => part.text).join("\n");
+const renderMarkdown = (markdown, messageType = "assistant", isStreaming = true) =>
+  markdownTransformers.reduce(
+    (current, transform) => transform(current, { messageType, isStreaming, availableWidth: 120 }),
+    markdown,
+  );
 
 // A home upgraded with outcomes that were delivered before the processed
 // marker existed treats them as processed once, at the first reconciliation:
@@ -1289,6 +1298,12 @@ if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error
 // provisional. Its ordinary text is removed at message_end, while thinking,
 // tool calls, usage, and the durable open sequence survive for one retry.
 startProcessingRun(request);
+if (renderMarkdown("The earlier captain answer.", "assistant", false) !== "The earlier captain answer.") {
+  throw new Error("dedicated containment hid finalized transcript history");
+}
+if (renderMarkdown("The retry safe-stopped; diagnosis is underway.") !== "") {
+  throw new Error("an unacknowledged dedicated answer rendered while streaming");
+}
 const failed = finishProcessingRun(assistant([
   { type: "thinking", thinking: "I should process the update." },
   { type: "text", text: "The retry safe-stopped; diagnosis is underway." },
@@ -1360,6 +1375,9 @@ const acceptedPrelude = finalizeMessage(assistant([
 if (textOf(acceptedPrelude) !== "") throw new Error("text beside the accepted tool call committed before execution");
 const ack = await processed.execute("ack", { through: seq }, undefined, undefined, {});
 if (ack.isError) throw new Error(`acknowledgement failed: ${JSON.stringify(ack)}`);
+if (renderMarkdown("Captain, the update is processed.") !== "Captain, the update is processed.") {
+  throw new Error("accepted acknowledgement left committed streaming text hidden");
+}
 const committed = finishProcessingRun(assistant([{ type: "text", text: "Captain, the update is processed." }]));
 if (textOf(committed) !== "Captain, the update is processed.") throw new Error("post-acknowledgement text was suppressed");
 if (unprocessedSeqs().length !== 0) throw new Error("the acknowledgement did not close the sequence");
