@@ -343,6 +343,15 @@ wait_for_file() {
   return 1
 }
 
+wait_for_terminal_source_retirement() {
+  local home=$1 id=$2 output=$3 attempt
+  for attempt in 1 2 3; do
+    [ ! -e "$home/state/procevent/$id.source" ] && return 0
+    FM_HOME="$home" "$PROCEVENT" start "$id" >"$output.$attempt"
+  done
+  [ ! -e "$home/state/procevent/$id.source" ]
+}
+
 wake_payloads() {
   awk -F '\t' '{print $5}' "$1/state/.wake-queue" 2>/dev/null
 }
@@ -1075,12 +1084,8 @@ SH
   classification=$(FM_ROOT_OVERRIDE="$COLLISION_ROOT" FM_HOME="$H_FLOW" "$PROCEVENT" classify "$result")
   assert_contains "$classification" "external-ready" "captured evidence could not be classified through its immutable owner"
   assert_not_contains "$classification" "wrong-built-in-owner" "a later same-name built-in reinterpreted extension evidence"
-  if [ -f "$H_FLOW/state/procevent/flow-source.source" ]; then
-    # A transient handshake timeout deliberately leaves terminal knowledge
-    # unknown and the registration armed, so exercise the public retry path.
-    FM_HOME="$H_FLOW" "$PROCEVENT" start flow-source >"$TMP_ROOT/flow-retry.out"
-  fi
-  assert_absent "$H_FLOW/state/procevent/flow-source.source" "terminal external source stayed registered after retry"
+  wait_for_terminal_source_retirement "$H_FLOW" flow-source "$TMP_ROOT/flow-retry.out" ||
+    fail "terminal external source stayed registered after bounded retries"
   FM_HOME="$H_FLOW" "$PROCEVENT" retire flow-source --if-owner "$owner_one" >/dev/null
   pass "one external adapter registers, invokes, captures unhandled evidence, classifies, and terminally retires end to end"
   FM_HOME="$H_FLOW" "$PROCEVENT" register-extension ext-flow crash-silent-source --config-ref crash-silent >/dev/null
@@ -2195,13 +2200,8 @@ if section_enabled example; then
   example_result=$(first_result "$H_EXAMPLE" example-file) || fail "example captured no file result"
   assert_grep 'build 42 completed successfully' "$example_result" "example did not preserve external evidence"
   assert_contains "$(FM_HOME="$H_EXAMPLE" "$PROCEVENT" classify "$example_result")" "file-signal" "example result did not classify through the package"
-  if [ -f "$H_EXAMPLE/state/procevent/example-file.source" ]; then
-    # A transient handshake timeout deliberately leaves terminal knowledge
-    # unknown and the registration armed. Exercise the public retry path rather
-    # than assuming a heavily loaded test host completes both handshakes at once.
-    FM_HOME="$H_EXAMPLE" "$PROCEVENT" start example-file >"$TMP_ROOT/example-retry.out"
-  fi
-  assert_absent "$H_EXAMPLE/state/procevent/example-file.source" "example terminal result did not retire its source after retry"
+  wait_for_terminal_source_retirement "$H_EXAMPLE" example-file "$TMP_ROOT/example-retry.out" ||
+    fail "example terminal result did not retire its source after bounded retries"
   FM_HOME="$H_EXAMPLE" "$PROCEVENT" retire example-file --if-owner "$example_token" >/dev/null
   pass "the shipped file-signal package is a runnable end-to-end external adapter"
 
