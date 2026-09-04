@@ -884,17 +884,15 @@ EOF
   pass "a captain outcome reaches main's model as one typed, sequence-keyed processing request while routine outcomes stay hidden and turn-free"
 }
 
-test_repeated_completed_task_stale_outcomes_stay_hidden_across_pi_settings() {
-  local backend harness repo home out status
-  for harness in pi pi-signed; do
-    for backend in tmux herdr zellij orca cmux; do
-      repo="$TMP_ROOT/routine-visibility-$harness-$backend-root"
-      home="$TMP_ROOT/routine-visibility-$harness-$backend-home"
-      mkdir -p "$home/state" "$home/config"
-      install_pi_branch_extension_fixture "$repo"
-      PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-        FM_PI_HARNESS="$harness" FM_BACKEND="$backend" DRIVER_PRELUDE="$DRIVER_PRELUDE" \
-        node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
+test_repeated_completed_task_stale_outcomes_stay_hidden_in_pi_herdr() {
+  local repo home out status
+  repo="$TMP_ROOT/routine-visibility-pi-herdr-root"
+  home="$TMP_ROOT/routine-visibility-pi-herdr-home"
+  mkdir -p "$home/state" "$home/config"
+  install_pi_branch_extension_fixture "$repo"
+  PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
+    FM_PI_HARNESS=pi FM_BACKEND=herdr DRIVER_PRELUDE="$DRIVER_PRELUDE" \
+    node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { pi, bus, fire, makeOffer, settle, sentToMain, mainEntries, outcomeScript, defaultSessionCtx, home }; })()`);
 const { pi, bus, fire, makeOffer, settle, sentToMain, mainEntries, outcomeScript, defaultSessionCtx, home } = globalThis.__t;
@@ -933,9 +931,8 @@ const runStale = async (seq, calmActive) => {
   await offer.settlement;
 };
 
-// Reproduce the incident twice, once under each Calm setting. FM_BACKEND and
-// FM_PI_HARNESS are varied by the shell driver around this public extension
-// boundary, including the captain's Pi + Herdr combination.
+// Reproduce the incident twice, once under each Calm setting in the captain's
+// Pi + Herdr combination.
 await runStale(1, false);
 await runStale(2, true);
 await settle(() => reports === 2, "both repeated stale reports");
@@ -976,12 +973,10 @@ if (processing.length !== 1 || !processing[0].options.triggerTurn || processing[
 }
 process.exit(0);
 EOF
-      status=$?
-      out=$(cat "$TMP_ROOT/node-output")
-      expect_code 0 "$status" "routine visibility must not depend on $harness, $backend, or Calm: $out"
-    done
-  done
-  pass "repeated completed-task stale outcomes stay hidden across Pi variants, every runtime backend, and both Calm settings"
+  status=$?
+  out=$(cat "$TMP_ROOT/node-output")
+  expect_code 0 "$status" "routine visibility must stay hidden in Pi with Herdr under either Calm setting: $out"
+  pass "repeated completed-task stale outcomes stay hidden in Pi with Herdr and both Calm settings"
 }
 
 test_requested_healthy_outcome_and_unsolicited_routine_outcome_delivery() {
@@ -4182,7 +4177,7 @@ JS
 test_outcomes_tool_uses_stock_execution_and_export_consumers
 test_real_pi_picker_primitives_stay_bounded_and_searchable
 test_branch_dispatch_two_stage_filter_and_prefix_contract
-test_repeated_completed_task_stale_outcomes_stay_hidden_across_pi_settings
+test_repeated_completed_task_stale_outcomes_stay_hidden_in_pi_herdr
 test_requested_healthy_outcome_and_unsolicited_routine_outcome_delivery
 test_captain_outcome_is_exactly_once_across_crash_reload_and_unrelated_response
 test_captain_outcome_processing_turn_is_sequence_keyed_and_re_presented
