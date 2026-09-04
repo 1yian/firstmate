@@ -715,10 +715,10 @@ if (typeof sentToMain[0].message.content !== "string" || !sentToMain[0].message.
 if (/branch merged|\[routine\]|\[captain\]/.test(sentToMain[0].message.content)) {
   throw new Error(`routine note still has boilerplate: ${sentToMain[0].message.content}`);
 }
-// A routine note is rendered as a custom message. A captain outcome is a
+// A routine outcome is a hidden custom message. A captain outcome is a
 // versioned custom session entry whose exact store summary is its payload.
-if (sentToMain[0].message.display !== true) {
-  throw new Error(`routine note must render: display=${sentToMain[0].message.display}`);
+if (sentToMain[0].message.display !== false) {
+  throw new Error(`routine outcome must stay hidden: display=${sentToMain[0].message.display}`);
 }
 writeFileSync(`${home}/state/delivered-routine-note`, sentToMain[0].message.content);
 const captainEntries = mainEntries.filter((entry) => entry.customType === "fm-branch-visible-outcome");
@@ -879,9 +879,109 @@ EOF
   *) fail "the processing request body lost the event-ownership boundary or the sequence-bound acknowledgement duty: $body" ;;
   esac
   if ./bin/fm-operational-input.sh kind <"$home/state/delivered-routine-note" >/dev/null 2>&1; then
-    fail "routine note must stay plain rendered text, not typed operational input"
+    fail "routine outcome must stay plain hidden text, not typed operational input"
   fi
-  pass "a captain outcome reaches main's model as one typed, sequence-keyed processing request while routine notes stay plain"
+  pass "a captain outcome reaches main's model as one typed, sequence-keyed processing request while routine outcomes stay hidden and turn-free"
+}
+
+test_repeated_completed_task_stale_outcomes_stay_hidden_across_pi_settings() {
+  local backend harness repo home out status
+  for harness in pi pi-signed; do
+    for backend in tmux herdr zellij orca cmux; do
+      repo="$TMP_ROOT/routine-visibility-$harness-$backend-root"
+      home="$TMP_ROOT/routine-visibility-$harness-$backend-home"
+      mkdir -p "$home/state" "$home/config"
+      install_pi_branch_extension_fixture "$repo"
+      PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
+        FM_PI_HARNESS="$harness" FM_BACKEND="$backend" DRIVER_PRELUDE="$DRIVER_PRELUDE" \
+        node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
+const prelude = process.env.DRIVER_PRELUDE;
+await eval(`(async () => { ${prelude}; globalThis.__t = { pi, bus, fire, makeOffer, settle, sentToMain, mainEntries, outcomeScript, defaultSessionCtx, home }; })()`);
+const { pi, bus, fire, makeOffer, settle, sentToMain, mainEntries, outcomeScript, defaultSessionCtx, home } = globalThis.__t;
+import { writeFileSync } from "node:fs";
+
+fire("session_start", {}, defaultSessionCtx);
+let reports = 0;
+let reportTool;
+globalThis.__fmOnBranchPrompt = async ({ session }) => {
+  reportTool = session.options.customTools.find((tool) => tool.name === "fm_branch_report");
+  reports += 1;
+  const result = await reportTool.execute(
+    `routine-stale-${reports}`,
+    {
+      task: "branch-driver",
+      verdict: "routine",
+      summary: "The stopped-response pane maps to an already-complete task; no action is required.",
+      wake: "stale: fm-branch-driver",
+    },
+    undefined,
+    undefined,
+    {},
+  );
+  if (result.isError) throw new Error(`routine report failed: ${JSON.stringify(result)}`);
+};
+
+const runStale = async (seq, calmActive) => {
+  pi.events.emit("firstmate:calm-presentation", { active: calmActive, stockExportRendering: false });
+  writeFileSync(
+    `${home}/state/.wake-queue`,
+    `1\t${seq}\tstale\tfm-branch-driver\tstale: fm-branch-driver stopped responding\n`,
+  );
+  const offer = makeOffer("stale: fm-branch-driver stopped responding");
+  bus.emit("fm-branch-supervision:dispatch", offer);
+  if (!offer.accepted) throw new Error("the stale wake was not accepted");
+  await offer.settlement;
+};
+
+// Reproduce the incident twice, once under each Calm setting. FM_BACKEND and
+// FM_PI_HARNESS are varied by the shell driver around this public extension
+// boundary, including the captain's Pi + Herdr combination.
+await runStale(1, false);
+await runStale(2, true);
+await settle(() => reports === 2, "both repeated stale reports");
+const routines = sentToMain.filter((sent) => sent.message.customType === "fm-branch-merge");
+if (routines.length !== 2) throw new Error(`expected two durable routine deliveries: ${JSON.stringify(sentToMain)}`);
+if (routines.some((sent) => sent.message.display !== false)) {
+  throw new Error(`a repeated routine outcome became captain-visible: ${JSON.stringify(routines)}`);
+}
+if (routines.some((sent) => sent.options.triggerTurn)) {
+  throw new Error(`a repeated routine outcome opened a main turn: ${JSON.stringify(routines)}`);
+}
+const routineRows = outcomeScript(["list", "--recent", "10"])
+  .split("\n")
+  .filter(Boolean)
+  .map((line) => JSON.parse(line))
+  .filter((row) => row.verdict === "routine");
+if (routineRows.length !== 2 || routineRows.some((row) => row.silent !== false)) {
+  throw new Error(`routine durability depended on silent metadata: ${JSON.stringify(routineRows)}`);
+}
+
+// The same boundary must still persist one visible captain outcome and open
+// its one sequence-keyed processing request.
+const captain = await reportTool.execute(
+  "captain-result",
+  { task: "branch-driver", verdict: "captain", summary: "The requested diagnosis is complete." },
+  undefined,
+  undefined,
+  {},
+);
+if (captain.isError) throw new Error(`captain report failed: ${JSON.stringify(captain)}`);
+const visible = mainEntries.filter((entry) => entry.customType === "fm-branch-visible-outcome");
+if (visible.length !== 1 || visible[0].data.summary !== "The requested diagnosis is complete.") {
+  throw new Error(`captain visibility changed: ${JSON.stringify(visible)}`);
+}
+const processing = sentToMain.filter((sent) => sent.message.customType === "fm-branch-process");
+if (processing.length !== 1 || !processing[0].options.triggerTurn || processing[0].message.display !== false) {
+  throw new Error(`captain processing changed: ${JSON.stringify(processing)}`);
+}
+process.exit(0);
+EOF
+      status=$?
+      out=$(cat "$TMP_ROOT/node-output")
+      expect_code 0 "$status" "routine visibility must not depend on $harness, $backend, or Calm: $out"
+    done
+  done
+  pass "repeated completed-task stale outcomes stay hidden across Pi variants, every runtime backend, and both Calm settings"
 }
 
 test_requested_healthy_outcome_and_unsolicited_routine_outcome_delivery() {
@@ -1008,17 +1108,17 @@ await settle(() => fleetOperations.length === 2, "unsolicited result acknowledge
 if (sentToMain.length !== 1 || sentToMain[0].options.triggerTurn) {
   throw new Error(`unsolicited healthy result opened a main turn: ${JSON.stringify(sentToMain)}`);
 }
-const sailboat = sentToMain[0];
-if (sailboat.message.display !== true || !sailboat.message.content.startsWith("⛵ branch-driver:")) {
-  throw new Error(`unsolicited healthy result was not a rendered sailboat note: ${JSON.stringify(sailboat)}`);
+const hiddenRoutine = sentToMain[0];
+if (hiddenRoutine.message.display !== false || !hiddenRoutine.message.content.startsWith("⛵ branch-driver:")) {
+  throw new Error(`unsolicited healthy result was not retained as a hidden routine outcome: ${JSON.stringify(hiddenRoutine)}`);
 }
 
 const outcomes = mainTools.find((tool) => tool.name === "fm_branch_outcomes");
 if (!outcomes) throw new Error("main did not receive its outcome-reading permission surface");
-const visibleToMain = await outcomes.execute("main-reads-sailboat", { recent: 1 }, undefined, undefined, {});
+const visibleToMain = await outcomes.execute("main-reads-routine", { recent: 1 }, undefined, undefined, {});
 const mainOutcomeText = visibleToMain.content.map((item) => item.text ?? "").join("\n");
 if (visibleToMain.isError || !mainOutcomeText.includes("healthy resource report: CPU 12%, memory 41%")) {
-  throw new Error(`main could not use the sailboat content through its existing permission path: ${JSON.stringify(visibleToMain)}`);
+  throw new Error(`main could not read the hidden routine content through its existing permission path: ${JSON.stringify(visibleToMain)}`);
 }
 if (fleetOperations.length !== 2) throw new Error("main's outcome read reprocessed the fleet event");
 
@@ -1582,9 +1682,9 @@ await heartbeatReport.execute(
   {},
 );
 const fleetRoutineMerge = sentToMain[sentToMain.length - 1];
-if (fleetRoutineMerge.message.display !== true) throw new Error("a fleet routine action must render");
+if (fleetRoutineMerge.message.display !== false) throw new Error("a fleet routine action must stay hidden");
 if (!fleetRoutineMerge.message.content.startsWith("⛵ fleet: reconciled the backlog after completed work")) {
-  throw new Error(`fleet routine action note changed: ${fleetRoutineMerge.message.content}`);
+  throw new Error(`fleet routine action record changed: ${fleetRoutineMerge.message.content}`);
 }
 await heartbeatReport.execute(
   "task-routine",
@@ -1594,9 +1694,9 @@ await heartbeatReport.execute(
   {},
 );
 const taskRoutineMerge = sentToMain[sentToMain.length - 1];
-if (taskRoutineMerge.message.display !== true) throw new Error("a task-scoped routine outcome must render");
+if (taskRoutineMerge.message.display !== false) throw new Error("a task-scoped routine outcome must stay hidden");
 if (!taskRoutineMerge.message.content.startsWith("⛵ task-9: worker healthy, no action needed")) {
-  throw new Error(`task-scoped routine note changed: ${taskRoutineMerge.message.content}`);
+  throw new Error(`task-scoped routine record changed: ${taskRoutineMerge.message.content}`);
 }
 await heartbeatReport.execute(
   "heartbeat-finding",
@@ -4082,6 +4182,7 @@ JS
 test_outcomes_tool_uses_stock_execution_and_export_consumers
 test_real_pi_picker_primitives_stay_bounded_and_searchable
 test_branch_dispatch_two_stage_filter_and_prefix_contract
+test_repeated_completed_task_stale_outcomes_stay_hidden_across_pi_settings
 test_requested_healthy_outcome_and_unsolicited_routine_outcome_delivery
 test_captain_outcome_is_exactly_once_across_crash_reload_and_unrelated_response
 test_captain_outcome_processing_turn_is_sequence_keyed_and_re_presented

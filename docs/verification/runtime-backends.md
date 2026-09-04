@@ -1432,3 +1432,45 @@ It is not evidence for the current Markdown transformer's streaming suppression;
 
 The full live script could not reach this probe in that environment because its unchanged first watcher-fallback probe timed out before main delivery.
 A clean archive of the then-current default branch failed identically at that same first probe, so this is not evidence of a containment regression; the pre-existing probe remains unchanged, and its prior successful version-scoped records above remain the current evidence for that separate boundary.
+
+### 2026-09-04 deterministic routine-outcome visibility
+
+The focused extension suite and credential-free real-SDK visibility probe were run on macOS arm64 with Node v26.8.1 and npm `@earendil-works/pi-coding-agent` 0.85.0.
+The npm package needed the published `@earendil-works/pi-server` companion installed beside it before its root export could load; the probe selected only `routine-visibility`, read no credential, selected no model, and made no provider call.
+
+```sh
+bin/fm-test-run.sh tests/fm-pi-branch-extension.test.sh
+live_dir=$(mktemp -d "${TMPDIR:-/tmp}/fm-pi-0.85.0.XXXXXX")
+npm install --prefix "$live_dir" --ignore-scripts --no-audit --no-fund \
+  @earendil-works/pi-coding-agent@0.85.0 @earendil-works/pi-server@0.85.0
+FM_PI_PACKAGE_DIR="$live_dir/node_modules/@earendil-works/pi-coding-agent" \
+  npm exec --yes --package=typescript@5.9.3 -- bash tests/fm-pi-primary-types.test.sh
+FM_PI_BRANCH_LIVE_E2E=1 \
+  FM_PI_BRANCH_LIVE_PROBE=routine-visibility \
+  FM_PI_PACKAGE_DIR="$live_dir/node_modules/@earendil-works/pi-coding-agent" \
+  bin/fm-test-run.sh tests/fm-pi-branch-live-e2e.test.sh
+rm -rf "$live_dir"
+```
+
+```text
+ok - repeated completed-task stale outcomes stay hidden across Pi variants, every runtime backend, and both Calm settings
+ok - requested and unsolicited healthy outcomes keep distinct delivery and event ownership
+ok - captain outcomes are exact and exactly once across crash, reload, busy main, compaction, and an unrelated assistant response
+ok - dedicated processing text commits only after exact acknowledgement, mixed captain answers survive, and retries stay bounded by the oldest open sequence
+ok - tracked Pi extensions pass strict no-emit typecheck against Pi 0.85.0
+ok - real Pi SDK 0.85.0 renders one captain entry while a persisted routine outcome stays hidden in the active transcript
+```
+
+The portable regression drives two repeated stopped-response outcomes for an already-complete task through the extension's dispatch and `fm_branch_report` boundaries.
+Both routine reports omit `silent`, remain durable, open no main turn, and carry `display=false` under Calm off and on, while the control captain report still creates exactly one visible entry and one sequence-keyed processing request.
+The real probe loads the tracked extension through Pi's real resource loader, subscribes stock `InteractiveMode`, sends the routine result through the real extension API, and confirms the persisted `custom_message` is absent from the active transcript while the captain control entry renders exactly once.
+
+The harness review found this change applicable only to the `pi` and `pi-signed` primary variants, which share the same tracked Pi extension and are both exercised by the portable counterfactual.
+Claude, Codex, OpenCode, Grok, Kimi, and Cursor do not load `.pi/extensions/fm-branch-supervision.ts`, so their ordinary main-conversation delivery paths are unchanged.
+Muse and Gemini remain crewmate-only and cannot host this primary extension.
+
+The runtime-backend counterfactual runs the same repeated stale-result boundary under `tmux`, `herdr`, `zellij`, `orca`, and `cmux` for both Pi variants.
+All ten combinations produced identical hidden routine deliveries and the same visible captain control.
+No Herdr lifecycle operation was needed or run: the backend can originate a stale event, but verdict-driven visibility is enforced later by the in-process Pi extension and reads no backend-specific rendering state.
+
+The full all-probe script still timed out in its older first watcher-fallback probe on Pi 0.85.0 before reaching visibility, so this run refreshes only the new `routine-visibility` scope and does not supersede the version-scoped evidence for unrelated watcher fallback, model, effort, or processing-containment guarantees above.

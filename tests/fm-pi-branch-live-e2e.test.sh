@@ -44,6 +44,11 @@ if [ ! -f "$PI_PACKAGE_DIR/package.json" ]; then
   fail "Pi package absent: the live branch guard needs @earendil-works/pi-coding-agent installed (FM_PI_PACKAGE_DIR to override)"
 fi
 PI_VERSION=$(jq -r '.version' "$PI_PACKAGE_DIR/package.json" 2>/dev/null || printf 'unknown')
+LIVE_PROBE=${FM_PI_BRANCH_LIVE_PROBE:-all}
+case "$LIVE_PROBE" in
+all | routine-visibility) ;;
+*) fail "unknown FM_PI_BRANCH_LIVE_PROBE: $LIVE_PROBE" ;;
+esac
 
 TMP_ROOT=$(fm_test_tmproot fm-pi-branch-live)
 repo="$TMP_ROOT/repo"
@@ -84,6 +89,7 @@ ln -s "$PI_PACKAGE_DIR/node_modules/@earendil-works/pi-tui" "$repo/node_modules/
 ln -s "$PI_PACKAGE_DIR/node_modules/@earendil-works/pi-ai" "$repo/node_modules/@earendil-works/pi-ai"
 ln -s "$PI_PACKAGE_DIR/node_modules/typebox" "$repo/node_modules/typebox"
 
+if [ "$LIVE_PROBE" = all ]; then
 # Stock macOS Bash 3.2 cannot reliably parse JavaScript template literals in a
 # heredoc nested inside command substitution, so capture through a file.
 BRANCH_PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" \
@@ -685,11 +691,13 @@ if [ "$status" -ne 0 ] || [ "$out" != "EFFORT_OK" ]; then
   fail "real-SDK effort-pin guard failed against pi-coding-agent $PI_VERSION: $out"
 fi
 pass "real Pi SDK $PI_VERSION reports its own supported effort levels and applies an explicit branch effort over a reopened session's recorded level"
+fi
 
-# Fifth probe: the real SDK contract deterministic captain delivery rests on.
-# ExtensionAPI.appendEntry must synchronously insert the registered custom entry
-# into an active InteractiveMode transcript, persist it across SessionManager
-# reopen, and keep it out of model context. No model is selected or prompted.
+# Fifth probe: the real SDK contract deterministic outcome visibility rests on.
+# ExtensionAPI.appendEntry must synchronously insert a captain entry, while a
+# display:false routine custom message remains absent from the active
+# InteractiveMode transcript. Both persist across SessionManager reopen, and
+# the captain entry stays out of model context. No model is selected or prompted.
 PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" DELIVERY_DIR="$TMP_ROOT/delivery-sessions" \
   DELIVERY_AGENT_DIR="$TMP_ROOT/delivery-agent-dir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
   node --input-type=module >"$TMP_ROOT/delivery-output" 2>&1 <<'EOF'
@@ -761,6 +769,13 @@ const record = {
   silent: false,
 };
 capturedApi.appendEntry("fm-branch-visible-outcome", record);
+const routineSummary = "The stopped-response pane maps to an already-complete task; no action is required.";
+capturedApi.sendMessage({
+  customType: "fm-branch-merge",
+  content: `⛵ completed-task: ${routineSummary}`,
+  display: false,
+});
+await new Promise((resolve) => setImmediate(resolve));
 
 const rendered = interactive.chatContainer.render(240).join("\n");
 if (!rendered.includes("⚓") || !rendered.includes(`[seq ${record.seq}]`) || !rendered.includes(record.task) || !rendered.includes(record.summary)) {
@@ -769,12 +784,21 @@ if (!rendered.includes("⚓") || !rendered.includes(`[seq ${record.seq}]`) || !r
 if (rendered.split(record.summary).length !== 2) {
   throw new Error(`active Pi transcript rendered the outcome more than once: ${rendered}`);
 }
+if (rendered.includes(routineSummary) || rendered.includes("⛵ completed-task")) {
+  throw new Error(`active Pi transcript rendered a hidden routine outcome: ${rendered}`);
+}
 
 const reopened = SessionManager.open(manager.getSessionFile(), sessions);
 const entries = reopened.getEntries();
 const entry = entries.find((candidate) => candidate.type === "custom" && candidate.customType === "fm-branch-visible-outcome");
 if (!entry || JSON.stringify(entry.data) !== JSON.stringify(record)) {
   throw new Error(`appendEntry did not persist the exact record across reopen: ${JSON.stringify(entry)}`);
+}
+const routineEntry = entries.find(
+  (candidate) => candidate.type === "custom_message" && candidate.customType === "fm-branch-merge",
+);
+if (!routineEntry || routineEntry.display !== false || !String(routineEntry.content).includes(routineSummary)) {
+  throw new Error(`hidden routine outcome did not persist exactly: ${JSON.stringify(routineEntry)}`);
 }
 if (reopened.buildSessionContext().messages.some((message) => JSON.stringify(message).includes(record.summary))) {
   throw new Error("a custom session entry entered model context");
@@ -789,8 +813,9 @@ out=$(cat "$TMP_ROOT/delivery-output")
 if [ "$status" -ne 0 ] || [ "$out" != "DELIVERY_OK" ]; then
   fail "real-SDK visible outcome delivery guard failed against pi-coding-agent $PI_VERSION: $out"
 fi
-pass "real Pi SDK $PI_VERSION immediately renders appendEntry in the active transcript, persists it across reopen, and excludes it from model context"
+pass "real Pi SDK $PI_VERSION renders one captain entry while a persisted routine outcome stays hidden in the active transcript"
 
+if [ "$LIVE_PROBE" = all ]; then
 # Sixth probe: the vendor event contract watcher continuity rests on, against
 # the real AgentSession and ExtensionRunner with the tracked watcher extension
 # loaded through Pi's own resource loader. A wake the extension delivers while
@@ -1185,3 +1210,4 @@ if [ "$status" -ne 0 ] || [ "$out" != "CONTAINMENT_OK" ]; then
   fail "real-SDK message containment guard failed against pi-coding-agent $PI_VERSION: $out"
 fi
 pass "real Pi SDK $PI_VERSION suppresses streaming dedicated text and removes it from finalized and restored transcripts"
+fi
