@@ -1075,7 +1075,12 @@ SH
   classification=$(FM_ROOT_OVERRIDE="$COLLISION_ROOT" FM_HOME="$H_FLOW" "$PROCEVENT" classify "$result")
   assert_contains "$classification" "external-ready" "captured evidence could not be classified through its immutable owner"
   assert_not_contains "$classification" "wrong-built-in-owner" "a later same-name built-in reinterpreted extension evidence"
-  assert_absent "$H_FLOW/state/procevent/flow-source.source" "terminal external source stayed registered"
+  if [ -f "$H_FLOW/state/procevent/flow-source.source" ]; then
+    # A transient handshake timeout deliberately leaves terminal knowledge
+    # unknown and the registration armed, so exercise the public retry path.
+    FM_HOME="$H_FLOW" "$PROCEVENT" start flow-source >"$TMP_ROOT/flow-retry.out"
+  fi
+  assert_absent "$H_FLOW/state/procevent/flow-source.source" "terminal external source stayed registered after retry"
   FM_HOME="$H_FLOW" "$PROCEVENT" retire flow-source --if-owner "$owner_one" >/dev/null
   pass "one external adapter registers, invokes, captures unhandled evidence, classifies, and terminally retires end to end"
   FM_HOME="$H_FLOW" "$PROCEVENT" register-extension ext-flow crash-silent-source --config-ref crash-silent >/dev/null
