@@ -90,13 +90,13 @@ ln -s "$PI_PACKAGE_DIR/node_modules/@earendil-works/pi-ai" "$repo/node_modules/@
 ln -s "$PI_PACKAGE_DIR/node_modules/typebox" "$repo/node_modules/typebox"
 
 if [ "$LIVE_PROBE" = all ]; then
-# Stock macOS Bash 3.2 cannot reliably parse JavaScript template literals in a
-# heredoc nested inside command substitution, so capture through a file.
-BRANCH_PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" \
-  WATCH_PLUGIN="$repo/.pi/extensions/fm-primary-pi-watch.ts" \
-  FM_HOME="$home" FM_REAL_ROOT="$ROOT" FM_WATCH_ROOT="$repo" \
-  FM_LIVE_WATCH_LOG="$TMP_ROOT/live-watch.log" FM_LIVE_WATCH_TRIGGER="$TMP_ROOT/live-watch.trigger" \
-  PI_CODING_AGENT_DIR="$agentdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
+  # Stock macOS Bash 3.2 cannot reliably parse JavaScript template literals in a
+  # heredoc nested inside command substitution, so capture through a file.
+  BRANCH_PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" \
+    WATCH_PLUGIN="$repo/.pi/extensions/fm-primary-pi-watch.ts" \
+    FM_HOME="$home" FM_REAL_ROOT="$ROOT" FM_WATCH_ROOT="$repo" \
+    FM_LIVE_WATCH_LOG="$TMP_ROOT/live-watch.log" FM_LIVE_WATCH_TRIGGER="$TMP_ROOT/live-watch.trigger" \
+    PI_CODING_AGENT_DIR="$agentdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -261,21 +261,21 @@ if (confirmations.length !== 2) {
 console.log("LIVE_OK");
 process.exit(0);
 EOF
-status=$?
-out=$(cat "$TMP_ROOT/node-output")
-if [ "$status" -ne 0 ] || [ "$out" != "LIVE_OK" ]; then
-  fail "real-SDK Pi branch guard failed against pi-coding-agent $PI_VERSION: $out"
-fi
-pass "real Pi SDK $PI_VERSION accepts the branch session construction and preserves an unpromptable wake"
+  status=$?
+  out=$(cat "$TMP_ROOT/node-output")
+  if [ "$status" -ne 0 ] || [ "$out" != "LIVE_OK" ]; then
+    fail "real-SDK Pi branch guard failed against pi-coding-agent $PI_VERSION: $out"
+  fi
+  pass "real Pi SDK $PI_VERSION accepts the branch session construction and preserves an unpromptable wake"
 
-# Real-SDK Mode 2 guard: a constructed AgentSession receives the c1 429 shape
-# from Pi's real OpenAI-compatible adapter. Fetch is intercepted in-process,
-# so no provider request leaves the machine, but Pi still persists the error
-# assistant message and resolves session.prompt() through its production loop.
-errorhome="$TMP_ROOT/error-home"
-erroragentdir="$TMP_ROOT/error-agent-dir"
-mkdir -p "$errorhome/state" "$errorhome/config" "$erroragentdir"
-cat >"$erroragentdir/models.json" <<'JSON'
+  # Real-SDK Mode 2 guard: a constructed AgentSession receives the c1 429 shape
+  # from Pi's real OpenAI-compatible adapter. Fetch is intercepted in-process,
+  # so no provider request leaves the machine, but Pi still persists the error
+  # assistant message and resolves session.prompt() through its production loop.
+  errorhome="$TMP_ROOT/error-home"
+  erroragentdir="$TMP_ROOT/error-agent-dir"
+  mkdir -p "$errorhome/state" "$errorhome/config" "$erroragentdir"
+  cat >"$erroragentdir/models.json" <<'JSON'
 {
   "providers": {
     "fm-live-error": {
@@ -289,12 +289,12 @@ cat >"$erroragentdir/models.json" <<'JSON'
   }
 }
 JSON
-BRANCH_PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" \
-  WATCH_PLUGIN="$repo/.pi/extensions/fm-primary-pi-watch.ts" \
-  FM_HOME="$errorhome" FM_REAL_ROOT="$ROOT" FM_WATCH_ROOT="$repo" \
-  FM_LIVE_WATCH_LOG="$TMP_ROOT/error-watch.log" FM_LIVE_WATCH_TRIGGER="$TMP_ROOT/error-watch.trigger" \
-  PI_CODING_AGENT_DIR="$erroragentdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
-  node --input-type=module >"$TMP_ROOT/error-output" 2>&1 <<'EOF'
+  BRANCH_PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" \
+    WATCH_PLUGIN="$repo/.pi/extensions/fm-primary-pi-watch.ts" \
+    FM_HOME="$errorhome" FM_REAL_ROOT="$ROOT" FM_WATCH_ROOT="$repo" \
+    FM_LIVE_WATCH_LOG="$TMP_ROOT/error-watch.log" FM_LIVE_WATCH_TRIGGER="$TMP_ROOT/error-watch.trigger" \
+    PI_CODING_AGENT_DIR="$erroragentdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
+    node --input-type=module >"$TMP_ROOT/error-output" 2>&1 <<'EOF'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -431,21 +431,21 @@ if (confirmations.length !== 1) {
 console.log("ERROR_FALLBACK_OK");
 process.exit(0);
 EOF
-status=$?
-out=$(cat "$TMP_ROOT/error-output")
-if [ "$status" -ne 0 ] || [ "$out" != "ERROR_FALLBACK_OK" ]; then
-  fail "real-SDK Pi settled-provider-error guard failed against pi-coding-agent $PI_VERSION: $out"
-fi
-pass "real Pi SDK $PI_VERSION rejects a post-construction 429 to watcher-owned main delivery without losing its durable row"
+  status=$?
+  out=$(cat "$TMP_ROOT/error-output")
+  if [ "$status" -ne 0 ] || [ "$out" != "ERROR_FALLBACK_OK" ]; then
+    fail "real-SDK Pi settled-provider-error guard failed against pi-coding-agent $PI_VERSION: $out"
+  fi
+  pass "real Pi SDK $PI_VERSION rejects a post-construction 429 to watcher-owned main delivery without losing its durable row"
 
-# Third probe: the vendor contract the supervision-branch model pin rests on.
-# An explicit model must beat the model a reopened session recorded, or a pin
-# would silently stop applying the first time the branch reopens. Proven with
-# a local, never-contacted fake provider with a placeholder key, so no request
-# leaves the machine and no user credential is read.
-modeldir="$TMP_ROOT/model-agent-dir"
-mkdir -p "$modeldir" "$TMP_ROOT/model-sessions"
-cat >"$modeldir/models.json" <<'JSON'
+  # Third probe: the vendor contract the supervision-branch model pin rests on.
+  # An explicit model must beat the model a reopened session recorded, or a pin
+  # would silently stop applying the first time the branch reopens. Proven with
+  # a local, never-contacted fake provider with a placeholder key, so no request
+  # leaves the machine and no user credential is read.
+  modeldir="$TMP_ROOT/model-agent-dir"
+  mkdir -p "$modeldir" "$TMP_ROOT/model-sessions"
+  cat >"$modeldir/models.json" <<'JSON'
 {
   "providers": {
     "fm-live-fake": {
@@ -460,8 +460,8 @@ cat >"$modeldir/models.json" <<'JSON'
   }
 }
 JSON
-PI_PACKAGE_DIR="$PI_PACKAGE_DIR" PI_CODING_AGENT_DIR="$modeldir" FM_LIVE_SESSIONS="$TMP_ROOT/model-sessions" \
-  node --input-type=module >"$TMP_ROOT/model-output" 2>&1 <<'EOF'
+  PI_PACKAGE_DIR="$PI_PACKAGE_DIR" PI_CODING_AGENT_DIR="$modeldir" FM_LIVE_SESSIONS="$TMP_ROOT/model-sessions" \
+    node --input-type=module >"$TMP_ROOT/model-output" 2>&1 <<'EOF'
 import { pathToFileURL } from "node:url";
 
 const pkg = pathToFileURL(`${process.env.PI_PACKAGE_DIR}/dist/index.js`).href;
@@ -518,22 +518,22 @@ if (unpinned.session.model?.id !== "fm-live-a") {
 console.log("MODEL_OK");
 process.exit(0);
 EOF
-status=$?
-out=$(cat "$TMP_ROOT/model-output")
-if [ "$status" -ne 0 ] || [ "$out" != "MODEL_OK" ]; then
-  fail "real-SDK model-pin precedence guard failed against pi-coding-agent $PI_VERSION: $out"
-fi
-pass "real Pi SDK $PI_VERSION applies an explicit branch model on create and over a reopened session's recorded model"
+  status=$?
+  out=$(cat "$TMP_ROOT/model-output")
+  if [ "$status" -ne 0 ] || [ "$out" != "MODEL_OK" ]; then
+    fail "real-SDK model-pin precedence guard failed against pi-coding-agent $PI_VERSION: $out"
+  fi
+  pass "real Pi SDK $PI_VERSION applies an explicit branch model on create and over a reopened session's recorded model"
 
-# Fourth probe: the vendor contract the supervision-branch EFFORT pin rests on.
-# Same never-contacted local provider, now declaring models with different
-# reasoning ceilings so Pi's own supported-level list and clamp are exercised
-# for real. The recorded-level case needs a session file on disk, and Pi
-# flushes one only once an assistant message exists, so the probe appends both
-# entries through the real SessionManager rather than hand-writing the format.
-effortdir="$TMP_ROOT/effort-agent-dir"
-mkdir -p "$effortdir" "$TMP_ROOT/effort-sessions"
-cat >"$effortdir/models.json" <<'JSON'
+  # Fourth probe: the vendor contract the supervision-branch EFFORT pin rests on.
+  # Same never-contacted local provider, now declaring models with different
+  # reasoning ceilings so Pi's own supported-level list and clamp are exercised
+  # for real. The recorded-level case needs a session file on disk, and Pi
+  # flushes one only once an assistant message exists, so the probe appends both
+  # entries through the real SessionManager rather than hand-writing the format.
+  effortdir="$TMP_ROOT/effort-agent-dir"
+  mkdir -p "$effortdir" "$TMP_ROOT/effort-sessions"
+  cat >"$effortdir/models.json" <<'JSON'
 {
   "providers": {
     "fm-live-fake": {
@@ -563,8 +563,8 @@ cat >"$effortdir/models.json" <<'JSON'
   }
 }
 JSON
-PI_PACKAGE_DIR="$PI_PACKAGE_DIR" PI_CODING_AGENT_DIR="$effortdir" FM_LIVE_SESSIONS="$TMP_ROOT/effort-sessions" \
-  node --input-type=module >"$TMP_ROOT/effort-output" 2>&1 <<'EOF'
+  PI_PACKAGE_DIR="$PI_PACKAGE_DIR" PI_CODING_AGENT_DIR="$effortdir" FM_LIVE_SESSIONS="$TMP_ROOT/effort-sessions" \
+    node --input-type=module >"$TMP_ROOT/effort-output" 2>&1 <<'EOF'
 import { pathToFileURL } from "node:url";
 
 const packageRoot = process.env.PI_PACKAGE_DIR;
@@ -685,12 +685,12 @@ if (clamped.session.thinkingLevel !== "high") {
 console.log("EFFORT_OK");
 process.exit(0);
 EOF
-status=$?
-out=$(cat "$TMP_ROOT/effort-output")
-if [ "$status" -ne 0 ] || [ "$out" != "EFFORT_OK" ]; then
-  fail "real-SDK effort-pin guard failed against pi-coding-agent $PI_VERSION: $out"
-fi
-pass "real Pi SDK $PI_VERSION reports its own supported effort levels and applies an explicit branch effort over a reopened session's recorded level"
+  status=$?
+  out=$(cat "$TMP_ROOT/effort-output")
+  if [ "$status" -ne 0 ] || [ "$out" != "EFFORT_OK" ]; then
+    fail "real-SDK effort-pin guard failed against pi-coding-agent $PI_VERSION: $out"
+  fi
+  pass "real Pi SDK $PI_VERSION reports its own supported effort levels and applies an explicit branch effort over a reopened session's recorded level"
 fi
 
 # Fifth probe: the real SDK contract deterministic outcome visibility rests on.
@@ -816,21 +816,21 @@ fi
 pass "real Pi SDK $PI_VERSION renders one captain entry while a persisted routine outcome stays hidden in the active transcript"
 
 if [ "$LIVE_PROBE" = all ]; then
-# Sixth probe: the vendor event contract watcher continuity rests on, against
-# the real AgentSession and ExtensionRunner with the tracked watcher extension
-# loaded through Pi's own resource loader. A wake the extension delivers while
-# main is streaming must join the running run without ever raising
-# before_agent_start, the extension must still start the successor and deliver
-# the next close, and Pi must surface consumption of both the streaming-time
-# and the idle follow-up through the events the extension reads (the user
-# message_start, and before_agent_start for the idle one). The provider is a
-# local fake whose only fetch is intercepted in-process and held open until
-# the follow-up is queued, so no request leaves the machine and no credential
-# is read.
-streamdir="$TMP_ROOT/stream-agent-dir"
-streamhome="$TMP_ROOT/stream-home"
-mkdir -p "$streamdir" "$streamhome/state" "$streamhome/config" "$TMP_ROOT/stream-sessions"
-cat >"$streamdir/models.json" <<'JSON'
+  # Sixth probe: the vendor event contract watcher continuity rests on, against
+  # the real AgentSession and ExtensionRunner with the tracked watcher extension
+  # loaded through Pi's own resource loader. A wake the extension delivers while
+  # main is streaming must join the running run without ever raising
+  # before_agent_start, the extension must still start the successor and deliver
+  # the next close, and Pi must surface consumption of both the streaming-time
+  # and the idle follow-up through the events the extension reads (the user
+  # message_start, and before_agent_start for the idle one). The provider is a
+  # local fake whose only fetch is intercepted in-process and held open until
+  # the follow-up is queued, so no request leaves the machine and no credential
+  # is read.
+  streamdir="$TMP_ROOT/stream-agent-dir"
+  streamhome="$TMP_ROOT/stream-home"
+  mkdir -p "$streamdir" "$streamhome/state" "$streamhome/config" "$TMP_ROOT/stream-sessions"
+  cat >"$streamdir/models.json" <<'JSON'
 {
   "providers": {
     "fm-live-stream": {
@@ -844,12 +844,12 @@ cat >"$streamdir/models.json" <<'JSON'
   }
 }
 JSON
-WATCH_PLUGIN="$repo/.pi/extensions/fm-primary-pi-watch.ts" \
-  FM_HOME="$streamhome" FM_ROOT_OVERRIDE="$repo" \
-  FM_LIVE_WATCH_LOG="$TMP_ROOT/stream-watch.log" FM_LIVE_WATCH_TRIGGER="$TMP_ROOT/stream-watch.trigger" \
-  FM_LIVE_SESSIONS="$TMP_ROOT/stream-sessions" \
-  PI_CODING_AGENT_DIR="$streamdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
-  node --input-type=module >"$TMP_ROOT/stream-output" 2>&1 <<'EOF'
+  WATCH_PLUGIN="$repo/.pi/extensions/fm-primary-pi-watch.ts" \
+    FM_HOME="$streamhome" FM_ROOT_OVERRIDE="$repo" \
+    FM_LIVE_WATCH_LOG="$TMP_ROOT/stream-watch.log" FM_LIVE_WATCH_TRIGGER="$TMP_ROOT/stream-watch.trigger" \
+    FM_LIVE_SESSIONS="$TMP_ROOT/stream-sessions" \
+    PI_CODING_AGENT_DIR="$streamdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
+    node --input-type=module >"$TMP_ROOT/stream-output" 2>&1 <<'EOF'
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -1011,22 +1011,22 @@ session.dispose();
 console.log("STREAM_OK");
 process.exit(0);
 EOF
-status=$?
-out=$(cat "$TMP_ROOT/stream-output")
-if [ "$status" -ne 0 ] || [ "$out" != "STREAM_OK" ]; then
-  fail "real-SDK streaming-time watcher delivery guard failed against pi-coding-agent $PI_VERSION: $out"
-fi
-pass "real Pi SDK $PI_VERSION queues a streaming-time watcher wake without before_agent_start, keeps the successor chain, and surfaces consumption of both follow-ups"
+  status=$?
+  out=$(cat "$TMP_ROOT/stream-output")
+  if [ "$status" -ne 0 ] || [ "$out" != "STREAM_OK" ]; then
+    fail "real-SDK streaming-time watcher delivery guard failed against pi-coding-agent $PI_VERSION: $out"
+  fi
+  pass "real Pi SDK $PI_VERSION queues a streaming-time watcher wake without before_agent_start, keeps the successor chain, and surfaces consumption of both follow-ups"
 
-# Seventh probe: the vendor rendering and message-lifecycle contracts dedicated
-# processing containment rests on. A real AgentSession streams a repeated prior
-# answer through stock inline and fullscreen InteractiveMode transcripts. The
-# Markdown transformer suppresses it during streaming, then a message_end
-# replacement removes it before listeners finalize the row and persistence.
-containagentdir="$TMP_ROOT/contain-agent-dir"
-containsessions="$TMP_ROOT/contain-sessions"
-mkdir -p "$containagentdir" "$containsessions"
-cat >"$containagentdir/models.json" <<'JSON'
+  # Seventh probe: the vendor rendering and message-lifecycle contracts dedicated
+  # processing containment rests on. A real AgentSession streams a repeated prior
+  # answer through stock inline and fullscreen InteractiveMode transcripts. The
+  # Markdown transformer suppresses it during streaming, then a message_end
+  # replacement removes it before listeners finalize the row and persistence.
+  containagentdir="$TMP_ROOT/contain-agent-dir"
+  containsessions="$TMP_ROOT/contain-sessions"
+  mkdir -p "$containagentdir" "$containsessions"
+  cat >"$containagentdir/models.json" <<'JSON'
 {
   "providers": {
     "fm-live-contain": {
@@ -1040,8 +1040,8 @@ cat >"$containagentdir/models.json" <<'JSON'
   }
 }
 JSON
-CONTAIN_AGENT_DIR="$containagentdir" CONTAIN_SESSIONS="$containsessions" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
-  node --input-type=module >"$TMP_ROOT/contain-output" 2>&1 <<'EOF'
+  CONTAIN_AGENT_DIR="$containagentdir" CONTAIN_SESSIONS="$containsessions" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
+    node --input-type=module >"$TMP_ROOT/contain-output" 2>&1 <<'EOF'
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -1204,10 +1204,10 @@ session.dispose();
 console.log("CONTAINMENT_OK");
 process.exit(0);
 EOF
-status=$?
-out=$(cat "$TMP_ROOT/contain-output")
-if [ "$status" -ne 0 ] || [ "$out" != "CONTAINMENT_OK" ]; then
-  fail "real-SDK message containment guard failed against pi-coding-agent $PI_VERSION: $out"
-fi
-pass "real Pi SDK $PI_VERSION suppresses streaming dedicated text and removes it from finalized and restored transcripts"
+  status=$?
+  out=$(cat "$TMP_ROOT/contain-output")
+  if [ "$status" -ne 0 ] || [ "$out" != "CONTAINMENT_OK" ]; then
+    fail "real-SDK message containment guard failed against pi-coding-agent $PI_VERSION: $out"
+  fi
+  pass "real Pi SDK $PI_VERSION suppresses streaming dedicated text and removes it from finalized and restored transcripts"
 fi
