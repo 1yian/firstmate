@@ -572,7 +572,7 @@ The CLI matrix was checked directly:
 | --- | --- | --- |
 | Explicit session routing | `herdr <verb> ... --session <name>` | Reached the named session even while another server was running. |
 | Literal send | `herdr pane send-text <pane> <text> --session <name>` | Left text unsubmitted until Enter. |
-| Keys | `herdr pane send-keys <pane> enter|escape|ctrl+c --session <name>` | Enter and Escape worked; Ctrl-C interrupted foreground work. |
+| Keys | `herdr pane send-keys <pane> enter | escape | ctrl+c --session <name>` | Enter and Escape worked; Ctrl-C interrupted foreground work. |
 | Capture | `herdr pane read <pane> --source recent --lines N` | Small N could return empty below viewport height; a 200-line request plus local trim was stable. |
 | Native state | `herdr agent get <pane>` | Working and done transitions were visible on some harnesses; live Claude Code 2.1.236 on Herdr 0.8.0 kept `agent_status=idle` for an entire landed turn, including a multi-second tool call, so submit confirmation falls through to the shared composer verdict. Native `busy` remains positive activity evidence, while native `idle` cannot close a turn and the adapter's semantic lifecycle decides worker state. |
 | Restart | guarded named-session stop then start | Workspace, tab, pane, and labels persisted; the agent process and registration did not. |
@@ -766,7 +766,7 @@ HERDR_LAB_HELPER=bin/fm-herdr-lab.sh \
 Observed output on Herdr 0.7.5:
 
 ```text
-ok - old path: the explicit last-pane close of a non-focused workspace stole focus (w3	w3:t1 -> w2	w2:t1)
+ok - old path: the explicit last-pane close of a non-focused workspace stole focus (w3 w3:t1 -> w2 w2:t1)
 ok - mitigation: every in-operation sample preserved exact focus while the doomed workspace was removed
 ok - mitigation: no explicit close and no corrective focus were needed on the defective release
 ok - fallback: a doomed pane holding a persistent child exhausts the proof and takes the plain explicit close
@@ -801,7 +801,7 @@ Default-on presentation projection is floored at Herdr 0.8.0.
 The floor's structural signal is the selected running server's protocol number, falling back to the client protocol only when that selected session positively reports no running server, and the release mapping was measured on 2026-08-05 by running each pinned upstream macOS aarch64 release asset's own `status --json` through the guarded lab helper:
 
 | Release | Reported version | Protocol | Carries both upstream focus fixes | Floor verdict |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | v0.7.3 | 0.7.3 | 16 | no | below |
 | v0.7.4 | 0.7.4 | 16 | no | below |
 | v0.7.5 | 0.7.5 | 17 | no | below |
@@ -1040,7 +1040,7 @@ Current active CLI findings:
 | Fresh readiness | `list-panes --workspace <id> --json --id-format uuids` | Found a brand-new surface before content existed. |
 | Fresh read counterexample | `read-screen` before any write | Returned `internal_error: Failed to read terminal text`. |
 | Literal send | `send --workspace <id> --surface <id> -- <text>` | Left text unsubmitted. |
-| Keys | `send-key ... enter|escape|ctrl-c` | All shared key operations worked. |
+| Keys | `send-key ... enter | escape | ctrl-c` | All shared key operations worked. |
 | Nested cwd | `current_directory` plus foreground subshell | Structured cwd froze; the marker-delimited `pwd` probe found the live cwd. |
 | Last surface | `close-surface` on the only surface | Refused with `invalid_state: Cannot close the last surface`. |
 | Last workspace | `close-workspace` on the only workspace in a window | Printed success but left the workspace present. |
@@ -1398,3 +1398,37 @@ The live probe loads the tracked watcher extension through Pi's real resource lo
 It proved that a follow-up the extension sends while main is streaming raises no `before_agent_start` at queue time or when the run reaches it, joins the run as a user `message_start` carrying the exact wake text in its own model turn, and is followed by a verified successor and delivery of the next close; a follow-up sent to the idle main raises `before_agent_start` with the exact text before its user `message_start`.
 The portable regression drives the same shape with a fake main that never raises `before_agent_start` while streaming, then proves a replacement replays only the follow-up Pi had not consumed and that an exhausted restoration delivers its typed failure without launching a further arm.
 A second regression holds a branch settlement open while the verified successor exits with a failure, and proves that failure takes the ordinary bounded retry once the delivery settles rather than leaving the generation with no watcher and no retry.
+
+### Historical: 2026-09-04 finalized processing-output containment
+
+This run predates the Markdown transformer and verifies only finalized and restored transcript containment through `message_end`.
+The focused extension regression, strict typecheck, and the containment portion of the then-current real-SDK guard were run against npm `@earendil-works/pi-coding-agent` 0.84.4 on macOS 26.4 arm64 and Node v26.8.1.
+The local fake provider's fetch was intercepted in-process, no credential was read, no request left the machine, and the active Pi session was not changed.
+
+```sh
+FM_PI_PACKAGE_DIR=<pi-0.84.4 package> bash tests/fm-pi-branch-extension.test.sh
+FM_PI_PACKAGE_DIR=<pi-0.84.4 package> bash tests/fm-pi-primary-types.test.sh
+probe=$(mktemp "${TMPDIR:-/tmp}/fm-pi-containment.XXXXXX")
+{
+  printf '%s\n' '#!/usr/bin/env bash' 'set -u' '. "tests/lib.sh"' 'export NODE_NO_WARNINGS=1' \
+    'PI_PACKAGE_DIR=<pi-0.84.4 package>' 'PI_VERSION=0.84.4' \
+    'TMP_ROOT=$(fm_test_tmproot fm-pi-containment-only)'
+  awk 'found { print } /^# Seventh probe:/ { found=1; print }' tests/fm-pi-branch-live-e2e.test.sh
+} > "$probe"
+bash "$probe"
+rm -f "$probe"
+```
+
+```text
+ok - dedicated processing text commits only after exact acknowledgement, mixed captain answers survive, and retries stay bounded by the oldest open sequence
+ok - tracked Pi extensions pass strict no-emit typecheck against Pi 0.84.4
+ok - real Pi SDK 0.84.4 removes finalized dedicated text from inline/fullscreen transcripts and restored history after a transient streamed render
+```
+
+The real AgentSession streamed a repeated prior answer into stock inline and fullscreen `InteractiveMode` components, and the guard observed that text before completion.
+Its `message_end` replacement then removed ordinary text before finalized listeners and `SessionManager` persistence, both stock transcript components returned to their pre-stream content, and reopening the session restored the uncommitted assistant message with no text block.
+This proves the historical stable and restored transcript boundary and records that the implementation under test still exposed provider tokens while streaming.
+It is not evidence for the current Markdown transformer's streaming suppression; that guarantee remains pending a recorded post-transformer real-SDK run.
+
+The full live script could not reach this probe in that environment because its unchanged first watcher-fallback probe timed out before main delivery.
+A clean archive of the then-current default branch failed identically at that same first probe, so this is not evidence of a containment regression; the pre-existing probe remains unchanged, and its prior successful version-scoped records above remain the current evidence for that separate boundary.

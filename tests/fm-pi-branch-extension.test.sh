@@ -34,10 +34,10 @@ install_pi_branch_extension_fixture() {
   mkdir -p "$repo/bin"
   cp "$ROOT/bin/fm-operational-input.sh" "$repo/bin/fm-operational-input.sh"
   chmod +x "$repo/bin/fm-operational-input.sh"
-  cat > "$repo/node_modules/@earendil-works/pi-coding-agent/package.json" <<'JSON'
+  cat >"$repo/node_modules/@earendil-works/pi-coding-agent/package.json" <<'JSON'
 {"name":"@earendil-works/pi-coding-agent","type":"module","exports":"./index.js"}
 JSON
-  cat > "$repo/node_modules/@earendil-works/pi-coding-agent/index.js" <<'JS'
+  cat >"$repo/node_modules/@earendil-works/pi-coding-agent/index.js" <<'JS'
 import { writeFileSync } from "node:fs";
 
 export function getAgentDir() {
@@ -210,10 +210,10 @@ export async function createAgentSession(options) {
   return { session, extensionsResult: {} };
 }
 JS
-  cat > "$repo/node_modules/@earendil-works/pi-ai/package.json" <<'JSON'
+  cat >"$repo/node_modules/@earendil-works/pi-ai/package.json" <<'JSON'
 {"name":"@earendil-works/pi-ai","type":"module","exports":"./index.js"}
 JSON
-  cat > "$repo/node_modules/@earendil-works/pi-ai/index.js" <<'JS'
+  cat >"$repo/node_modules/@earendil-works/pi-ai/index.js" <<'JS'
 // Pi's own thinking-level rules, reproduced from the installed package so the
 // portable regression can drive models with different effort ceilings. The
 // live guard (tests/fm-pi-branch-live-e2e.test.sh) is what proves the real
@@ -244,10 +244,10 @@ export function clampThinkingLevel(model, level) {
   return available[0] ?? "off";
 }
 JS
-  cat > "$repo/node_modules/@earendil-works/pi-tui/package.json" <<'JSON'
+  cat >"$repo/node_modules/@earendil-works/pi-tui/package.json" <<'JSON'
 {"name":"@earendil-works/pi-tui","type":"module","exports":"./index.js"}
 JSON
-  cat > "$repo/node_modules/@earendil-works/pi-tui/index.js" <<'JS'
+  cat >"$repo/node_modules/@earendil-works/pi-tui/index.js" <<'JS'
 export class Text {
   constructor(text, paddingX, paddingY) {
     this.text = text;
@@ -341,10 +341,10 @@ export function fuzzyFilter(items, query, getText) {
   return items.filter((item) => getText(item).toLowerCase().includes(needle));
 }
 JS
-  cat > "$repo/node_modules/typebox/package.json" <<'JSON'
+  cat >"$repo/node_modules/typebox/package.json" <<'JSON'
 {"name":"typebox","type":"module","exports":"./index.js"}
 JSON
-  cat > "$repo/node_modules/typebox/index.js" <<'JS'
+  cat >"$repo/node_modules/typebox/index.js" <<'JS'
 export const Type = {
   Object(properties, options) {
     return { type: "object", properties, ...(options ?? {}) };
@@ -375,7 +375,7 @@ JS
 # event bus (mirrors pi's EventEmitter-backed bus), captured handlers, and
 # captured main-bound messages.
 DRIVER_PRELUDE_FILE="$TMP_ROOT/driver-prelude.js"
-cat > "$DRIVER_PRELUDE_FILE" <<'JS'
+cat >"$DRIVER_PRELUDE_FILE" <<'JS'
 const { spawnSync } = await import("node:child_process");
 const { mkdirSync, writeFileSync } = await import("node:fs");
 const { pathToFileURL } = await import("node:url");
@@ -509,6 +509,7 @@ const mainUserMessages = [];
 const mainTools = [];
 const renderers = new Map();
 const entryRenderers = new Map();
+const markdownTransformers = [];
 const mainEntries = [];
 const mainSessionManager = {
   getSessionFile: () => `${home}/main.jsonl`,
@@ -532,6 +533,9 @@ const pi = {
   },
   registerEntryRenderer(customType, renderer) {
     entryRenderers.set(customType, renderer);
+  },
+  registerMarkdownTransformer(transformer) {
+    markdownTransformers.push(transformer);
   },
   appendEntry(customType, data) {
     activeMainSession.getEntries().push({ type: "custom", customType, data });
@@ -605,7 +609,7 @@ test_branch_dispatch_two_stage_filter_and_prefix_contract() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { pi, fire, dispatch, settle, outcomeScript, sentToMain, mainUserMessages, mainTools, renderers, entryRenderers, mainEntries, defaultSessionCtx, home, realRoot }; })()`);
 const { pi, fire, dispatch, settle, outcomeScript, sentToMain, mainUserMessages, mainTools, renderers, entryRenderers, mainEntries, defaultSessionCtx, home, realRoot } = globalThis.__t;
@@ -850,8 +854,8 @@ EOF
   out=$(cat "$TMP_ROOT/node-output")
   expect_code 0 "$status" "branch dispatch, prefix contract, and two-stage filter must hold: $out"
   case "$out" in
-    CACHE_KEY=fm-branch-*) ;;
-    *) fail "cache key line missing from driver output: $out" ;;
+  CACHE_KEY=fm-branch-*) ;;
+  *) fail "cache key line missing from driver output: $out" ;;
   esac
   pass "branch owns accepted wakes with a stable prefix and deterministic verdict-driven delivery"
 
@@ -861,20 +865,20 @@ EOF
   # that nothing but that acknowledgement closes it. Routine notes remain
   # plain rendered text rather than typed operational input.
   local kind body
-  kind=$(./bin/fm-operational-input.sh kind < "$home/state/delivered-processing-request") \
-    || fail "the processing request reaches main's model as unattributed text"
+  kind=$(./bin/fm-operational-input.sh kind <"$home/state/delivered-processing-request") ||
+    fail "the processing request reaches main's model as unattributed text"
   [ "$kind" = branch-outcome ] || fail "the processing request was delivered as kind '$kind', not branch-outcome"
-  body=$(./bin/fm-operational-input.sh body < "$home/state/delivered-processing-request") \
-    || fail "the processing request envelope carries no readable body"
+  body=$(./bin/fm-operational-input.sh body <"$home/state/delivered-processing-request") ||
+    fail "the processing request envelope carries no readable body"
   case "$body" in
-    *"delivered automatically by the supervision branch."*"It was not typed by the captain."*"[seq 3] task-9: PR https://example.com/pr/9 checks green, ready for review"*) ;;
-    *) fail "the processing request body lost its self-description or the outcome itself: $body" ;;
+  *"delivered automatically by the supervision branch."*"It was not typed by the captain."*"[seq 3] task-9: PR https://example.com/pr/9 checks green, ready for review"*) ;;
+  *) fail "the processing request body lost its self-description or the outcome itself: $body" ;;
   esac
   case "$body" in
-    *"do not re-drain, re-run, or acknowledge the wake."*"call fm_branch_processed with through=3 exactly once."*"never counts as processing."*) ;;
-    *) fail "the processing request body lost the event-ownership boundary or the sequence-bound acknowledgement duty: $body" ;;
+  *"do not re-drain, re-run, or acknowledge the wake."*"call fm_branch_processed with through=3 exactly once."*"never counts as processing."*) ;;
+  *) fail "the processing request body lost the event-ownership boundary or the sequence-bound acknowledgement duty: $body" ;;
   esac
-  if ./bin/fm-operational-input.sh kind < "$home/state/delivered-routine-note" >/dev/null 2>&1; then
+  if ./bin/fm-operational-input.sh kind <"$home/state/delivered-routine-note" >/dev/null 2>&1; then
     fail "routine note must stay plain rendered text, not typed operational input"
   fi
   pass "a captain outcome reaches main's model as one typed, sequence-keyed processing request while routine notes stay plain"
@@ -887,7 +891,7 @@ test_requested_healthy_outcome_and_unsolicited_routine_outcome_delivery() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, sentToMain, mainEntries, outcomeScript, mainTools, home, realRoot }; })()`);
 const { fire, dispatch, settle, sentToMain, mainEntries, outcomeScript, mainTools, home, realRoot } = globalThis.__t;
@@ -1103,7 +1107,7 @@ test_captain_outcome_is_exactly_once_across_crash_reload_and_unrelated_response(
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, sentToMain, mainEntries, entryRenderers, outcomeScript, defaultSessionCtx }; })()`);
 const { fire, sentToMain, mainEntries, entryRenderers, outcomeScript, defaultSessionCtx } = globalThis.__t;
@@ -1193,15 +1197,58 @@ test_captain_outcome_processing_turn_is_sequence_keyed_and_re_presented() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
-await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, sentToMain, mainEntries, mainTools, outcomeScript, defaultSessionCtx, home }; })()`);
-const { fire, dispatch, settle, sentToMain, mainEntries, mainTools, outcomeScript, defaultSessionCtx, home } = globalThis.__t;
+await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, sentToMain, mainEntries, mainTools, outcomeScript, defaultSessionCtx, home, piHandlers, markdownTransformers }; })()`);
+const { fire, dispatch, settle, sentToMain, mainEntries, mainTools, outcomeScript, defaultSessionCtx, home, piHandlers, markdownTransformers } = globalThis.__t;
 import { readFileSync, writeFileSync } from "node:fs";
 
 const requests = () => sentToMain.filter((sent) => sent.message.customType === "fm-branch-process");
 const unprocessedSeqs = () => outcomeScript(["unprocessed"]).split("\n").filter(Boolean).map((line) => JSON.parse(line).seq);
 const runOf = (fn) => { fire("agent_start", {}); fn?.(); fire("agent_end", {}); fire("agent_settled", {}); };
+const finalizeMessage = (message) => {
+  let finalized = message;
+  for (const handler of piHandlers.get("message_end") ?? []) {
+    const result = handler({ type: "message_end", message: finalized }, defaultSessionCtx);
+    if (result && typeof result.then === "function") throw new Error("the processing containment handler unexpectedly became asynchronous");
+    if (result?.message) finalized = result.message;
+  }
+  return finalized;
+};
+const startProcessingRun = (request, captainText) => {
+  fire("agent_start", {});
+  if (captainText) {
+    fire("message_start", {
+      message: { role: "user", content: [{ type: "text", text: captainText }], timestamp: Date.now() },
+    }, defaultSessionCtx);
+  }
+  fire("message_start", {
+    message: { role: "custom", ...request.message, timestamp: Date.now() },
+  }, defaultSessionCtx);
+};
+const finishProcessingRun = (message) => {
+  const finalized = finalizeMessage(message);
+  mainEntries.push({ type: "message", message: finalized });
+  fire("agent_end", {});
+  fire("agent_settled", {});
+  return finalized;
+};
+const assistant = (content, stopReason = "stop") => ({
+  role: "assistant",
+  content,
+  api: "openai-completions",
+  provider: "test",
+  model: "test",
+  usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+  stopReason,
+  timestamp: Date.now(),
+});
+const textOf = (message) => message.content.filter((part) => part.type === "text").map((part) => part.text).join("\n");
+const renderMarkdown = (markdown, messageType = "assistant", isStreaming = true) =>
+  markdownTransformers.reduce(
+    (current, transform) => transform(current, { messageType, isStreaming, availableWidth: 120 }),
+    markdown,
+  );
 
 // A home upgraded with outcomes that were delivered before the processed
 // marker existed treats them as processed once, at the first reconciliation:
@@ -1247,33 +1294,52 @@ if (request.options.triggerTurn !== true || request.options.deliverAs !== "follo
 if (!request.message.content.includes(`[seq ${seq}] task-d: ${decision}`)) throw new Error(`the request lost its key or summary: ${request.message.content}`);
 if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error(`delivery did not leave seq ${seq} unprocessed: ${unprocessedSeqs()}`);
 
-// Case A (timeline report 2026-08-31): the turn returns an EMPTY assistant
-// message. The processed marker must not move, and the same sequence is
-// presented again at the run boundary.
-runOf(() => mainEntries.push({ type: "message", message: { role: "assistant", content: [] } }));
-if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("an empty answer advanced the processed marker");
-if (requests().length !== 2) throw new Error(`an empty answer did not re-present the outcome: ${requests().length} requests`);
-if (requests()[1].options.triggerTurn !== true) throw new Error("the first re-presentation must open its own turn");
-if (!requests()[1].message.content.includes(`[seq ${seq}] task-d: ${decision}`)) throw new Error("the re-presentation changed the outcome");
-
-// Case B: the turn repeats an unrelated prior answer. Same result: the marker
-// holds, and the request is presented again - now riding the captain's next
-// prompt because the triggered budget for this sequence set is spent.
-runOf(() => mainEntries.push({ type: "message", message: { role: "assistant", content: "The retry safe-stopped; diagnosis is underway." } }));
-if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("an unrelated answer advanced the processed marker");
-if (requests().length !== 3) throw new Error(`an unrelated answer did not re-present the outcome: ${requests().length} requests`);
-if (requests()[2].options.deliverAs !== "nextTurn" || requests()[2].options.triggerTurn) {
-  throw new Error(`after the triggered budget the request must ride the next prompt: ${JSON.stringify(requests()[2].options)}`);
+// A dedicated processing attempt that repeats an unrelated prior answer is
+// provisional. Its ordinary text is removed at message_end, while thinking,
+// tool calls, usage, and the durable open sequence survive for one retry.
+startProcessingRun(request);
+if (renderMarkdown("The earlier captain answer.", "assistant", false) !== "The earlier captain answer.") {
+  throw new Error("dedicated containment hid finalized transcript history");
 }
-// A quiet settle with the copy still queued does not queue a duplicate.
+if (renderMarkdown("The retry safe-stopped; diagnosis is underway.") !== "") {
+  throw new Error("an unacknowledged dedicated answer rendered while streaming");
+}
+const failed = finishProcessingRun(assistant([
+  { type: "thinking", thinking: "I should process the update." },
+  { type: "text", text: "The retry safe-stopped; diagnosis is underway." },
+  { type: "toolCall", id: "unrelated", name: "read", arguments: { path: "README.md" } },
+], "toolUse"));
+if (textOf(failed) !== "") throw new Error(`an unacknowledged dedicated answer remained visible: ${JSON.stringify(failed.content)}`);
+if (!failed.content.some((part) => part.type === "thinking") || !failed.content.some((part) => part.type === "toolCall")) {
+  throw new Error("containment removed non-text assistant content");
+}
+if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("an unrelated answer advanced the processed marker");
+if (requests().length !== 2 || requests()[1].options.triggerTurn !== true) {
+  throw new Error(`the first failed attempt did not receive one triggered retry: ${JSON.stringify(requests())}`);
+}
+
+// The second failed dedicated attempt is also silent. It exhausts the
+// autonomous budget, after which the open outcome rides a real captain turn.
+startProcessingRun(requests()[1]);
+const failedRetry = finishProcessingRun(assistant([{ type: "text", text: "The retry safe-stopped again." }]));
+if (textOf(failedRetry) !== "") throw new Error("the failed retry remained captain-visible");
+if (requests().length !== 3 || requests()[2].options.deliverAs !== "nextTurn" || requests()[2].options.triggerTurn) {
+  throw new Error(`retry exhaustion did not fall back to the next captain turn: ${JSON.stringify(requests())}`);
+}
 fire("agent_settled", {});
 if (requests().length !== 3) throw new Error("a duplicate next-turn copy was queued");
-// The captain's next prompt consumes that copy; settling unacknowledged queues one more.
-runOf(() => mainEntries.push({ type: "message", message: { role: "assistant", content: "Captain, shipshape." } }));
-if (requests().length !== 4 || requests()[3].options.deliverAs !== "nextTurn") throw new Error("the outcome stopped being re-presented on later prompts");
-if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("a paraphrase advanced the processed marker");
 
-// A session replacement re-presents with a fresh triggered budget.
+// A real captain message delivered with the old outcome makes the attempt
+// mixed. Its legitimate answer is retained even though the outcome remains
+// unacknowledged and queued for a later prompt.
+startProcessingRun(requests()[2], "What changed in the retry behavior?");
+const mixed = finishProcessingRun(assistant([{ type: "text", text: "The retry now keeps its original budget." }]));
+if (textOf(mixed) !== "The retry now keeps its original budget.") throw new Error("a mixed captain answer was suppressed");
+if (requests().length !== 4 || requests()[3].options.deliverAs !== "nextTurn") throw new Error("the mixed turn lost durable re-presentation");
+if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("a mixed answer advanced the processed marker");
+
+// A session replacement gives the still-open oldest outcome a fresh bounded
+// budget and preserves its exact visible anchor.
 fire("session_shutdown", {});
 fire("session_start", {}, defaultSessionCtx);
 if (requests().length !== 5 || requests()[4].options.triggerTurn !== true) throw new Error("session start did not re-present the unprocessed outcome with its own turn");
@@ -1281,19 +1347,39 @@ if (mainEntries.filter((entry) => entry.customType === "fm-branch-visible-outcom
   throw new Error("re-presentation duplicated the visible entry");
 }
 
-// Only the sequence-bound acknowledgement closes it.
+// A rejected acknowledgement does not commit text. A later exact accepted
+// acknowledgement commits only the final assistant text emitted after it.
 const processed = mainTools.find((tool) => tool.name === "fm_branch_processed");
 if (!processed) throw new Error("main did not receive its acknowledgement tool");
+startProcessingRun(requests()[4]);
+const rejectedPrelude = finalizeMessage(assistant([
+  { type: "text", text: "This must not commit before acknowledgement." },
+  { type: "toolCall", id: "ack-too-far", name: "fm_branch_processed", arguments: { through: seq + 100 } },
+], "toolUse"));
+if (textOf(rejectedPrelude) !== "") throw new Error("pre-acknowledgement text committed");
 const routineAck = await processed.execute("ack-routine", { through: routineSeq }, undefined, undefined, {});
 if (!routineAck.isError || !routineAck.content.some((item) => item.type === "text" && item.text.includes("not an unprocessed captain outcome"))) {
   throw new Error(`a routine-sequence acknowledgement was not clearly refused: ${JSON.stringify(routineAck)}`);
 }
-if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("a routine-sequence acknowledgement closed the open captain sequence");
 const tooFar = await processed.execute("ack-too-far", { through: seq + 100 }, undefined, undefined, {});
-if (!tooFar.isError) throw new Error("an acknowledgement beyond the read cursor was accepted");
+if (!tooFar.isError) throw new Error("an acknowledgement beyond the active request was accepted");
+const rejectedFinal = finishProcessingRun(assistant([{ type: "text", text: "Rejected but still visible." }]));
+if (textOf(rejectedFinal) !== "") throw new Error("a rejected acknowledgement committed captain text");
 if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("a refused acknowledgement moved the marker");
+
+startProcessingRun(requests().at(-1));
+const acceptedPrelude = finalizeMessage(assistant([
+  { type: "text", text: "Still provisional." },
+  { type: "toolCall", id: "ack", name: "fm_branch_processed", arguments: { through: seq } },
+], "toolUse"));
+if (textOf(acceptedPrelude) !== "") throw new Error("text beside the accepted tool call committed before execution");
 const ack = await processed.execute("ack", { through: seq }, undefined, undefined, {});
 if (ack.isError) throw new Error(`acknowledgement failed: ${JSON.stringify(ack)}`);
+if (renderMarkdown("Captain, the update is processed.") !== "Captain, the update is processed.") {
+  throw new Error("accepted acknowledgement left committed streaming text hidden");
+}
+const committed = finishProcessingRun(assistant([{ type: "text", text: "Captain, the update is processed." }]));
+if (textOf(committed) !== "Captain, the update is processed.") throw new Error("post-acknowledgement text was suppressed");
 if (unprocessedSeqs().length !== 0) throw new Error("the acknowledgement did not close the sequence");
 const before = requests().length;
 runOf();
@@ -1335,32 +1421,42 @@ if (!unlisted.isError || !unlisted.content.some((item) => item.type === "text" &
 if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seqE, seqF])) {
   throw new Error(`an unlisted acknowledgement closed outcomes: ${unprocessedSeqs()}`);
 }
-runOf();
+startProcessingRun(requests().at(-1));
+finishProcessingRun(assistant([{ type: "text", text: "Ignored first sequence." }]));
 if (requests().length !== beforePair + 2) throw new Error("the widened sequence was not presented at the run boundary");
-const latest = requests().at(-1).message.content;
+const widenedRequest = requests().at(-1);
+const latest = widenedRequest.message.content;
 if (!latest.includes(`[seq ${seqE}] branch-driver:`) || !latest.includes(`[seq ${seqF}] task-f:`) || !latest.includes(`through=${seqF}`)) {
   throw new Error(`the widened request did not cover every unprocessed sequence with the highest key: ${latest}`);
 }
-const beforePairRepeat = requests().length;
-runOf();
-if (requests().length !== beforePairRepeat + 1 || requests().at(-1).options.triggerTurn !== true) {
-  throw new Error("the second presentation of the widened sequence set did not open its own turn");
+if (widenedRequest.options.triggerTurn !== true) throw new Error("the widened request did not spend the oldest outcome's second attempt");
+startProcessingRun(widenedRequest);
+finishProcessingRun(assistant([{ type: "text", text: "Ignored widened request." }]));
+if (requests().length !== beforePair + 3 || requests().at(-1).options.deliverAs !== "nextTurn" || requests().at(-1).options.triggerTurn) {
+  throw new Error("sequence widening renewed the oldest outcome's autonomous retry budget");
 }
+
+// A partial acknowledgement on a mixed captain turn leaves the newer outcome
+// open. Once the oldest changes, that newer outcome receives its own budget.
+startProcessingRun(requests().at(-1), "Please continue with the newest update.");
 const partial = await processed.execute("ack-partial", { through: seqE }, undefined, undefined, {});
 if (partial.isError) throw new Error(`partial acknowledgement failed: ${JSON.stringify(partial)}`);
+const partialAnswer = finishProcessingRun(assistant([{ type: "text", text: "The older update is accounted for." }]));
+if (textOf(partialAnswer) !== "The older update is accounted for.") throw new Error("the mixed partial-acknowledgement answer was suppressed");
 if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seqF])) throw new Error(`a partial acknowledgement did not keep the newer sequence open: ${unprocessedSeqs()}`);
-const beforeF = requests().length;
-runOf();
 if (
-  requests().length !== beforeF + 1 ||
   requests().at(-1).options.triggerTurn !== true ||
   requests().at(-1).options.deliverAs !== "followUp" ||
   !requests().at(-1).message.content.includes(`[seq ${seqF}] task-f:`)
 ) {
-  throw new Error("the changed remaining sequence set did not restart its triggered presentation budget");
+  throw new Error("the new oldest sequence did not receive a fresh triggered presentation budget");
 }
+startProcessingRun(requests().at(-1));
 const done = await processed.execute("ack-final", { through: seqF }, undefined, undefined, {});
-if (done.isError || unprocessedSeqs().length !== 0) throw new Error("the final acknowledgement did not close the newer sequence");
+if (done.isError) throw new Error(`final acknowledgement failed: ${JSON.stringify(done)}`);
+const finalAnswer = finishProcessingRun(assistant([{ type: "text", text: "Captain, the credential blocker remains." }]));
+if (textOf(finalAnswer) !== "Captain, the credential blocker remains.") throw new Error("the final committed answer was suppressed");
+if (unprocessedSeqs().length !== 0) throw new Error("the final acknowledgement did not close the newer sequence");
 
 // A session that does not own the fleet lock cannot acknowledge anything.
 writeFileSync(`${home}/state/.lock`, "1\n");
@@ -1371,7 +1467,7 @@ EOF
   status=$?
   out=$(cat "$TMP_ROOT/node-output")
   expect_code 0 "$status" "captain outcomes must be processed through a sequence-bound acknowledgement and re-presented until then: $out"
-  pass "a captain outcome opens one sequence-keyed processing turn, survives empty and unrelated answers, is re-presented at run end and session start, and closes only on its acknowledgement"
+  pass "dedicated processing text commits only after exact acknowledgement, mixed captain answers survive, and retries stay bounded by the oldest open sequence"
 }
 
 test_branch_cache_key_is_per_home_stable() {
@@ -1417,14 +1513,14 @@ test_branch_default_on_heartbeat_afk_and_fallback() {
   cp "$ROOT/bin/fm-branch-outcome.sh" "$ROOT/bin/fm-classify-lib.sh" \
     "$ROOT/bin/fm-lease.sh" "$ROOT/bin/fm-lease-lib.sh" "$ROOT/bin/fm-timeout-lib.sh" \
     "$ROOT/bin/fm-wake-lib.sh" "$ROOT/bin/fm-wake-grant.sh" "$broken/bin/"
-  cat > "$broken/bin/fm-branch-prompt.sh" <<'SH'
+  cat >"$broken/bin/fm-branch-prompt.sh" <<'SH'
 #!/usr/bin/env bash
 echo "synthetic generator failure" >&2
 exit 1
 SH
   chmod +x "$broken/bin/fm-branch-prompt.sh"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, fire, settle, home, sentToMain, mainEntries, defaultSessionCtx }; })()`);
 const { dispatch, fire, settle, home, sentToMain, mainEntries, defaultSessionCtx } = globalThis.__t;
@@ -1539,7 +1635,7 @@ EOF
   expect_code 0 "$status" "default-on eligibility, heartbeat routing, and afk gating must bind: $out"
 
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$TMP_ROOT/gating-home-2" FM_ROOT_OVERRIDE="$broken" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, settle, mainUserMessages }; })()`);
 const { dispatch, settle, mainUserMessages } = globalThis.__t;
@@ -1574,7 +1670,7 @@ test_branch_predrain_recheck_keeps_a_heartbeat_a_co_present_check_arrives_under(
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, fire, home, mainUserMessages }; })()`);
 const { dispatch, fire, home, mainUserMessages } = globalThis.__t;
@@ -1627,7 +1723,7 @@ test_branch_report_refuses_a_task_the_wake_did_not_name() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, fire, home, settle, approvedProject, defaultSessionCtx }; })()`);
 const { dispatch, fire, home, settle, approvedProject, defaultSessionCtx } = globalThis.__t;
@@ -1718,7 +1814,7 @@ test_branch_predrain_recheck_excludes_new_main_owned_row_without_deferring_eligi
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, fire, home, mainUserMessages }; })()`);
 const { dispatch, fire, home, mainUserMessages } = globalThis.__t;
@@ -1774,7 +1870,7 @@ test_settled_branch_prompt_releases_unacknowledged_grant() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, fire, home, realRoot, mainUserMessages }; })()`);
 const { dispatch, fire, home, realRoot, mainUserMessages } = globalThis.__t;
@@ -1825,7 +1921,7 @@ test_post_construction_provider_error_falls_back_latches_and_recovers_on_cooldow
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { pi, makeOffer, dispatch, fire, settle, home, mainUserMessages, sentToMain }; })()`);
 const { pi, makeOffer, dispatch, fire, settle, home, mainUserMessages, sentToMain } = globalThis.__t;
@@ -2010,7 +2106,7 @@ test_selection_change_does_not_corrupt_inflight_provider_state() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, fire, settle, home, mainUserMessages }; })()`);
 const { dispatch, fire, settle, home, mainUserMessages } = globalThis.__t;
@@ -2091,7 +2187,7 @@ test_main_owned_grant_result_falls_back_to_main() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, fire, home, mainUserMessages }; })()`);
 const { dispatch, fire, home, mainUserMessages } = globalThis.__t;
@@ -2129,7 +2225,7 @@ test_branch_predrain_recheck_noops_already_drained_wake() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, fire, home, mainUserMessages }; })()`);
 const { dispatch, fire, home, mainUserMessages } = globalThis.__t;
@@ -2183,7 +2279,7 @@ test_branch_mirror_filters_order_and_cursor() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, home }; })()`);
 const { fire, dispatch, settle, home } = globalThis.__t;
@@ -2274,7 +2370,7 @@ test_branch_mirror_reanchors_for_the_new_session_branch_conversation() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, makeCtx, home }; })()`);
 const { fire, dispatch, settle, makeCtx, home } = globalThis.__t;
@@ -2344,7 +2440,7 @@ test_branch_session_is_new_at_every_main_session_start() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, makeCtx, home }; })()`);
 const { fire, dispatch, settle, makeCtx, home } = globalThis.__t;
@@ -2397,14 +2493,14 @@ EOF
   expect_code 0 "$status" "a main session start must start a new branch conversation: $out"
   first_pointer=$(tail -n 1 "$TMP_ROOT/node-output")
   case "$first_pointer" in
-    */fresh-session-home/state/branch-session/*.jsonl) ;;
-    *) fail "the branch conversation was not recorded under state/branch-session: $first_pointer" ;;
+  */fresh-session-home/state/branch-session/*.jsonl) ;;
+  *) fail "the branch conversation was not recorded under state/branch-session: $first_pointer" ;;
   esac
   # A restart is a main session start too: the recorded conversation from the
   # previous process is left on disk and never becomes the live one.
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
     FM_TEST_PRIOR_POINTER="$first_pointer" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, makeCtx, home }; })()`);
 const { fire, dispatch, settle, makeCtx, home } = globalThis.__t;
@@ -2441,7 +2537,7 @@ test_branch_model_pin_applies_and_absent_pin_keeps_the_default() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, makeCtx, registryModels, home }; })()`);
 const { fire, dispatch, settle, makeCtx, registryModels, home } = globalThis.__t;
@@ -2528,7 +2624,7 @@ test_unpinned_branch_follows_main_model_changes_live() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, makeCtx, registryModels, home }; })()`);
 const { fire, dispatch, settle, makeCtx, registryModels, home } = globalThis.__t;
@@ -2587,7 +2683,7 @@ test_supervision_model_command_persists_and_rebinds_the_live_branch() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, makeCtx, commands, registryModels, uiSelections, uiPrompts, notices, home }; })()`);
 const { fire, dispatch, settle, makeCtx, commands, registryModels, uiSelections, uiPrompts, notices, home } = globalThis.__t;
@@ -2737,7 +2833,7 @@ test_branch_effort_pin_applies_and_absent_pin_follows_main() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, makeCtx, registryModels, setMainThinkingLevel, home }; })()`);
 const { fire, dispatch, settle, makeCtx, registryModels, setMainThinkingLevel, home } = globalThis.__t;
@@ -2862,7 +2958,7 @@ test_unpinned_branch_follows_main_effort_changes_live() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, makeCtx, registryModels, setMainThinkingLevel, home }; })()`);
 const { fire, dispatch, settle, makeCtx, registryModels, setMainThinkingLevel, home } = globalThis.__t;
@@ -2926,7 +3022,7 @@ test_supervision_model_picker_is_bounded_searchable_and_branch_only() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, makeCtx, makeTuiCtx, commands, registryModels, uiSelections, uiKeystrokes, mainModelWrites, home }; })()`);
 const { fire, makeCtx, makeTuiCtx, commands, registryModels, uiSelections, uiKeystrokes, mainModelWrites, home } = globalThis.__t;
@@ -3005,7 +3101,7 @@ test_branch_model_picker_keeps_follow_main_first_under_ranking() {
   repo="$TMP_ROOT/pickerlib-root"
   mkdir -p "$repo/.pi/extensions/lib"
   cp "$ROOT/.pi/extensions/lib/fm-branch-model-picker.ts" "$repo/.pi/extensions/lib/fm-branch-model-picker.ts"
-  LIB="$repo/.pi/extensions/lib/fm-branch-model-picker.ts" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+  LIB="$repo/.pi/extensions/lib/fm-branch-model-picker.ts" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 import { pathToFileURL } from "node:url";
 
 const { buildBranchModelItems, filterBranchPickerItems, BRANCH_PICKER_MAX_VISIBLE, FOLLOW_MAIN_VALUE } = await import(
@@ -3055,7 +3151,7 @@ test_supervision_model_command_picks_effort_after_the_model() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, makeCtx, commands, registryModels, uiSelections, uiPrompts, notices, setMainThinkingLevel, home }; })()`);
 const { fire, dispatch, settle, makeCtx, commands, registryModels, uiSelections, uiPrompts, notices, setMainThinkingLevel, home } = globalThis.__t;
@@ -3217,7 +3313,7 @@ test_unusable_model_pin_falls_back_to_main() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, makeCtx, registryModels, mainUserMessages, home }; })()`);
 const { fire, dispatch, settle, makeCtx, registryModels, mainUserMessages, home } = globalThis.__t;
@@ -3275,7 +3371,7 @@ test_replacement_activation_cleans_leases_and_retries_failure() {
   real_bash=$(command -v bash)
   mkdir -p "$home/state" "$home/config" "$fakebin"
   install_pi_branch_extension_fixture "$repo"
-  cat > "$fakebin/bash" <<'SH'
+  cat >"$fakebin/bash" <<'SH'
 #!/bin/sh
 if [ "$1" = "$FM_TEST_LEASE_SCRIPT" ] && [ ! -e "$FM_TEST_FAIL_MARKER" ]; then
   : > "$FM_TEST_FAIL_MARKER"
@@ -3287,7 +3383,7 @@ SH
   PATH="$fakebin:$PATH" PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
     FM_TEST_REAL_BASH="$real_bash" FM_TEST_LEASE_SCRIPT="$ROOT/bin/fm-lease.sh" \
     FM_TEST_FAIL_MARKER="$home/state/release-failed-once" DRIVER_PRELUDE="$DRIVER_PRELUDE" \
-    node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, home, realRoot }; })()`);
 const { fire, dispatch, settle, home } = globalThis.__t;
@@ -3316,7 +3412,7 @@ test_cold_start_activates_after_lock_acquisition() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    FM_TEST_SKIP_LOCK=1 DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    FM_TEST_SKIP_LOCK=1 DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, home, mainEntries, outcomeScript, defaultSessionCtx }; })()`);
 const { fire, dispatch, settle, home, mainEntries, outcomeScript, defaultSessionCtx } = globalThis.__t;
@@ -3359,7 +3455,7 @@ test_queued_actions_recheck_lock_ownership() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, home, mainUserMessages }; })()`);
 const { fire, dispatch, settle, home, mainUserMessages } = globalThis.__t;
@@ -3405,7 +3501,7 @@ test_stale_generation_boundaries_are_side_effect_free() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, home, sentToMain }; })()`);
 const { fire, dispatch, settle, home, sentToMain } = globalThis.__t;
@@ -3485,9 +3581,9 @@ test_secondary_session_stays_inert() {
   # session: it must accept nothing, write no marker, and release no leases.
   sleep 60 &
   foreign_pid=$!
-  printf 'branch\t%s\t123\n' "$foreign_pid" > "$home/state/.lease-task-x"
+  printf 'branch\t%s\t123\n' "$foreign_pid" >"$home/state/.lease-task-x"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    FM_TEST_SKIP_LOCK=1 FM_TEST_LOCK_PID=$foreign_pid DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    FM_TEST_SKIP_LOCK=1 FM_TEST_LOCK_PID=$foreign_pid DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { dispatch, home }; })()`);
 const { dispatch, home } = globalThis.__t;
@@ -3516,7 +3612,7 @@ test_rebind_remirrors_undelivered_dialog_from_durable_cursor() {
   mkdir -p "$home/state" "$home/config"
   install_pi_branch_extension_fixture "$repo"
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
-    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
 await eval(`(async () => { ${prelude}; globalThis.__t = { fire, home }; })()`);
 const { fire, home } = globalThis.__t;
@@ -3608,9 +3704,9 @@ test_branch_dispatch_classifies_main_only_rows_and_writes_the_eligible_snapshot(
   mkdir -p "$repo/.pi/extensions/lib" "$home/state" "$home/projects/approved"
   cp "$ROOT/.pi/extensions/lib/fm-branch-dispatch.ts" "$repo/.pi/extensions/lib/fm-branch-dispatch.ts"
   cp "$ROOT/.pi/extensions/lib/fm-branch-model-picker.ts" "$repo/.pi/extensions/lib/fm-branch-model-picker.ts"
-  printf 'project=%s/projects/approved\nwindow=fm-window\n' "$home" > "$home/state/task-a.meta"
+  printf 'project=%s/projects/approved\nwindow=fm-window\n' "$home" >"$home/state/task-a.meta"
   LIB="$repo/.pi/extensions/lib/fm-branch-dispatch.ts" FM_HOME="$home" GRANT="$ROOT/bin/fm-wake-grant.sh" \
-    node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+    node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 import { pathToFileURL } from "node:url";
 import { readFileSync, writeFileSync } from "node:fs";
 
@@ -3774,7 +3870,7 @@ test_real_pi_picker_primitives_stay_bounded_and_searchable() {
   original_dir=$PWD
   cd "$fixture" || fail "could not enter the Pi picker primitives fixture"
   LIB="$fixture/lib/fm-branch-model-picker.ts" PI_VERSION_FILE="$package_dir/package.json" \
-    node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'JS'
+    node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'JS'
 import { pathToFileURL } from "node:url";
 import { readFileSync } from "node:fs";
 
@@ -3866,7 +3962,8 @@ test_outcomes_tool_uses_stock_execution_and_export_consumers() {
   ln -s "$package_dir/node_modules/@earendil-works/pi-ai" "$fixture/node_modules/@earendil-works/pi-ai"
   ln -s "$package_dir/node_modules/typebox" "$fixture/node_modules/typebox"
 
-  out=$(cd "$fixture" && EXT="$fixture/.pi/extensions/fm-branch-supervision.ts" PI_PACKAGE_DIR="$package_dir" node --input-type=module 2>&1 <<'JS'
+  out=$(
+    cd "$fixture" && EXT="$fixture/.pi/extensions/fm-branch-supervision.ts" PI_PACKAGE_DIR="$package_dir" node --input-type=module 2>&1 <<'JS'
 import { pathToFileURL } from "node:url";
 
 const packageRoot = process.env.PI_PACKAGE_DIR;

@@ -59,7 +59,7 @@ cp "$ROOT/.pi/extensions/lib/fm-calm-visibility.ts" "$repo/.pi/extensions/lib/fm
 cp "$ROOT/.pi/extensions/lib/fm-operational-input.ts" "$repo/.pi/extensions/lib/fm-operational-input.ts"
 mkdir -p "$repo/bin"
 cp "$ROOT/bin/fm-operational-input.sh" "$repo/bin/fm-operational-input.sh"
-cat > "$repo/bin/fm-watch-arm.sh" <<'SH'
+cat >"$repo/bin/fm-watch-arm.sh" <<'SH'
 #!/usr/bin/env bash
 if [ "${1:-}" = --handling-delivered ]; then
   printf 'confirmed generation=%s watcher=%s\n' "$2" "$4" >> "${FM_LIVE_WATCH_LOG:?}"
@@ -90,7 +90,7 @@ BRANCH_PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" \
   WATCH_PLUGIN="$repo/.pi/extensions/fm-primary-pi-watch.ts" \
   FM_HOME="$home" FM_REAL_ROOT="$ROOT" FM_WATCH_ROOT="$repo" \
   FM_LIVE_WATCH_LOG="$TMP_ROOT/live-watch.log" FM_LIVE_WATCH_TRIGGER="$TMP_ROOT/live-watch.trigger" \
-  PI_CODING_AGENT_DIR="$agentdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+  PI_CODING_AGENT_DIR="$agentdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -269,7 +269,7 @@ pass "real Pi SDK $PI_VERSION accepts the branch session construction and preser
 errorhome="$TMP_ROOT/error-home"
 erroragentdir="$TMP_ROOT/error-agent-dir"
 mkdir -p "$errorhome/state" "$errorhome/config" "$erroragentdir"
-cat > "$erroragentdir/models.json" <<'JSON'
+cat >"$erroragentdir/models.json" <<'JSON'
 {
   "providers": {
     "fm-live-error": {
@@ -288,7 +288,7 @@ BRANCH_PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" \
   FM_HOME="$errorhome" FM_REAL_ROOT="$ROOT" FM_WATCH_ROOT="$repo" \
   FM_LIVE_WATCH_LOG="$TMP_ROOT/error-watch.log" FM_LIVE_WATCH_TRIGGER="$TMP_ROOT/error-watch.trigger" \
   PI_CODING_AGENT_DIR="$erroragentdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
-  node --input-type=module > "$TMP_ROOT/error-output" 2>&1 <<'EOF'
+  node --input-type=module >"$TMP_ROOT/error-output" 2>&1 <<'EOF'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -439,7 +439,7 @@ pass "real Pi SDK $PI_VERSION rejects a post-construction 429 to watcher-owned m
 # leaves the machine and no user credential is read.
 modeldir="$TMP_ROOT/model-agent-dir"
 mkdir -p "$modeldir" "$TMP_ROOT/model-sessions"
-cat > "$modeldir/models.json" <<'JSON'
+cat >"$modeldir/models.json" <<'JSON'
 {
   "providers": {
     "fm-live-fake": {
@@ -455,7 +455,7 @@ cat > "$modeldir/models.json" <<'JSON'
 }
 JSON
 PI_PACKAGE_DIR="$PI_PACKAGE_DIR" PI_CODING_AGENT_DIR="$modeldir" FM_LIVE_SESSIONS="$TMP_ROOT/model-sessions" \
-  node --input-type=module > "$TMP_ROOT/model-output" 2>&1 <<'EOF'
+  node --input-type=module >"$TMP_ROOT/model-output" 2>&1 <<'EOF'
 import { pathToFileURL } from "node:url";
 
 const pkg = pathToFileURL(`${process.env.PI_PACKAGE_DIR}/dist/index.js`).href;
@@ -527,7 +527,7 @@ pass "real Pi SDK $PI_VERSION applies an explicit branch model on create and ove
 # entries through the real SessionManager rather than hand-writing the format.
 effortdir="$TMP_ROOT/effort-agent-dir"
 mkdir -p "$effortdir" "$TMP_ROOT/effort-sessions"
-cat > "$effortdir/models.json" <<'JSON'
+cat >"$effortdir/models.json" <<'JSON'
 {
   "providers": {
     "fm-live-fake": {
@@ -558,7 +558,7 @@ cat > "$effortdir/models.json" <<'JSON'
 }
 JSON
 PI_PACKAGE_DIR="$PI_PACKAGE_DIR" PI_CODING_AGENT_DIR="$effortdir" FM_LIVE_SESSIONS="$TMP_ROOT/effort-sessions" \
-  node --input-type=module > "$TMP_ROOT/effort-output" 2>&1 <<'EOF'
+  node --input-type=module >"$TMP_ROOT/effort-output" 2>&1 <<'EOF'
 import { pathToFileURL } from "node:url";
 
 const packageRoot = process.env.PI_PACKAGE_DIR;
@@ -692,7 +692,7 @@ pass "real Pi SDK $PI_VERSION reports its own supported effort levels and applie
 # reopen, and keep it out of model context. No model is selected or prompted.
 PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" DELIVERY_DIR="$TMP_ROOT/delivery-sessions" \
   DELIVERY_AGENT_DIR="$TMP_ROOT/delivery-agent-dir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
-  node --input-type=module > "$TMP_ROOT/delivery-output" 2>&1 <<'EOF'
+  node --input-type=module >"$TMP_ROOT/delivery-output" 2>&1 <<'EOF'
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -805,7 +805,7 @@ pass "real Pi SDK $PI_VERSION immediately renders appendEntry in the active tran
 streamdir="$TMP_ROOT/stream-agent-dir"
 streamhome="$TMP_ROOT/stream-home"
 mkdir -p "$streamdir" "$streamhome/state" "$streamhome/config" "$TMP_ROOT/stream-sessions"
-cat > "$streamdir/models.json" <<'JSON'
+cat >"$streamdir/models.json" <<'JSON'
 {
   "providers": {
     "fm-live-stream": {
@@ -824,7 +824,7 @@ WATCH_PLUGIN="$repo/.pi/extensions/fm-primary-pi-watch.ts" \
   FM_LIVE_WATCH_LOG="$TMP_ROOT/stream-watch.log" FM_LIVE_WATCH_TRIGGER="$TMP_ROOT/stream-watch.trigger" \
   FM_LIVE_SESSIONS="$TMP_ROOT/stream-sessions" \
   PI_CODING_AGENT_DIR="$streamdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
-  node --input-type=module > "$TMP_ROOT/stream-output" 2>&1 <<'EOF'
+  node --input-type=module >"$TMP_ROOT/stream-output" 2>&1 <<'EOF'
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -992,3 +992,196 @@ if [ "$status" -ne 0 ] || [ "$out" != "STREAM_OK" ]; then
   fail "real-SDK streaming-time watcher delivery guard failed against pi-coding-agent $PI_VERSION: $out"
 fi
 pass "real Pi SDK $PI_VERSION queues a streaming-time watcher wake without before_agent_start, keeps the successor chain, and surfaces consumption of both follow-ups"
+
+# Seventh probe: the vendor rendering and message-lifecycle contracts dedicated
+# processing containment rests on. A real AgentSession streams a repeated prior
+# answer through stock inline and fullscreen InteractiveMode transcripts. The
+# Markdown transformer suppresses it during streaming, then a message_end
+# replacement removes it before listeners finalize the row and persistence.
+containagentdir="$TMP_ROOT/contain-agent-dir"
+containsessions="$TMP_ROOT/contain-sessions"
+mkdir -p "$containagentdir" "$containsessions"
+cat >"$containagentdir/models.json" <<'JSON'
+{
+  "providers": {
+    "fm-live-contain": {
+      "baseUrl": "https://fm-live-contain.invalid/v1",
+      "api": "openai-completions",
+      "apiKey": "fm-live-placeholder",
+      "models": [
+        { "id": "fm-live-contain-model", "name": "fm live containment", "contextWindow": 8192, "maxTokens": 512 }
+      ]
+    }
+  }
+}
+JSON
+CONTAIN_AGENT_DIR="$containagentdir" CONTAIN_SESSIONS="$containsessions" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
+  node --input-type=module >"$TMP_ROOT/contain-output" 2>&1 <<'EOF'
+import { mkdirSync } from "node:fs";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+
+const pkg = resolve(process.env.PI_PACKAGE_DIR);
+const {
+  DefaultResourceLoader,
+  InteractiveMode,
+  ModelRegistry,
+  ModelRuntime,
+  SessionManager,
+  SettingsManager,
+  createAgentSession,
+  initTheme,
+} = await import(pathToFileURL(`${pkg}/dist/index.js`).href);
+initTheme("dark");
+const agentDir = resolve(process.env.CONTAIN_AGENT_DIR);
+const sessions = resolve(process.env.CONTAIN_SESSIONS);
+mkdirSync(agentDir, { recursive: true });
+mkdirSync(sessions, { recursive: true });
+
+const repeated = "The retry safe-stopped; diagnosis is underway.";
+let sawRepeatedUpdate = false;
+let releaseStream = () => {};
+const streamHeld = new Promise((release) => { releaseStream = release; });
+const chunk = (delta, finish) => `data: ${JSON.stringify({
+  id: "fm-live-contain",
+  object: "chat.completion.chunk",
+  created: 1,
+  model: "fm-live-contain-model",
+  choices: [{ index: 0, delta, finish_reason: finish }],
+  ...(finish ? { usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } } : {}),
+})}\n\n`;
+globalThis.fetch = async (input) => {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  if (!url.startsWith("https://fm-live-contain.invalid/")) {
+    throw new Error(`unexpected network request in containment guard: ${url}`);
+  }
+  const encoder = new TextEncoder();
+  const body = new ReadableStream({
+    async start(controller) {
+      controller.enqueue(encoder.encode(chunk({ role: "assistant", content: repeated }, null)));
+      await streamHeld;
+      controller.enqueue(encoder.encode(chunk({}, "stop")));
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
+  return new Response(body, { status: 200, headers: { "content-type": "text/event-stream" } });
+};
+
+const settings = SettingsManager.create(process.cwd(), agentDir);
+const loader = new DefaultResourceLoader({
+  cwd: process.cwd(),
+  agentDir,
+  settingsManager: settings,
+  extensionFactories: [{
+    name: "message-end-containment-probe",
+    factory: (pi) => {
+      let dedicated = false;
+      pi.on("message_start", (event) => {
+        if (event.message.role === "custom" && event.message.customType === "fm-branch-process") dedicated = true;
+      });
+      pi.on("message_update", (event) => {
+        if (
+          event.message.role === "assistant" &&
+          event.message.content.some((part) => part.type === "text" && part.text.includes(repeated))
+        ) sawRepeatedUpdate = true;
+      });
+      pi.registerMarkdownTransformer((markdown, { messageType, isStreaming }) => {
+        if (dedicated && messageType === "assistant" && isStreaming) return "";
+        return markdown;
+      });
+      pi.on("message_end", (event) => {
+        if (!dedicated || event.message.role !== "assistant") return;
+        return {
+          message: {
+            ...event.message,
+            content: event.message.content.filter((part) => part.type !== "text"),
+          },
+        };
+      });
+    },
+  }],
+  noSkills: true,
+  noPromptTemplates: true,
+  noThemes: true,
+  noContextFiles: true,
+});
+await loader.reload();
+const runtime = await ModelRuntime.create({
+  authPath: `${agentDir}/auth.json`,
+  modelsPath: `${agentDir}/models.json`,
+});
+const registry = new ModelRegistry(runtime);
+await registry.refresh();
+const model = registry.find("fm-live-contain", "fm-live-contain-model");
+if (!model) throw new Error("the real registry did not resolve the containment model");
+const manager = SessionManager.create(process.cwd(), sessions);
+manager.appendMessage({
+  role: "assistant",
+  content: [{ type: "text", text: repeated }],
+  api: "openai-completions",
+  provider: "fm-live-contain",
+  model: "fm-live-contain-model",
+  usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+  stopReason: "stop",
+});
+const { session } = await createAgentSession({
+  cwd: process.cwd(),
+  sessionManager: manager,
+  settingsManager: settings,
+  resourceLoader: loader,
+  modelRuntime: runtime,
+  model,
+  noTools: "builtin",
+});
+const runtimeHost = { session, setBeforeSessionInvalidate() {}, setRebindSession() {} };
+const inline = new InteractiveMode(runtimeHost, { tuiMode: "inline" });
+const fullscreen = new InteractiveMode(runtimeHost, { tuiMode: "alt-screen" });
+for (const interactive of [inline, fullscreen]) {
+  // Keep the live stock transcript components while preventing this headless
+  // guard from writing terminal control sequences to the test process.
+  interactive.ui.requestRender = () => {};
+  interactive.isInitialized = true;
+  interactive.subscribeToAgent();
+}
+const countRendered = (interactive) => interactive.chatContainer.render(240).join("\n").split(repeated).length - 1;
+const inlineBaseline = countRendered(inline);
+const fullscreenBaseline = countRendered(fullscreen);
+const waitFor = async (predicate, label) => {
+  for (let i = 0; i < 600; i += 1) {
+    if (predicate()) return;
+    await new Promise((tick) => setTimeout(tick, 10));
+  }
+  throw new Error(`timeout waiting for ${label}`);
+};
+const run = session.sendCustomMessage({
+  customType: "fm-branch-process",
+  content: "Process the durable outcome.",
+  display: false,
+}, { triggerTurn: true, deliverAs: "followUp" });
+await waitFor(() => session.isStreaming && sawRepeatedUpdate, "the repeated answer to stream");
+if (countRendered(inline) !== inlineBaseline || countRendered(fullscreen) !== fullscreenBaseline) {
+  throw new Error(`streaming transcript exposed repeated output: inline=${countRendered(inline)} fullscreen=${countRendered(fullscreen)}`);
+}
+releaseStream();
+await run;
+await waitFor(() => !session.isStreaming, "the containment turn to settle");
+if (countRendered(inline) !== inlineBaseline || countRendered(fullscreen) !== fullscreenBaseline) {
+  throw new Error(`stable transcript retained repeated output: inline=${countRendered(inline)} fullscreen=${countRendered(fullscreen)}`);
+}
+const reopened = SessionManager.open(manager.getSessionFile(), sessions);
+const assistants = reopened.buildSessionContext().messages.filter((message) => message.role === "assistant");
+if (assistants.length !== 2 || assistants[1].content.some((part) => part.type === "text")) {
+  throw new Error(`restored session retained uncommitted assistant text: ${JSON.stringify(assistants)}`);
+}
+for (const interactive of [inline, fullscreen]) interactive.unsubscribe();
+session.dispose();
+console.log("CONTAINMENT_OK");
+process.exit(0);
+EOF
+status=$?
+out=$(cat "$TMP_ROOT/contain-output")
+if [ "$status" -ne 0 ] || [ "$out" != "CONTAINMENT_OK" ]; then
+  fail "real-SDK message containment guard failed against pi-coding-agent $PI_VERSION: $out"
+fi
+pass "real Pi SDK $PI_VERSION suppresses streaming dedicated text and removes it from finalized and restored transcripts"
