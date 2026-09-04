@@ -1399,9 +1399,10 @@ It proved that a follow-up the extension sends while main is streaming raises no
 The portable regression drives the same shape with a fake main that never raises `before_agent_start` while streaming, then proves a replacement replays only the follow-up Pi had not consumed and that an exhausted restoration delivers its typed failure without launching a further arm.
 A second regression holds a branch settlement open while the verified successor exits with a failure, and proves that failure takes the ordinary bounded retry once the delivery settles rather than leaving the generation with no watcher and no retry.
 
-### 2026-09-04 processing-output containment
+### Historical: 2026-09-04 finalized processing-output containment
 
-The focused extension regression, strict typecheck, and the containment portion of the real-SDK guard were run against npm `@earendil-works/pi-coding-agent` 0.84.4 on macOS 26.4 arm64 and Node v26.8.1.
+This run predates the Markdown transformer and verifies only finalized and restored transcript containment through `message_end`.
+The focused extension regression, strict typecheck, and the containment portion of the then-current real-SDK guard were run against npm `@earendil-works/pi-coding-agent` 0.84.4 on macOS 26.4 arm64 and Node v26.8.1.
 The local fake provider's fetch was intercepted in-process, no credential was read, no request left the machine, and the active Pi session was not changed.
 
 ```sh
@@ -1426,7 +1427,8 @@ ok - real Pi SDK 0.84.4 removes finalized dedicated text from inline/fullscreen 
 
 The real AgentSession streamed a repeated prior answer into stock inline and fullscreen `InteractiveMode` components, and the guard observed that text before completion.
 Its `message_end` replacement then removed ordinary text before finalized listeners and `SessionManager` persistence, both stock transcript components returned to their pre-stream content, and reopening the session restored the uncommitted assistant message with no text block.
-This proves stable and restored transcript containment but also proves its limit: provider tokens can flash while streaming before `message_end` is able to replace the finalized message.
+This proves the historical stable and restored transcript boundary and records that the implementation under test still exposed provider tokens while streaming.
+It is not evidence for the current Markdown transformer's streaming suppression; that guarantee remains pending a recorded post-transformer real-SDK run.
 
 The full live script could not reach this probe in that environment because its unchanged first watcher-fallback probe timed out before main delivery.
 A clean archive of the then-current default branch failed identically at that same first probe, so this is not evidence of a containment regression; the pre-existing probe remains unchanged, and its prior successful version-scoped records above remain the current evidence for that separate boundary.
