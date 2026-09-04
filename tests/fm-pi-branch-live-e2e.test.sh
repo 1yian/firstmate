@@ -992,3 +992,187 @@ if [ "$status" -ne 0 ] || [ "$out" != "STREAM_OK" ]; then
   fail "real-SDK streaming-time watcher delivery guard failed against pi-coding-agent $PI_VERSION: $out"
 fi
 pass "real Pi SDK $PI_VERSION queues a streaming-time watcher wake without before_agent_start, keeps the successor chain, and surfaces consumption of both follow-ups"
+
+# Seventh probe: the vendor message-lifecycle contract dedicated processing
+# containment rests on. A real AgentSession streams a repeated prior answer
+# into stock inline and fullscreen InteractiveMode transcripts. A message_end
+# replacement removes that text before listeners finalize the row and before
+# SessionManager persistence. The streamed token is observable transiently;
+# this guard pins the honest boundary that the stable and restored transcript,
+# not in-flight terminal bytes, is quarantined.
+containagentdir="$TMP_ROOT/contain-agent-dir"
+containsessions="$TMP_ROOT/contain-sessions"
+mkdir -p "$containagentdir" "$containsessions"
+cat >"$containagentdir/models.json" <<'JSON'
+{
+  "providers": {
+    "fm-live-contain": {
+      "baseUrl": "https://fm-live-contain.invalid/v1",
+      "api": "openai-completions",
+      "apiKey": "fm-live-placeholder",
+      "models": [
+        { "id": "fm-live-contain-model", "name": "fm live containment", "contextWindow": 8192, "maxTokens": 512 }
+      ]
+    }
+  }
+}
+JSON
+CONTAIN_AGENT_DIR="$containagentdir" CONTAIN_SESSIONS="$containsessions" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
+  node --input-type=module >"$TMP_ROOT/contain-output" 2>&1 <<'EOF'
+import { mkdirSync } from "node:fs";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+
+const pkg = resolve(process.env.PI_PACKAGE_DIR);
+const {
+  DefaultResourceLoader,
+  InteractiveMode,
+  ModelRegistry,
+  ModelRuntime,
+  SessionManager,
+  SettingsManager,
+  createAgentSession,
+  initTheme,
+} = await import(pathToFileURL(`${pkg}/dist/index.js`).href);
+initTheme("dark");
+const agentDir = resolve(process.env.CONTAIN_AGENT_DIR);
+const sessions = resolve(process.env.CONTAIN_SESSIONS);
+mkdirSync(agentDir, { recursive: true });
+mkdirSync(sessions, { recursive: true });
+
+const repeated = "The retry safe-stopped; diagnosis is underway.";
+let releaseStream = () => {};
+const streamHeld = new Promise((release) => { releaseStream = release; });
+const chunk = (delta, finish) => `data: ${JSON.stringify({
+  id: "fm-live-contain",
+  object: "chat.completion.chunk",
+  created: 1,
+  model: "fm-live-contain-model",
+  choices: [{ index: 0, delta, finish_reason: finish }],
+  ...(finish ? { usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } } : {}),
+})}\n\n`;
+globalThis.fetch = async (input) => {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  if (!url.startsWith("https://fm-live-contain.invalid/")) {
+    throw new Error(`unexpected network request in containment guard: ${url}`);
+  }
+  const encoder = new TextEncoder();
+  const body = new ReadableStream({
+    async start(controller) {
+      controller.enqueue(encoder.encode(chunk({ role: "assistant", content: repeated }, null)));
+      await streamHeld;
+      controller.enqueue(encoder.encode(chunk({}, "stop")));
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
+  return new Response(body, { status: 200, headers: { "content-type": "text/event-stream" } });
+};
+
+const settings = SettingsManager.create(process.cwd(), agentDir);
+const loader = new DefaultResourceLoader({
+  cwd: process.cwd(),
+  agentDir,
+  settingsManager: settings,
+  extensionFactories: [{
+    name: "message-end-containment-probe",
+    factory: (pi) => {
+      let dedicated = false;
+      pi.on("message_start", (event) => {
+        if (event.message.role === "custom" && event.message.customType === "fm-branch-process") dedicated = true;
+      });
+      pi.on("message_end", (event) => {
+        if (!dedicated || event.message.role !== "assistant") return;
+        return {
+          message: {
+            ...event.message,
+            content: event.message.content.filter((part) => part.type !== "text"),
+          },
+        };
+      });
+    },
+  }],
+  noSkills: true,
+  noPromptTemplates: true,
+  noThemes: true,
+  noContextFiles: true,
+});
+await loader.reload();
+const runtime = await ModelRuntime.create({
+  authPath: `${agentDir}/auth.json`,
+  modelsPath: `${agentDir}/models.json`,
+});
+const registry = new ModelRegistry(runtime);
+await registry.refresh();
+const model = registry.find("fm-live-contain", "fm-live-contain-model");
+if (!model) throw new Error("the real registry did not resolve the containment model");
+const manager = SessionManager.create(process.cwd(), sessions);
+manager.appendMessage({
+  role: "assistant",
+  content: [{ type: "text", text: repeated }],
+  api: "openai-completions",
+  provider: "fm-live-contain",
+  model: "fm-live-contain-model",
+  usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+  stopReason: "stop",
+});
+const { session } = await createAgentSession({
+  cwd: process.cwd(),
+  sessionManager: manager,
+  settingsManager: settings,
+  resourceLoader: loader,
+  modelRuntime: runtime,
+  model,
+  noTools: "builtin",
+});
+const runtimeHost = { session, setBeforeSessionInvalidate() {}, setRebindSession() {} };
+const inline = new InteractiveMode(runtimeHost, { tuiMode: "inline" });
+const fullscreen = new InteractiveMode(runtimeHost, { tuiMode: "alt-screen" });
+for (const interactive of [inline, fullscreen]) {
+  // Keep the live stock transcript components while preventing this headless
+  // guard from writing terminal control sequences to the test process.
+  interactive.ui.requestRender = () => {};
+  interactive.isInitialized = true;
+  interactive.subscribeToAgent();
+}
+const countRendered = (interactive) => interactive.chatContainer.render(240).join("\n").split(repeated).length - 1;
+const inlineBaseline = countRendered(inline);
+const fullscreenBaseline = countRendered(fullscreen);
+const waitFor = async (predicate, label) => {
+  for (let i = 0; i < 600; i += 1) {
+    if (predicate()) return;
+    await new Promise((tick) => setTimeout(tick, 10));
+  }
+  throw new Error(`timeout waiting for ${label}`);
+};
+const run = session.sendCustomMessage({
+  customType: "fm-branch-process",
+  content: "Process the durable outcome.",
+  display: false,
+}, { triggerTurn: true, deliverAs: "followUp" });
+await waitFor(
+  () => session.isStreaming && countRendered(inline) === inlineBaseline + 1 && countRendered(fullscreen) === fullscreenBaseline + 1,
+  "the repeated answer to render transiently",
+);
+releaseStream();
+await run;
+await waitFor(() => !session.isStreaming, "the containment turn to settle");
+if (countRendered(inline) !== inlineBaseline || countRendered(fullscreen) !== fullscreenBaseline) {
+  throw new Error(`stable transcript retained repeated output: inline=${countRendered(inline)} fullscreen=${countRendered(fullscreen)}`);
+}
+const reopened = SessionManager.open(manager.getSessionFile(), sessions);
+const assistants = reopened.buildSessionContext().messages.filter((message) => message.role === "assistant");
+if (assistants.length !== 2 || assistants[1].content.some((part) => part.type === "text")) {
+  throw new Error(`restored session retained uncommitted assistant text: ${JSON.stringify(assistants)}`);
+}
+for (const interactive of [inline, fullscreen]) interactive.unsubscribe();
+session.dispose();
+console.log("CONTAINMENT_OK");
+process.exit(0);
+EOF
+status=$?
+out=$(cat "$TMP_ROOT/contain-output")
+if [ "$status" -ne 0 ] || [ "$out" != "CONTAINMENT_OK" ]; then
+  fail "real-SDK message containment guard failed against pi-coding-agent $PI_VERSION: $out"
+fi
+pass "real Pi SDK $PI_VERSION removes finalized dedicated text from inline/fullscreen transcripts and restored history after a transient streamed render"

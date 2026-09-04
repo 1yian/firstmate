@@ -1195,13 +1195,51 @@ test_captain_outcome_processing_turn_is_sequence_keyed_and_re_presented() {
   PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" FM_HOME="$home" FM_ROOT_OVERRIDE="$ROOT" \
     DRIVER_PRELUDE="$DRIVER_PRELUDE" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
 const prelude = process.env.DRIVER_PRELUDE;
-await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, sentToMain, mainEntries, mainTools, outcomeScript, defaultSessionCtx, home }; })()`);
-const { fire, dispatch, settle, sentToMain, mainEntries, mainTools, outcomeScript, defaultSessionCtx, home } = globalThis.__t;
+await eval(`(async () => { ${prelude}; globalThis.__t = { fire, dispatch, settle, sentToMain, mainEntries, mainTools, outcomeScript, defaultSessionCtx, home, piHandlers }; })()`);
+const { fire, dispatch, settle, sentToMain, mainEntries, mainTools, outcomeScript, defaultSessionCtx, home, piHandlers } = globalThis.__t;
 import { readFileSync, writeFileSync } from "node:fs";
 
 const requests = () => sentToMain.filter((sent) => sent.message.customType === "fm-branch-process");
 const unprocessedSeqs = () => outcomeScript(["unprocessed"]).split("\n").filter(Boolean).map((line) => JSON.parse(line).seq);
 const runOf = (fn) => { fire("agent_start", {}); fn?.(); fire("agent_end", {}); fire("agent_settled", {}); };
+const finalizeMessage = (message) => {
+  let finalized = message;
+  for (const handler of piHandlers.get("message_end") ?? []) {
+    const result = handler({ type: "message_end", message: finalized }, defaultSessionCtx);
+    if (result && typeof result.then === "function") throw new Error("the processing containment handler unexpectedly became asynchronous");
+    if (result?.message) finalized = result.message;
+  }
+  return finalized;
+};
+const startProcessingRun = (request, captainText) => {
+  fire("agent_start", {});
+  if (captainText) {
+    fire("message_start", {
+      message: { role: "user", content: [{ type: "text", text: captainText }], timestamp: Date.now() },
+    }, defaultSessionCtx);
+  }
+  fire("message_start", {
+    message: { role: "custom", ...request.message, timestamp: Date.now() },
+  }, defaultSessionCtx);
+};
+const finishProcessingRun = (message) => {
+  const finalized = finalizeMessage(message);
+  mainEntries.push({ type: "message", message: finalized });
+  fire("agent_end", {});
+  fire("agent_settled", {});
+  return finalized;
+};
+const assistant = (content, stopReason = "stop") => ({
+  role: "assistant",
+  content,
+  api: "openai-completions",
+  provider: "test",
+  model: "test",
+  usage: { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+  stopReason,
+  timestamp: Date.now(),
+});
+const textOf = (message) => message.content.filter((part) => part.type === "text").map((part) => part.text).join("\n");
 
 // A home upgraded with outcomes that were delivered before the processed
 // marker existed treats them as processed once, at the first reconciliation:
@@ -1247,33 +1285,46 @@ if (request.options.triggerTurn !== true || request.options.deliverAs !== "follo
 if (!request.message.content.includes(`[seq ${seq}] task-d: ${decision}`)) throw new Error(`the request lost its key or summary: ${request.message.content}`);
 if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error(`delivery did not leave seq ${seq} unprocessed: ${unprocessedSeqs()}`);
 
-// Case A (timeline report 2026-08-31): the turn returns an EMPTY assistant
-// message. The processed marker must not move, and the same sequence is
-// presented again at the run boundary.
-runOf(() => mainEntries.push({ type: "message", message: { role: "assistant", content: [] } }));
-if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("an empty answer advanced the processed marker");
-if (requests().length !== 2) throw new Error(`an empty answer did not re-present the outcome: ${requests().length} requests`);
-if (requests()[1].options.triggerTurn !== true) throw new Error("the first re-presentation must open its own turn");
-if (!requests()[1].message.content.includes(`[seq ${seq}] task-d: ${decision}`)) throw new Error("the re-presentation changed the outcome");
-
-// Case B: the turn repeats an unrelated prior answer. Same result: the marker
-// holds, and the request is presented again - now riding the captain's next
-// prompt because the triggered budget for this sequence set is spent.
-runOf(() => mainEntries.push({ type: "message", message: { role: "assistant", content: "The retry safe-stopped; diagnosis is underway." } }));
-if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("an unrelated answer advanced the processed marker");
-if (requests().length !== 3) throw new Error(`an unrelated answer did not re-present the outcome: ${requests().length} requests`);
-if (requests()[2].options.deliverAs !== "nextTurn" || requests()[2].options.triggerTurn) {
-  throw new Error(`after the triggered budget the request must ride the next prompt: ${JSON.stringify(requests()[2].options)}`);
+// A dedicated processing attempt that repeats an unrelated prior answer is
+// provisional. Its ordinary text is removed at message_end, while thinking,
+// tool calls, usage, and the durable open sequence survive for one retry.
+startProcessingRun(request);
+const failed = finishProcessingRun(assistant([
+  { type: "thinking", thinking: "I should process the update." },
+  { type: "text", text: "The retry safe-stopped; diagnosis is underway." },
+  { type: "toolCall", id: "unrelated", name: "read", arguments: { path: "README.md" } },
+], "toolUse"));
+if (textOf(failed) !== "") throw new Error(`an unacknowledged dedicated answer remained visible: ${JSON.stringify(failed.content)}`);
+if (!failed.content.some((part) => part.type === "thinking") || !failed.content.some((part) => part.type === "toolCall")) {
+  throw new Error("containment removed non-text assistant content");
 }
-// A quiet settle with the copy still queued does not queue a duplicate.
+if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("an unrelated answer advanced the processed marker");
+if (requests().length !== 2 || requests()[1].options.triggerTurn !== true) {
+  throw new Error(`the first failed attempt did not receive one triggered retry: ${JSON.stringify(requests())}`);
+}
+
+// The second failed dedicated attempt is also silent. It exhausts the
+// autonomous budget, after which the open outcome rides a real captain turn.
+startProcessingRun(requests()[1]);
+const failedRetry = finishProcessingRun(assistant([{ type: "text", text: "The retry safe-stopped again." }]));
+if (textOf(failedRetry) !== "") throw new Error("the failed retry remained captain-visible");
+if (requests().length !== 3 || requests()[2].options.deliverAs !== "nextTurn" || requests()[2].options.triggerTurn) {
+  throw new Error(`retry exhaustion did not fall back to the next captain turn: ${JSON.stringify(requests())}`);
+}
 fire("agent_settled", {});
 if (requests().length !== 3) throw new Error("a duplicate next-turn copy was queued");
-// The captain's next prompt consumes that copy; settling unacknowledged queues one more.
-runOf(() => mainEntries.push({ type: "message", message: { role: "assistant", content: "Captain, shipshape." } }));
-if (requests().length !== 4 || requests()[3].options.deliverAs !== "nextTurn") throw new Error("the outcome stopped being re-presented on later prompts");
-if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("a paraphrase advanced the processed marker");
 
-// A session replacement re-presents with a fresh triggered budget.
+// A real captain message delivered with the old outcome makes the attempt
+// mixed. Its legitimate answer is retained even though the outcome remains
+// unacknowledged and queued for a later prompt.
+startProcessingRun(requests()[2], "What changed in the retry behavior?");
+const mixed = finishProcessingRun(assistant([{ type: "text", text: "The retry now keeps its original budget." }]));
+if (textOf(mixed) !== "The retry now keeps its original budget.") throw new Error("a mixed captain answer was suppressed");
+if (requests().length !== 4 || requests()[3].options.deliverAs !== "nextTurn") throw new Error("the mixed turn lost durable re-presentation");
+if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("a mixed answer advanced the processed marker");
+
+// A session replacement gives the still-open oldest outcome a fresh bounded
+// budget and preserves its exact visible anchor.
 fire("session_shutdown", {});
 fire("session_start", {}, defaultSessionCtx);
 if (requests().length !== 5 || requests()[4].options.triggerTurn !== true) throw new Error("session start did not re-present the unprocessed outcome with its own turn");
@@ -1281,19 +1332,36 @@ if (mainEntries.filter((entry) => entry.customType === "fm-branch-visible-outcom
   throw new Error("re-presentation duplicated the visible entry");
 }
 
-// Only the sequence-bound acknowledgement closes it.
+// A rejected acknowledgement does not commit text. A later exact accepted
+// acknowledgement commits only the final assistant text emitted after it.
 const processed = mainTools.find((tool) => tool.name === "fm_branch_processed");
 if (!processed) throw new Error("main did not receive its acknowledgement tool");
+startProcessingRun(requests()[4]);
+const rejectedPrelude = finalizeMessage(assistant([
+  { type: "text", text: "This must not commit before acknowledgement." },
+  { type: "toolCall", id: "ack-too-far", name: "fm_branch_processed", arguments: { through: seq + 100 } },
+], "toolUse"));
+if (textOf(rejectedPrelude) !== "") throw new Error("pre-acknowledgement text committed");
 const routineAck = await processed.execute("ack-routine", { through: routineSeq }, undefined, undefined, {});
 if (!routineAck.isError || !routineAck.content.some((item) => item.type === "text" && item.text.includes("not an unprocessed captain outcome"))) {
   throw new Error(`a routine-sequence acknowledgement was not clearly refused: ${JSON.stringify(routineAck)}`);
 }
-if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("a routine-sequence acknowledgement closed the open captain sequence");
 const tooFar = await processed.execute("ack-too-far", { through: seq + 100 }, undefined, undefined, {});
-if (!tooFar.isError) throw new Error("an acknowledgement beyond the read cursor was accepted");
+if (!tooFar.isError) throw new Error("an acknowledgement beyond the active request was accepted");
+const rejectedFinal = finishProcessingRun(assistant([{ type: "text", text: "Rejected but still visible." }]));
+if (textOf(rejectedFinal) !== "") throw new Error("a rejected acknowledgement committed captain text");
 if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seq])) throw new Error("a refused acknowledgement moved the marker");
+
+startProcessingRun(requests().at(-1));
+const acceptedPrelude = finalizeMessage(assistant([
+  { type: "text", text: "Still provisional." },
+  { type: "toolCall", id: "ack", name: "fm_branch_processed", arguments: { through: seq } },
+], "toolUse"));
+if (textOf(acceptedPrelude) !== "") throw new Error("text beside the accepted tool call committed before execution");
 const ack = await processed.execute("ack", { through: seq }, undefined, undefined, {});
 if (ack.isError) throw new Error(`acknowledgement failed: ${JSON.stringify(ack)}`);
+const committed = finishProcessingRun(assistant([{ type: "text", text: "Captain, the update is processed." }]));
+if (textOf(committed) !== "Captain, the update is processed.") throw new Error("post-acknowledgement text was suppressed");
 if (unprocessedSeqs().length !== 0) throw new Error("the acknowledgement did not close the sequence");
 const before = requests().length;
 runOf();
@@ -1335,32 +1403,42 @@ if (!unlisted.isError || !unlisted.content.some((item) => item.type === "text" &
 if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seqE, seqF])) {
   throw new Error(`an unlisted acknowledgement closed outcomes: ${unprocessedSeqs()}`);
 }
-runOf();
+startProcessingRun(requests().at(-1));
+finishProcessingRun(assistant([{ type: "text", text: "Ignored first sequence." }]));
 if (requests().length !== beforePair + 2) throw new Error("the widened sequence was not presented at the run boundary");
-const latest = requests().at(-1).message.content;
+const widenedRequest = requests().at(-1);
+const latest = widenedRequest.message.content;
 if (!latest.includes(`[seq ${seqE}] branch-driver:`) || !latest.includes(`[seq ${seqF}] task-f:`) || !latest.includes(`through=${seqF}`)) {
   throw new Error(`the widened request did not cover every unprocessed sequence with the highest key: ${latest}`);
 }
-const beforePairRepeat = requests().length;
-runOf();
-if (requests().length !== beforePairRepeat + 1 || requests().at(-1).options.triggerTurn !== true) {
-  throw new Error("the second presentation of the widened sequence set did not open its own turn");
+if (widenedRequest.options.triggerTurn !== true) throw new Error("the widened request did not spend the oldest outcome's second attempt");
+startProcessingRun(widenedRequest);
+finishProcessingRun(assistant([{ type: "text", text: "Ignored widened request." }]));
+if (requests().length !== beforePair + 3 || requests().at(-1).options.deliverAs !== "nextTurn" || requests().at(-1).options.triggerTurn) {
+  throw new Error("sequence widening renewed the oldest outcome's autonomous retry budget");
 }
+
+// A partial acknowledgement on a mixed captain turn leaves the newer outcome
+// open. Once the oldest changes, that newer outcome receives its own budget.
+startProcessingRun(requests().at(-1), "Please continue with the newest update.");
 const partial = await processed.execute("ack-partial", { through: seqE }, undefined, undefined, {});
 if (partial.isError) throw new Error(`partial acknowledgement failed: ${JSON.stringify(partial)}`);
+const partialAnswer = finishProcessingRun(assistant([{ type: "text", text: "The older update is accounted for." }]));
+if (textOf(partialAnswer) !== "The older update is accounted for.") throw new Error("the mixed partial-acknowledgement answer was suppressed");
 if (JSON.stringify(unprocessedSeqs()) !== JSON.stringify([seqF])) throw new Error(`a partial acknowledgement did not keep the newer sequence open: ${unprocessedSeqs()}`);
-const beforeF = requests().length;
-runOf();
 if (
-  requests().length !== beforeF + 1 ||
   requests().at(-1).options.triggerTurn !== true ||
   requests().at(-1).options.deliverAs !== "followUp" ||
   !requests().at(-1).message.content.includes(`[seq ${seqF}] task-f:`)
 ) {
-  throw new Error("the changed remaining sequence set did not restart its triggered presentation budget");
+  throw new Error("the new oldest sequence did not receive a fresh triggered presentation budget");
 }
+startProcessingRun(requests().at(-1));
 const done = await processed.execute("ack-final", { through: seqF }, undefined, undefined, {});
-if (done.isError || unprocessedSeqs().length !== 0) throw new Error("the final acknowledgement did not close the newer sequence");
+if (done.isError) throw new Error(`final acknowledgement failed: ${JSON.stringify(done)}`);
+const finalAnswer = finishProcessingRun(assistant([{ type: "text", text: "Captain, the credential blocker remains." }]));
+if (textOf(finalAnswer) !== "Captain, the credential blocker remains.") throw new Error("the final committed answer was suppressed");
+if (unprocessedSeqs().length !== 0) throw new Error("the final acknowledgement did not close the newer sequence");
 
 // A session that does not own the fleet lock cannot acknowledge anything.
 writeFileSync(`${home}/state/.lock`, "1\n");
@@ -1371,7 +1449,7 @@ EOF
   status=$?
   out=$(cat "$TMP_ROOT/node-output")
   expect_code 0 "$status" "captain outcomes must be processed through a sequence-bound acknowledgement and re-presented until then: $out"
-  pass "a captain outcome opens one sequence-keyed processing turn, survives empty and unrelated answers, is re-presented at run end and session start, and closes only on its acknowledgement"
+  pass "dedicated processing text commits only after exact acknowledgement, mixed captain answers survive, and retries stay bounded by the oldest open sequence"
 }
 
 test_branch_cache_key_is_per_home_stable() {

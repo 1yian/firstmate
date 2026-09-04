@@ -154,10 +154,11 @@ const VISIBLE_OUTCOME_ENTRY_TYPE = "fm-branch-visible-outcome";
 // gives the model only a custom message's `content`, so the request carries
 // its own identity through the typed operational envelope.
 const PROCESSING_MESSAGE_TYPE = "fm-branch-process";
-// Triggered re-presentations per unprocessed sequence set before the request
-// stops opening turns of its own and instead rides the captain's next prompt
-// (deliverAs nextTurn). Bounded so an answer that repeatedly ignores the
-// request cannot become an unbounded loop of empty turns.
+// Triggered re-presentations while one oldest sequence stays unprocessed
+// before the request stops opening turns of its own and instead rides the
+// captain's next prompt (deliverAs nextTurn). Bounded so an answer that
+// repeatedly ignores the request cannot become an unbounded loop of empty
+// turns, even when newer outcomes widen that request.
 const PROCESSING_TRIGGERED_ATTEMPTS = 2;
 // One provider failure rejects immediately to watcher-owned fallback but leaves
 // room for a transient outage to recover on the next wake. A second consecutive
@@ -543,14 +544,29 @@ export default function (pi: ExtensionAPI) {
     reanchor: true,
   };
   let currentMainSession: ReadonlyEntries | null = null;
-  // Volatile view of the open processing request: the sequences it presented,
-  // how many turns it has opened for that set, whether a
-  // presentation is still pending its run boundary, and whether a copy is
-  // queued for the captain's next prompt. The durable truth is the store's
-  // processed marker; this only paces re-presentation and resets with the
-  // session generation.
-  type ProcessingState = { sequences: string; through: number; triggered: number; pending: boolean; nextTurnQueued: boolean };
+  // Volatile view of the open processing request: the oldest sequence that
+  // owns its autonomous retry budget, the complete sequence set most recently
+  // presented, whether that presentation is still pending its run boundary,
+  // and whether a copy is queued for the captain's next prompt. The durable
+  // truth is the store's processed marker; this only paces re-presentation and
+  // resets with the session generation.
+  type ProcessingState = {
+    oldest: number;
+    sequences: string;
+    through: number;
+    triggered: number;
+    pending: boolean;
+    nextTurnQueued: boolean;
+  };
   let processing: ProcessingState | null = null;
+  // One processing custom message opens an attempt. A real captain message
+  // since the preceding assistant response makes that attempt mixed; otherwise
+  // it is dedicated and its ordinary assistant text remains provisional until
+  // the exact requested through sequence is durably acknowledged. Tool-call,
+  // thinking, usage, and error data are never removed.
+  type ProcessingAttempt = { through: number; dedicated: boolean; committed: boolean };
+  let processingAttempt: ProcessingAttempt | null = null;
+  let captainInputSinceAssistant = false;
   let processedInitializedGeneration = -1;
   // One revision for BOTH selections: a model or effort change invalidates an
   // in-flight branch build exactly the same way.
@@ -853,11 +869,13 @@ export default function (pi: ExtensionAPI) {
 
   // Present every unprocessed captain outcome to main as ONE sequence-keyed
   // processing request. The first PROCESSING_TRIGGERED_ATTEMPTS presentations
-  // of a given sequence set open a turn of their own (queued as a follow-up
-  // while main is busy); after that the request rides the captain's next
-  // prompt instead, once per run, and a session replacement starts the
-  // triggered budget over. Nothing here advances the processed marker: only
-  // fm_branch_processed does, keyed to the sequence main acknowledges.
+  // while the same oldest sequence remains open start a turn of their own
+  // (queued as a follow-up while main is busy); after that the request rides
+  // the captain's next prompt instead, once per run. Newer outcomes widen the
+  // request without renewing that oldest outcome's budget, while a session
+  // replacement starts the bounded budget over. Nothing here advances the
+  // processed marker: only fm_branch_processed does, keyed to the sequence
+  // main acknowledges.
   function presentUnprocessedOutcomes(expectedGeneration: number): boolean {
     const rows = readUnprocessedOutcomes(expectedGeneration);
     if (rows === null) return false;
@@ -865,16 +883,27 @@ export default function (pi: ExtensionAPI) {
       processing = null;
       return true;
     }
+    const oldest = rows[0].seq;
     const through = rows[rows.length - 1].seq;
     const sequences = rows.map((row) => row.seq).join(",");
     if (processing?.pending) return true;
-    if (!processing || processing.sequences !== sequences) {
-      processing = { sequences, through, triggered: 0, pending: false, nextTurnQueued: false };
+    if (!processing || processing.oldest !== oldest) {
+      processing = { oldest, sequences, through, triggered: 0, pending: false, nextTurnQueued: false };
+    } else {
+      // A newer outcome widens what the next request covers, but it must not
+      // buy the same ignored oldest outcome another autonomous retry burst.
+      processing.sequences = sequences;
+      processing.through = through;
     }
     // A presentation already sent is consumed by the run it joins or opens;
     // until that run settles, sending a widened or identical copy would hand
     // overlapping requests to the same run.
-    const message = { customType: PROCESSING_MESSAGE_TYPE, content: processingRequestInput(rows), display: false };
+    const message = {
+      customType: PROCESSING_MESSAGE_TYPE,
+      content: processingRequestInput(rows),
+      display: false,
+      details: { through },
+    };
     if (processing.triggered < PROCESSING_TRIGGERED_ATTEMPTS) {
       processing.triggered += 1;
       processing.pending = true;
@@ -1011,7 +1040,7 @@ export default function (pi: ExtensionAPI) {
 
   async function createBranch(
     branchGeneration: number,
-    selectionRevision: number,
+    _selectionRevision: number,
   ): Promise<{ session: AgentSession; sessionManager: SessionManager }> {
     // Resolved first, before any session file or prompt work: a model pin Pi
     // cannot honor must fail before this build leaves anything behind. Every
@@ -1115,6 +1144,7 @@ ${context.command}
       resourceLoader: loader,
       tools: [...BRANCH_TOOL_NAMES],
       customTools: [
+        // SAFETY: Pi's bash factory and session builder share this runtime tool contract; only their generic detail parameters differ.
         bashTool as unknown as ToolDefinition,
         createReportTool(branchGeneration),
       ],
@@ -1364,12 +1394,50 @@ ${context.command}
 
   pi.on?.("agent_start", () => {
     mainStreaming = true;
+    processingAttempt = null;
+    captainInputSinceAssistant = false;
     // Pi delivers a queued nextTurn copy with the prompt that starts this run,
     // so a fresh copy may be queued again once this run settles unacknowledged.
     if (processing) processing.nextTurnQueued = false;
   });
   pi.on?.("agent_end", () => {
     mainStreaming = false;
+  });
+  pi.on?.("message_start", (event) => {
+    const message = event.message;
+    if (message.role === "user") {
+      const text = textOfContent(message.content).trim();
+      if (text && !isOperationalUserText(text)) {
+        captainInputSinceAssistant = true;
+        processingAttempt = null;
+      }
+      return;
+    }
+    if (message.role !== "custom" || message.customType !== PROCESSING_MESSAGE_TYPE) return;
+    const detailThrough = message.details && typeof message.details === "object"
+      ? (message.details as { through?: unknown }).through
+      : undefined;
+    const through = typeof detailThrough === "number" && Number.isSafeInteger(detailThrough) && detailThrough >= 1
+      ? detailThrough
+      : processing?.through;
+    processingAttempt = through === undefined
+      ? null
+      : { through, dedicated: !captainInputSinceAssistant, committed: false };
+  });
+  // Pi applies this replacement before SessionManager persistence and before
+  // interactive listeners receive the finalized message. Streaming tokens may
+  // have rendered transiently, but an uncommitted dedicated attempt leaves no
+  // stable or restored captain-facing text behind.
+  pi.on?.("message_end", (event) => {
+    if (event.message.role !== "assistant") return;
+    captainInputSinceAssistant = false;
+    if (!processingAttempt?.dedicated || processingAttempt.committed) return;
+    return {
+      message: {
+        ...event.message,
+        content: event.message.content.filter((part) => part.type !== "text"),
+      },
+    };
   });
   // The run boundary is where an ignored processing request is detected: every
   // presentation sent before this point has been consumed by the run that just
@@ -1379,6 +1447,8 @@ ${context.command}
   // reply that only paraphrased it - and is presented again.
   pi.on?.("agent_settled", () => {
     mainStreaming = false;
+    processingAttempt = null;
+    captainInputSinceAssistant = false;
     if (processing) processing.pending = false;
     if (!actingAsOwner()) return;
     presentUnprocessedOutcomes(generation);
@@ -1464,6 +1534,8 @@ ${context.command}
     shuttingDown = true;
     generation += 1;
     processing = null;
+    processingAttempt = null;
+    captainInputSinceAssistant = false;
     pendingMirror.length = 0;
     currentMainSession = null;
     mirrorCollection.collectAnchor = null;
@@ -1541,9 +1613,7 @@ ${context.command}
       // The model choice is persisted; report it exactly, then run the effort
       // step on the model the branch will actually use.
       let modelReport: { message: string; warning: boolean };
-      if (picked !== FOLLOW_MAIN_VALUE) {
-        modelReport = { message: `Supervision branch model: ${picked}.`, warning: false };
-      } else {
+      if (picked === FOLLOW_MAIN_VALUE) {
         // Clearing the pin only follows main if main's model can actually be
         // applied to the branch; say what will really happen rather than
         // reporting a state that did not take effect.
@@ -1565,6 +1635,8 @@ ${context.command}
             warning: true,
           };
         }
+      } else {
+        modelReport = { message: `Supervision branch model: ${picked}.`, warning: false };
       }
 
       // The model choice is already persisted, so a failing effort step must
@@ -1736,10 +1808,7 @@ ${context.command}
     !calmPresentation.stockExportRendering &&
     !calmTranscriptClassIsVisible(itemClass);
 
-  const outcomesToolAnsiPattern = new RegExp(
-    "(?:\\u001B\\][\\s\\S]*?(?:\\u0007|\\u001B\\u005C|\\u009C))|[\\u001B\\u009B][[\\]\\()#;?]*(?:\\d{1,4}(?:[;:]\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]",
-    "g",
-  );
+  const outcomesToolAnsiPattern = /(?:\u001B\][\s\S]*?(?:\u0007|\u001B\u005C|\u009C))|[\u001B\u009B][[\]()#;?]*(?:\d{1,4}(?:[;:]\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~]/g;
   const normalizeOutcomesToolOutput = (value: string): string => {
     const withoutAnsi = value.includes("\u001B") || value.includes("\u009B")
       ? value.replace(outcomesToolAnsiPattern, "")
@@ -1939,6 +2008,9 @@ ${context.command}
           details: undefined,
           isError: true,
         };
+      }
+      if (processingAttempt && through === processingAttempt.through) {
+        processingAttempt.committed = true;
       }
       const remaining = readUnprocessedOutcomes(generation);
       if (remaining !== null && remaining.length === 0) processing = null;

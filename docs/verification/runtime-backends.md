@@ -1398,3 +1398,35 @@ The live probe loads the tracked watcher extension through Pi's real resource lo
 It proved that a follow-up the extension sends while main is streaming raises no `before_agent_start` at queue time or when the run reaches it, joins the run as a user `message_start` carrying the exact wake text in its own model turn, and is followed by a verified successor and delivery of the next close; a follow-up sent to the idle main raises `before_agent_start` with the exact text before its user `message_start`.
 The portable regression drives the same shape with a fake main that never raises `before_agent_start` while streaming, then proves a replacement replays only the follow-up Pi had not consumed and that an exhausted restoration delivers its typed failure without launching a further arm.
 A second regression holds a branch settlement open while the verified successor exits with a failure, and proves that failure takes the ordinary bounded retry once the delivery settles rather than leaving the generation with no watcher and no retry.
+
+### 2026-09-04 processing-output containment
+
+The focused extension regression, strict typecheck, and the containment portion of the real-SDK guard were run against npm `@earendil-works/pi-coding-agent` 0.84.4 on macOS 26.4 arm64 and Node v26.8.1.
+The local fake provider's fetch was intercepted in-process, no credential was read, no request left the machine, and the active Pi session was not changed.
+
+```sh
+FM_PI_PACKAGE_DIR=<pi-0.84.4 package> bash tests/fm-pi-branch-extension.test.sh
+FM_PI_PACKAGE_DIR=<pi-0.84.4 package> bash tests/fm-pi-primary-types.test.sh
+probe=$(mktemp "${TMPDIR:-/tmp}/fm-pi-containment.XXXXXX")
+{
+  printf '%s\n' '#!/usr/bin/env bash' 'set -u' '. "tests/lib.sh"' 'export NODE_NO_WARNINGS=1' \
+    'PI_PACKAGE_DIR=<pi-0.84.4 package>' 'PI_VERSION=0.84.4' \
+    'TMP_ROOT=$(fm_test_tmproot fm-pi-containment-only)'
+  awk 'found { print } /^# Seventh probe:/ { found=1; print }' tests/fm-pi-branch-live-e2e.test.sh
+} > "$probe"
+bash "$probe"
+rm -f "$probe"
+```
+
+```text
+ok - dedicated processing text commits only after exact acknowledgement, mixed captain answers survive, and retries stay bounded by the oldest open sequence
+ok - tracked Pi extensions pass strict no-emit typecheck against Pi 0.84.4
+ok - real Pi SDK 0.84.4 removes finalized dedicated text from inline/fullscreen transcripts and restored history after a transient streamed render
+```
+
+The real AgentSession streamed a repeated prior answer into stock inline and fullscreen `InteractiveMode` components, and the guard observed that text before completion.
+Its `message_end` replacement then removed ordinary text before finalized listeners and `SessionManager` persistence, both stock transcript components returned to their pre-stream content, and reopening the session restored the uncommitted assistant message with no text block.
+This proves stable and restored transcript containment but also proves its limit: provider tokens can flash while streaming before `message_end` is able to replace the finalized message.
+
+The full live script could not reach this probe in that environment because its unchanged first watcher-fallback probe timed out before main delivery.
+A clean archive of the then-current default branch failed identically at that same first probe, so this is not evidence of a containment regression; the pre-existing probe remains unchanged, and its prior successful version-scoped records above remain the current evidence for that separate boundary.
