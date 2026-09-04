@@ -59,7 +59,7 @@ cp "$ROOT/.pi/extensions/lib/fm-calm-visibility.ts" "$repo/.pi/extensions/lib/fm
 cp "$ROOT/.pi/extensions/lib/fm-operational-input.ts" "$repo/.pi/extensions/lib/fm-operational-input.ts"
 mkdir -p "$repo/bin"
 cp "$ROOT/bin/fm-operational-input.sh" "$repo/bin/fm-operational-input.sh"
-cat > "$repo/bin/fm-watch-arm.sh" <<'SH'
+cat >"$repo/bin/fm-watch-arm.sh" <<'SH'
 #!/usr/bin/env bash
 if [ "${1:-}" = --handling-delivered ]; then
   printf 'confirmed generation=%s watcher=%s\n' "$2" "$4" >> "${FM_LIVE_WATCH_LOG:?}"
@@ -90,7 +90,7 @@ BRANCH_PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" \
   WATCH_PLUGIN="$repo/.pi/extensions/fm-primary-pi-watch.ts" \
   FM_HOME="$home" FM_REAL_ROOT="$ROOT" FM_WATCH_ROOT="$repo" \
   FM_LIVE_WATCH_LOG="$TMP_ROOT/live-watch.log" FM_LIVE_WATCH_TRIGGER="$TMP_ROOT/live-watch.trigger" \
-  PI_CODING_AGENT_DIR="$agentdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" node --input-type=module > "$TMP_ROOT/node-output" 2>&1 <<'EOF'
+  PI_CODING_AGENT_DIR="$agentdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" node --input-type=module >"$TMP_ROOT/node-output" 2>&1 <<'EOF'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -269,7 +269,7 @@ pass "real Pi SDK $PI_VERSION accepts the branch session construction and preser
 errorhome="$TMP_ROOT/error-home"
 erroragentdir="$TMP_ROOT/error-agent-dir"
 mkdir -p "$errorhome/state" "$errorhome/config" "$erroragentdir"
-cat > "$erroragentdir/models.json" <<'JSON'
+cat >"$erroragentdir/models.json" <<'JSON'
 {
   "providers": {
     "fm-live-error": {
@@ -288,7 +288,7 @@ BRANCH_PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" \
   FM_HOME="$errorhome" FM_REAL_ROOT="$ROOT" FM_WATCH_ROOT="$repo" \
   FM_LIVE_WATCH_LOG="$TMP_ROOT/error-watch.log" FM_LIVE_WATCH_TRIGGER="$TMP_ROOT/error-watch.trigger" \
   PI_CODING_AGENT_DIR="$erroragentdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
-  node --input-type=module > "$TMP_ROOT/error-output" 2>&1 <<'EOF'
+  node --input-type=module >"$TMP_ROOT/error-output" 2>&1 <<'EOF'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -439,7 +439,7 @@ pass "real Pi SDK $PI_VERSION rejects a post-construction 429 to watcher-owned m
 # leaves the machine and no user credential is read.
 modeldir="$TMP_ROOT/model-agent-dir"
 mkdir -p "$modeldir" "$TMP_ROOT/model-sessions"
-cat > "$modeldir/models.json" <<'JSON'
+cat >"$modeldir/models.json" <<'JSON'
 {
   "providers": {
     "fm-live-fake": {
@@ -455,7 +455,7 @@ cat > "$modeldir/models.json" <<'JSON'
 }
 JSON
 PI_PACKAGE_DIR="$PI_PACKAGE_DIR" PI_CODING_AGENT_DIR="$modeldir" FM_LIVE_SESSIONS="$TMP_ROOT/model-sessions" \
-  node --input-type=module > "$TMP_ROOT/model-output" 2>&1 <<'EOF'
+  node --input-type=module >"$TMP_ROOT/model-output" 2>&1 <<'EOF'
 import { pathToFileURL } from "node:url";
 
 const pkg = pathToFileURL(`${process.env.PI_PACKAGE_DIR}/dist/index.js`).href;
@@ -527,7 +527,7 @@ pass "real Pi SDK $PI_VERSION applies an explicit branch model on create and ove
 # entries through the real SessionManager rather than hand-writing the format.
 effortdir="$TMP_ROOT/effort-agent-dir"
 mkdir -p "$effortdir" "$TMP_ROOT/effort-sessions"
-cat > "$effortdir/models.json" <<'JSON'
+cat >"$effortdir/models.json" <<'JSON'
 {
   "providers": {
     "fm-live-fake": {
@@ -558,7 +558,7 @@ cat > "$effortdir/models.json" <<'JSON'
 }
 JSON
 PI_PACKAGE_DIR="$PI_PACKAGE_DIR" PI_CODING_AGENT_DIR="$effortdir" FM_LIVE_SESSIONS="$TMP_ROOT/effort-sessions" \
-  node --input-type=module > "$TMP_ROOT/effort-output" 2>&1 <<'EOF'
+  node --input-type=module >"$TMP_ROOT/effort-output" 2>&1 <<'EOF'
 import { pathToFileURL } from "node:url";
 
 const packageRoot = process.env.PI_PACKAGE_DIR;
@@ -692,7 +692,7 @@ pass "real Pi SDK $PI_VERSION reports its own supported effort levels and applie
 # reopen, and keep it out of model context. No model is selected or prompted.
 PLUGIN="$repo/.pi/extensions/fm-branch-supervision.ts" DELIVERY_DIR="$TMP_ROOT/delivery-sessions" \
   DELIVERY_AGENT_DIR="$TMP_ROOT/delivery-agent-dir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
-  node --input-type=module > "$TMP_ROOT/delivery-output" 2>&1 <<'EOF'
+  node --input-type=module >"$TMP_ROOT/delivery-output" 2>&1 <<'EOF'
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -805,7 +805,7 @@ pass "real Pi SDK $PI_VERSION immediately renders appendEntry in the active tran
 streamdir="$TMP_ROOT/stream-agent-dir"
 streamhome="$TMP_ROOT/stream-home"
 mkdir -p "$streamdir" "$streamhome/state" "$streamhome/config" "$TMP_ROOT/stream-sessions"
-cat > "$streamdir/models.json" <<'JSON'
+cat >"$streamdir/models.json" <<'JSON'
 {
   "providers": {
     "fm-live-stream": {
@@ -824,7 +824,7 @@ WATCH_PLUGIN="$repo/.pi/extensions/fm-primary-pi-watch.ts" \
   FM_LIVE_WATCH_LOG="$TMP_ROOT/stream-watch.log" FM_LIVE_WATCH_TRIGGER="$TMP_ROOT/stream-watch.trigger" \
   FM_LIVE_SESSIONS="$TMP_ROOT/stream-sessions" \
   PI_CODING_AGENT_DIR="$streamdir" PI_PACKAGE_DIR="$PI_PACKAGE_DIR" \
-  node --input-type=module > "$TMP_ROOT/stream-output" 2>&1 <<'EOF'
+  node --input-type=module >"$TMP_ROOT/stream-output" 2>&1 <<'EOF'
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
