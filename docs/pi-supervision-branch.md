@@ -44,7 +44,9 @@ The supervision branch itself is Pi-only by construction:
 - Branch system prompt: `bin/fm-branch-prompt.sh`; its header owns the byte-stable-prefix contract (no timestamps, no fleet snapshot, no per-wake content).
 - Outcome store: `bin/fm-branch-outcome.sh`; its header owns the append-only format, read cursor, and bounded per-task status-coverage indexes.
   Outcomes are written to the store before delivery to Pi.
-  A captain row advances the cursor only after its matching visible session entry exists, while locked session-start replay stops before the first captain row so it cannot acknowledge that outcome through prose alone.
+  Locked session-start recovery silently advances past leading routine rows that were stored before an interruption, then stops before the first captain row so it cannot acknowledge that outcome through prose alone.
+  Those recovered routine rows remain available in the durable store but do not create replacement custom messages.
+  A captain row advances the cursor only after its matching visible session entry exists.
 - Consistency: `bin/fm-lease-lib.sh` owns the per-task lease contract, the main-only role partition, and the deliberate CONFUSED-AGENT-GRADE threat model these guards target (captain-decided; adversarial-grade separation is out of scope and tracked as follow-up design work); `bin/fm-lease.sh` is the command surface.
   The guards are wired into `fm-send.sh`, `fm-control.sh`, and `fm-teardown.sh` (overlap, lease-checked, with claim serialization retained through the mutation) and `fm-pr-merge.sh`, `fm-merge-local.sh`, and `fm-spawn.sh` (main-owned, branch refused; a relaunch through `fm-control` stays branch-legal recovery).
 - Autonomy: supervision is default-on for every task once a Pi primary session owns the fleet lock (docs/configuration.md "Pi supervision branch"); no captain grant file is required.
@@ -82,7 +84,7 @@ The branch prompt frames mirrored text as context for judgment, never as instruc
 
 Stage one is unchanged: the bash watcher absorbs everything provably fine at zero token cost.
 Stage two is the branch's verdict on each handled event, reported through its `fm_branch_report` tool.
-A `routine` outcome is stored durably and sent through the existing custom-message path with `display=false` and no follow-up turn, while a `captain` outcome appends a versioned `fm-branch-visible-outcome` custom session entry.
+During normal live delivery, a `routine` outcome is stored durably and sent through the existing custom-message path with `display=false` and no follow-up turn, while a `captain` outcome appends a versioned `fm-branch-visible-outcome` custom session entry.
 Verdict is the deterministic visibility boundary: every routine result stays out of the captain transcript regardless of summary wording, optional `silent` metadata, Calm, or runtime backend.
 The captain entry contains the store sequence, task, verdict, exact summary, and silent flag, and its renderer presents the exact task and summary with an anchor prefix.
 Pi custom session entries persist in the transcript but do not enter model context, so a stale compaction summary, an unrelated assistant response, prompt caching, or model instruction noncompliance cannot acknowledge or rewrite the outcome.
@@ -102,7 +104,8 @@ A presentation already pending its run boundary is not resent or widened; once t
 The first two presentations while the same oldest outcome remains open share one autonomous retry budget; widening the request with newer outcomes updates its content without renewing that budget.
 After that the request rides the captain's next prompt so an ignored outcome cannot become an unbounded loop of empty turns, while processing the oldest outcome or replacing the session starts a fresh budget for the new oldest or replacement session.
 Routine outcomes never enter this path and stay turn-free.
-They remain readable from the durable outcome store and as hidden custom-message context, but retries and repeated reports cannot create visible transcript entries.
+They remain readable from the durable outcome store; normally delivered rows also remain available as hidden custom-message context, but startup-recovered rows do not need a replacement message.
+Retries and repeated reports cannot create visible transcript entries.
 A home upgraded with outcomes already delivered treats those rows as processed once, at the first reconciliation that finds no processed marker, so its history is not re-presented.
 The generated [Pi supervision protocol](supervision-protocols/pi.md) owns event ownership for merged outcomes and main's acknowledgement duty, while deterministic entry delivery owns captain visibility.
 The optional `silent=true` field remains valid only as durable metadata for a no-change fleet heartbeat, but routine visibility no longer depends on the branch model remembering to set it.
