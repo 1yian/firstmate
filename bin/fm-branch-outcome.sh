@@ -7,7 +7,7 @@
 #     object per line: {"seq":N,"epoch":N,"task":"...","wake":"...",
 #     "verdict":"routine"|"captain","summary":"...","silent":true|false,
 #     "statusEndpoint":N,"statusIdent":"..."}. Legacy rows without `silent`
-#     or status provenance remain valid and are treated as visible.
+#     or status provenance remain valid.
 #     Every read and append validates the complete log as a gap-free sequence;
 #     malformed, duplicate, or reordered rows fail closed.
 #     Existing lines are never rewritten, reordered, or deleted by any
@@ -17,8 +17,8 @@
 #     and truncation, if ever needed, is a captain-approved manual act.
 #   - Cursor: $STATE/.branch-outcomes-cursor holds the highest seq handed to
 #     Pi as a routine merge note, persisted as a sequence-keyed visible captain
-#     entry, emitted by the locked session-start replay, or silently consumed
-#     there because `silent` is true. Records above the cursor are unread.
+#     entry, or silently consumed by the locked session-start recovery.
+#     Records above the cursor are unread.
 #     A captain row advances only after its matching visible entry exists in
 #     Pi's session, so reload recovery is idempotent across that crash window.
 #     A cursor beyond the validated store tail fails closed.
@@ -82,13 +82,10 @@
 #   fm-branch-outcome.sh list [--recent <n>]
 #     Print the last n records (default 20), read or not.
 #   fm-branch-outcome.sh startup-replay
-#     Session-start recovery: print the leading routine unread records under a
-#     labeled header into the locked startup digest, skip rows whose `silent`
-#     field is true, and mark those leading routine rows read. Stop before the
-#     first captain row because only Pi's sequence-keyed visible entry may
-#     acknowledge that row. Prints nothing when nothing replayable is unread.
-#     Run it only when the session holds the lock (fm-session-start.sh owns the
-#     call site).
+#     Session-start recovery: silently mark leading routine rows read, stopping
+#     before the first captain row because only Pi's sequence-keyed visible
+#     entry may acknowledge that row. Run it only when the session holds the
+#     lock (fm-session-start.sh owns the call site).
 set -eu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -113,7 +110,7 @@ usage() {
 
 bounded_uint() {
   local value=$1
-  case "$value" in ''|*[!0-9]*|0[0-9]*) return 1 ;; esac
+  case "$value" in '' | *[!0-9]* | 0[0-9]*) return 1 ;; esac
   [ "${#value}" -le "${#MAX_SAFE_SEQ}" ] || return 1
   [ "$value" -le "$MAX_SAFE_SEQ" ]
 }
@@ -136,16 +133,19 @@ json_escape() { # <text> -> escaped JSON string content on stdout
 
 read_cursor() {
   local value
-  [ -e "$CURSOR" ] || { printf '0\n'; return 0; }
+  [ -e "$CURSOR" ] || {
+    printf '0\n'
+    return 0
+  }
   if ! value=$(cat "$CURSOR" 2>/dev/null); then
     echo "error: refusing operation because the outcome cursor is unreadable" >&2
     return 1
   fi
   case "$value" in
-    ''|*[!0-9]*|0[0-9]*)
-      echo "error: refusing operation because the outcome cursor is malformed" >&2
-      return 1
-      ;;
+  '' | *[!0-9]* | 0[0-9]*)
+    echo "error: refusing operation because the outcome cursor is malformed" >&2
+    return 1
+    ;;
   esac
   if ! bounded_uint "$value"; then
     echo "error: refusing operation because the outcome cursor is out of range" >&2
@@ -156,16 +156,19 @@ read_cursor() {
 
 read_processed() {
   local value
-  [ -e "$PROCESSED" ] || { printf '0\n'; return 0; }
+  [ -e "$PROCESSED" ] || {
+    printf '0\n'
+    return 0
+  }
   if ! value=$(cat "$PROCESSED" 2>/dev/null); then
     echo "error: refusing operation because the processed marker is unreadable" >&2
     return 1
   fi
   case "$value" in
-    ''|*[!0-9]*|0[0-9]*)
-      echo "error: refusing operation because the processed marker is malformed" >&2
-      return 1
-      ;;
+  '' | *[!0-9]* | 0[0-9]*)
+    echo "error: refusing operation because the processed marker is malformed" >&2
+    return 1
+    ;;
   esac
   if ! bounded_uint "$value"; then
     echo "error: refusing operation because the processed marker is out of range" >&2
@@ -175,7 +178,10 @@ read_processed() {
 }
 
 last_seq() {
-  [ -s "$STORE" ] || { printf '0\n'; return 0; }
+  [ -s "$STORE" ] || {
+    printf '0\n'
+    return 0
+  }
   jq -Rse '
     def valid:
       type == "object"
@@ -213,7 +219,7 @@ record_seq() { # <jsonl-line>
 }
 
 outcome_index_path() { # <task>
-  case "$1" in ''|*[!A-Za-z0-9._-]*) return 1 ;; esac
+  case "$1" in '' | *[!A-Za-z0-9._-]*) return 1 ;; esac
   printf '%s/.%s.branch-outcome-index' "$STATE" "$1"
 }
 
@@ -230,7 +236,7 @@ capture_status_position() { # <task>
   ident_after=$(_fm_open_decisions_file_ident "$f") || return 0
   case "$size:$size_after" in *[!0-9:]*) return 0 ;; esac
   [ "$size" = "$size_after" ] && [ "$ident" = "$ident_after" ] || return 0
-  case "$ident" in *$'\t'*|*$'\n'*|'') return 0 ;; esac
+  case "$ident" in *$'\t'* | *$'\n'* | '') return 0 ;; esac
   CAPTURED_STATUS_ENDPOINT=$size
   CAPTURED_STATUS_IDENT=$ident
 }
@@ -242,22 +248,34 @@ write_outcome_index() { # <task> <seq> [<endpoint> <identity>]
     "$endpoint" "$ident") || return 1
   [ "${#record}" -le "$OUTCOME_INDEX_MAX_BYTES" ] || return 1
   tmp=$(mktemp "$STATE/.branch-outcome-index.XXXXXX") || return 1
-  chmod 0600 "$tmp" || { rm -f -- "$tmp"; return 1; }
-  printf '%s\n' "$record" > "$tmp" || { rm -f -- "$tmp"; return 1; }
+  chmod 0600 "$tmp" || {
+    rm -f -- "$tmp"
+    return 1
+  }
+  printf '%s\n' "$record" >"$tmp" || {
+    rm -f -- "$tmp"
+    return 1
+  }
   mv -f -- "$tmp" "$path"
 }
 
 publish_outcome_index_ready() { # <seq>
   local tmp
   tmp=$(mktemp "$STATE/.branch-outcome-index-ready.XXXXXX") || return 1
-  printf '%s\n' "$1" > "$tmp" || { rm -f -- "$tmp"; return 1; }
+  printf '%s\n' "$1" >"$tmp" || {
+    rm -f -- "$tmp"
+    return 1
+  }
   mv -f -- "$tmp" "$OUTCOME_INDEX_READY"
 }
 
 rebuild_outcome_indexes() {
   local rows task seq epoch endpoint ident f mtime
   rm -f -- "$OUTCOME_INDEX_READY" || return 1
-  [ -s "$STORE" ] || { publish_outcome_index_ready 0; return; }
+  [ -s "$STORE" ] || {
+    publish_outcome_index_ready 0
+    return
+  }
   rows=$(jq -r -s '
     map(select(.task != "fleet"))
     | group_by(.task)
@@ -274,18 +292,18 @@ rebuild_outcome_indexes() {
       ident=-
       if [ -f "$f" ] && [ -r "$f" ] && [ ! -L "$f" ]; then
         mtime=$(_fm_status_file_mtime "$f") || mtime=
-        case "$mtime" in ''|*[!0-9]*) ;;
-          *)
-            # Legacy rows have only whole-second epochs, so equal timestamps
-            # cannot prove whether the status preceded the outcome. Leave that
-            # span uncovered: migration may rarely duplicate an old handled
-            # event, but it will not hide a plausibly later captain-facing one.
-            if [ "$mtime" -lt "$epoch" ]; then
-              capture_status_position "$task"
-              endpoint=$CAPTURED_STATUS_ENDPOINT
-              ident=$CAPTURED_STATUS_IDENT
-            fi
-            ;;
+        case "$mtime" in '' | *[!0-9]*) ;;
+        *)
+          # Legacy rows have only whole-second epochs, so equal timestamps
+          # cannot prove whether the status preceded the outcome. Leave that
+          # span uncovered: migration may rarely duplicate an old handled
+          # event, but it will not hide a plausibly later captain-facing one.
+          if [ "$mtime" -lt "$epoch" ]; then
+            capture_status_position "$task"
+            endpoint=$CAPTURED_STATUS_ENDPOINT
+            ident=$CAPTURED_STATUS_IDENT
+          fi
+          ;;
         esac
       fi
     fi
@@ -321,14 +339,14 @@ advance_cursor() { # <seq>
   fi
   [ "$through" -gt "$cursor" ] || return 0
   tmp=$(mktemp "$STATE/.branch-outcomes-cursor.XXXXXX")
-  printf '%s\n' "$through" > "$tmp"
+  printf '%s\n' "$through" >"$tmp"
   mv -f -- "$tmp" "$CURSOR"
 }
 
 write_processed() { # <seq>
   local through=$1 tmp
   tmp=$(mktemp "$STATE/.branch-outcomes-processed.XXXXXX")
-  printf '%s\n' "$through" > "$tmp"
+  printf '%s\n' "$through" >"$tmp"
   mv -f -- "$tmp" "$PROCESSED"
 }
 
@@ -388,7 +406,7 @@ processed_init_locked() {
 
 held_lock_owned_by_ancestor() {
   local owner owner_pid pid parent depth=0
-  case "$PPID" in ''|*[!0-9]*|0|1) return 1 ;; esac
+  case "$PPID" in '' | *[!0-9]* | 0 | 1) return 1 ;; esac
   if [ -L "$LOCK" ]; then
     owner=$(fm_lock_link_owner "$LOCK" 2>/dev/null) || return 1
     fm_lock_points_to_owner "$LOCK" "$owner" || return 1
@@ -409,7 +427,7 @@ held_lock_owned_by_ancestor() {
     [ "$pid" = "$owner_pid" ] && return 0
     parent=$(ps -o ppid= -p "$pid" 2>/dev/null) || return 1
     parent=${parent//[[:space:]]/}
-    case "$parent" in ''|*[!0-9]*|0|1) return 1 ;; esac
+    case "$parent" in '' | *[!0-9]* | 0 | 1) return 1 ;; esac
     [ "$parent" != "$pid" ] || return 1
     pid=$parent
     depth=$((depth + 1))
@@ -421,220 +439,233 @@ CMD=${1:-}
 shift 2>/dev/null || true
 
 case "$CMD" in
-  append)
-    TASK=''
-    VERDICT=''
-    SUMMARY=''
-    WAKE=''
-    SILENT=false
-    while [ "$#" -gt 0 ]; do
-      case "$1" in
-        --task) TASK=${2:-}; shift 2 || usage ;;
-        --verdict) VERDICT=${2:-}; shift 2 || usage ;;
-        --summary) SUMMARY=${2:-}; shift 2 || usage ;;
-        --wake) WAKE=${2:-}; shift 2 || usage ;;
-        --silent) SILENT=${2:-}; shift 2 || usage ;;
-        *) usage ;;
-      esac
-    done
-    [ -n "$TASK" ] || usage
-    outcome_index_path "$TASK" >/dev/null || usage
-    [ -n "$SUMMARY" ] || usage
-    case "$VERDICT" in routine|captain) ;; *) usage ;; esac
-    case "$SILENT" in true|false) ;; *) usage ;; esac
-    if [ "$SILENT" = true ] && { [ "$TASK" != fleet ] || [ "$VERDICT" != routine ]; }; then
-      echo "error: silent outcomes must be routine fleet outcomes" >&2
-      exit 2
-    fi
-    fm_lock_acquire_wait "$LOCK"
-    if ! LAST_SEQ=$(last_seq); then
-      fm_lock_release "$LOCK"
-      echo "error: refusing append because the outcome store is malformed or non-sequential" >&2
-      exit 1
-    fi
-    if ! CURSOR_SEQ=$(read_cursor) || [ "$CURSOR_SEQ" -gt "$LAST_SEQ" ]; then
-      fm_lock_release "$LOCK"
-      echo "error: refusing append because the outcome cursor is invalid or ahead of the store" >&2
-      exit 1
-    fi
-    SEQ=$(( LAST_SEQ + 1 ))
-    capture_status_position "$TASK"
-    rm -f -- "$OUTCOME_INDEX_READY" || { fm_lock_release "$LOCK"; exit 1; }
-    printf '{"seq":%s,"epoch":%s,"task":"%s","wake":"%s","verdict":"%s","summary":"%s","silent":%s,"statusEndpoint":%s,"statusIdent":"%s"}\n' \
-      "$SEQ" "$(date +%s)" "$(json_escape "$TASK")" "$(json_escape "$WAKE")" \
-      "$VERDICT" "$(json_escape "$SUMMARY")" "$SILENT" "$CAPTURED_STATUS_ENDPOINT" \
-      "$(json_escape "$CAPTURED_STATUS_IDENT")" >> "$STORE"
-    # A task with neither a live meta nor a status log is retired: the branch
-    # reports the teardown it just performed, and writing the index here would
-    # recreate the footprint teardown removed. The outcome itself is still
-    # stored and delivered; only the reader-less cache is skipped.
-    if { [ -e "$STATE/$TASK.meta" ] || [ -e "$STATE/$TASK.status" ]; } \
-        && ! write_outcome_index "$TASK" "$SEQ"; then
-      fm_lock_release "$LOCK"
-      echo "error: outcome was stored but its bounded task index could not be updated" >&2
-      exit 1
-    fi
-    if ! publish_outcome_index_ready "$SEQ"; then
-      fm_lock_release "$LOCK"
-      echo "error: outcome was stored but its bounded task index could not be updated" >&2
-      exit 1
-    fi
-    fm_lock_release "$LOCK"
-    printf '%s\n' "$SEQ"
-    ;;
-  unread)
-    [ "$#" -eq 0 ] || usage
-    fm_lock_acquire_wait "$LOCK"
-    print_unread
-    fm_lock_release "$LOCK"
-    ;;
-  mark-read)
-    [ "${1:-}" = --through ] || usage
-    THROUGH=${2:-}
-    bounded_uint "$THROUGH" || usage
-    [ "$#" -eq 2 ] || usage
-    fm_lock_acquire_wait "$LOCK"
-    if ! LAST_SEQ=$(last_seq); then
-      fm_lock_release "$LOCK"
-      echo "error: refusing cursor advancement because the outcome store is malformed or non-sequential" >&2
-      exit 1
-    fi
-    if ! CURSOR_SEQ=$(read_cursor); then
-      fm_lock_release "$LOCK"
-      exit 1
-    fi
-    if [ "$CURSOR_SEQ" -gt "$LAST_SEQ" ]; then
-      fm_lock_release "$LOCK"
-      echo "error: refusing cursor advancement because the outcome cursor is ahead of the store" >&2
-      exit 1
-    fi
-    if [ "$THROUGH" -gt "$LAST_SEQ" ]; then
-      fm_lock_release "$LOCK"
-      echo "error: refusing cursor advancement beyond a valid stored outcome" >&2
-      exit 1
-    fi
-    if ! advance_cursor "$THROUGH"; then
-      fm_lock_release "$LOCK"
-      exit 1
-    fi
-    fm_lock_release "$LOCK"
-    ;;
-  unprocessed)
-    [ "$#" -eq 0 ] || usage
-    fm_lock_acquire_wait "$LOCK"
-    print_unprocessed
-    STATUS=$?
-    fm_lock_release "$LOCK"
-    exit "$STATUS"
-    ;;
-  mark-processed)
-    [ "${1:-}" = --through ] || usage
-    THROUGH=${2:-}
-    bounded_uint "$THROUGH" || usage
-    [ "$#" -eq 2 ] || usage
-    fm_lock_acquire_wait "$LOCK"
-    if ! CURSOR_SEQ=$(read_cursor) || ! PROCESSED_SEQ=$(read_processed); then
-      fm_lock_release "$LOCK"
-      exit 1
-    fi
-    if ! LAST_SEQ=$(last_seq); then
-      fm_lock_release "$LOCK"
-      echo "error: refusing processed advancement because the outcome store is malformed or non-sequential" >&2
-      exit 1
-    fi
-    if [ "$CURSOR_SEQ" -gt "$LAST_SEQ" ]; then
-      fm_lock_release "$LOCK"
-      echo "error: refusing processed advancement because the outcome cursor is ahead of the store" >&2
-      exit 1
-    fi
-    if [ "$PROCESSED_SEQ" -gt "$CURSOR_SEQ" ]; then
-      fm_lock_release "$LOCK"
-      echo "error: refusing processed advancement because the processed marker is ahead of the read cursor" >&2
-      exit 1
-    fi
-    if [ "$THROUGH" -gt "$CURSOR_SEQ" ]; then
-      fm_lock_release "$LOCK"
-      echo "error: refusing processed advancement beyond the read cursor ($CURSOR_SEQ)" >&2
-      exit 1
-    fi
-    if [ "$THROUGH" -le "$PROCESSED_SEQ" ]; then
-      fm_lock_release "$LOCK"
-      echo "error: refusing processed advancement because seq $THROUGH is already processed" >&2
-      exit 1
-    fi
-    VERDICT=$(jq -r --argjson through "$THROUGH" 'select(.seq == $through) | .verdict' "$STORE")
-    if [ "$VERDICT" != captain ]; then
-      fm_lock_release "$LOCK"
-      echo "error: refusing processed advancement because seq $THROUGH is not an unprocessed captain outcome" >&2
-      exit 1
-    fi
-    write_processed "$THROUGH"
-    fm_lock_release "$LOCK"
-    ;;
-  processed-init)
-    HELD_LOCK=0
-    if [ "${1:-}" = --held-lock ]; then
-      HELD_LOCK=1
-      shift
-    fi
-    [ "$#" -eq 0 ] || usage
-    if [ "$HELD_LOCK" -eq 0 ]; then
-      fm_lock_acquire_wait "$LOCK"
-    elif ! held_lock_owned_by_ancestor; then
-      echo "error: --held-lock requires an ancestor process to own the outcome lock" >&2
-      exit 1
-    fi
-    if ! processed_init_locked; then
-      if [ "$HELD_LOCK" -eq 0 ]; then
-        fm_lock_release "$LOCK"
-      fi
-      exit 1
-    fi
-    if [ "$HELD_LOCK" -eq 0 ]; then
-      fm_lock_release "$LOCK"
-    fi
-    ;;
-  list)
-    RECENT=20
-    if [ "${1:-}" = --recent ]; then
-      RECENT=${2:-}
-      case "$RECENT" in ''|*[!0-9]*|0) usage ;; esac
+append)
+  TASK=''
+  VERDICT=''
+  SUMMARY=''
+  WAKE=''
+  SILENT=false
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+    --task)
+      TASK=${2:-}
       shift 2 || usage
-    fi
-    [ "$#" -eq 0 ] || usage
-    fm_lock_acquire_wait "$LOCK"
-    if ! last_seq >/dev/null; then
-      fm_lock_release "$LOCK"
-      echo "error: refusing read because the outcome store is malformed or non-sequential" >&2
-      exit 1
-    fi
-    if [ -s "$STORE" ]; then
-      tail -n "$RECENT" "$STORE"
-    fi
+      ;;
+    --verdict)
+      VERDICT=${2:-}
+      shift 2 || usage
+      ;;
+    --summary)
+      SUMMARY=${2:-}
+      shift 2 || usage
+      ;;
+    --wake)
+      WAKE=${2:-}
+      shift 2 || usage
+      ;;
+    --silent)
+      SILENT=${2:-}
+      shift 2 || usage
+      ;;
+    *) usage ;;
+    esac
+  done
+  [ -n "$TASK" ] || usage
+  outcome_index_path "$TASK" >/dev/null || usage
+  [ -n "$SUMMARY" ] || usage
+  case "$VERDICT" in routine | captain) ;; *) usage ;; esac
+  case "$SILENT" in true | false) ;; *) usage ;; esac
+  if [ "$SILENT" = true ] && { [ "$TASK" != fleet ] || [ "$VERDICT" != routine ]; }; then
+    echo "error: silent outcomes must be routine fleet outcomes" >&2
+    exit 2
+  fi
+  fm_lock_acquire_wait "$LOCK"
+  if ! LAST_SEQ=$(last_seq); then
     fm_lock_release "$LOCK"
-    ;;
-  startup-replay)
-    [ "$#" -eq 0 ] || usage
+    echo "error: refusing append because the outcome store is malformed or non-sequential" >&2
+    exit 1
+  fi
+  if ! CURSOR_SEQ=$(read_cursor) || [ "$CURSOR_SEQ" -gt "$LAST_SEQ" ]; then
+    fm_lock_release "$LOCK"
+    echo "error: refusing append because the outcome cursor is invalid or ahead of the store" >&2
+    exit 1
+  fi
+  SEQ=$((LAST_SEQ + 1))
+  capture_status_position "$TASK"
+  rm -f -- "$OUTCOME_INDEX_READY" || {
+    fm_lock_release "$LOCK"
+    exit 1
+  }
+  printf '{"seq":%s,"epoch":%s,"task":"%s","wake":"%s","verdict":"%s","summary":"%s","silent":%s,"statusEndpoint":%s,"statusIdent":"%s"}\n' \
+    "$SEQ" "$(date +%s)" "$(json_escape "$TASK")" "$(json_escape "$WAKE")" \
+    "$VERDICT" "$(json_escape "$SUMMARY")" "$SILENT" "$CAPTURED_STATUS_ENDPOINT" \
+    "$(json_escape "$CAPTURED_STATUS_IDENT")" >>"$STORE"
+  # A task with neither a live meta nor a status log is retired: the branch
+  # reports the teardown it just performed, and writing the index here would
+  # recreate the footprint teardown removed. The outcome itself is still
+  # stored and delivered; only the reader-less cache is skipped.
+  if { [ -e "$STATE/$TASK.meta" ] || [ -e "$STATE/$TASK.status" ]; } &&
+    ! write_outcome_index "$TASK" "$SEQ"; then
+    fm_lock_release "$LOCK"
+    echo "error: outcome was stored but its bounded task index could not be updated" >&2
+    exit 1
+  fi
+  if ! publish_outcome_index_ready "$SEQ"; then
+    fm_lock_release "$LOCK"
+    echo "error: outcome was stored but its bounded task index could not be updated" >&2
+    exit 1
+  fi
+  fm_lock_release "$LOCK"
+  printf '%s\n' "$SEQ"
+  ;;
+unread)
+  [ "$#" -eq 0 ] || usage
+  fm_lock_acquire_wait "$LOCK"
+  print_unread
+  fm_lock_release "$LOCK"
+  ;;
+mark-read)
+  [ "${1:-}" = --through ] || usage
+  THROUGH=${2:-}
+  bounded_uint "$THROUGH" || usage
+  [ "$#" -eq 2 ] || usage
+  fm_lock_acquire_wait "$LOCK"
+  if ! LAST_SEQ=$(last_seq); then
+    fm_lock_release "$LOCK"
+    echo "error: refusing cursor advancement because the outcome store is malformed or non-sequential" >&2
+    exit 1
+  fi
+  if ! CURSOR_SEQ=$(read_cursor); then
+    fm_lock_release "$LOCK"
+    exit 1
+  fi
+  if [ "$CURSOR_SEQ" -gt "$LAST_SEQ" ]; then
+    fm_lock_release "$LOCK"
+    echo "error: refusing cursor advancement because the outcome cursor is ahead of the store" >&2
+    exit 1
+  fi
+  if [ "$THROUGH" -gt "$LAST_SEQ" ]; then
+    fm_lock_release "$LOCK"
+    echo "error: refusing cursor advancement beyond a valid stored outcome" >&2
+    exit 1
+  fi
+  if ! advance_cursor "$THROUGH"; then
+    fm_lock_release "$LOCK"
+    exit 1
+  fi
+  fm_lock_release "$LOCK"
+  ;;
+unprocessed)
+  [ "$#" -eq 0 ] || usage
+  fm_lock_acquire_wait "$LOCK"
+  print_unprocessed
+  STATUS=$?
+  fm_lock_release "$LOCK"
+  exit "$STATUS"
+  ;;
+mark-processed)
+  [ "${1:-}" = --through ] || usage
+  THROUGH=${2:-}
+  bounded_uint "$THROUGH" || usage
+  [ "$#" -eq 2 ] || usage
+  fm_lock_acquire_wait "$LOCK"
+  if ! CURSOR_SEQ=$(read_cursor) || ! PROCESSED_SEQ=$(read_processed); then
+    fm_lock_release "$LOCK"
+    exit 1
+  fi
+  if ! LAST_SEQ=$(last_seq); then
+    fm_lock_release "$LOCK"
+    echo "error: refusing processed advancement because the outcome store is malformed or non-sequential" >&2
+    exit 1
+  fi
+  if [ "$CURSOR_SEQ" -gt "$LAST_SEQ" ]; then
+    fm_lock_release "$LOCK"
+    echo "error: refusing processed advancement because the outcome cursor is ahead of the store" >&2
+    exit 1
+  fi
+  if [ "$PROCESSED_SEQ" -gt "$CURSOR_SEQ" ]; then
+    fm_lock_release "$LOCK"
+    echo "error: refusing processed advancement because the processed marker is ahead of the read cursor" >&2
+    exit 1
+  fi
+  if [ "$THROUGH" -gt "$CURSOR_SEQ" ]; then
+    fm_lock_release "$LOCK"
+    echo "error: refusing processed advancement beyond the read cursor ($CURSOR_SEQ)" >&2
+    exit 1
+  fi
+  if [ "$THROUGH" -le "$PROCESSED_SEQ" ]; then
+    fm_lock_release "$LOCK"
+    echo "error: refusing processed advancement because seq $THROUGH is already processed" >&2
+    exit 1
+  fi
+  VERDICT=$(jq -r --argjson through "$THROUGH" 'select(.seq == $through) | .verdict' "$STORE")
+  if [ "$VERDICT" != captain ]; then
+    fm_lock_release "$LOCK"
+    echo "error: refusing processed advancement because seq $THROUGH is not an unprocessed captain outcome" >&2
+    exit 1
+  fi
+  write_processed "$THROUGH"
+  fm_lock_release "$LOCK"
+  ;;
+processed-init)
+  HELD_LOCK=0
+  if [ "${1:-}" = --held-lock ]; then
+    HELD_LOCK=1
+    shift
+  fi
+  [ "$#" -eq 0 ] || usage
+  if [ "$HELD_LOCK" -eq 0 ]; then
     fm_lock_acquire_wait "$LOCK"
-    UNREAD=$(print_unread)
-    if [ -n "$UNREAD" ]; then
-      REPLAYABLE=$(printf '%s\n' "$UNREAD" | jq -sc '
+  elif ! held_lock_owned_by_ancestor; then
+    echo "error: --held-lock requires an ancestor process to own the outcome lock" >&2
+    exit 1
+  fi
+  if ! processed_init_locked; then
+    if [ "$HELD_LOCK" -eq 0 ]; then
+      fm_lock_release "$LOCK"
+    fi
+    exit 1
+  fi
+  if [ "$HELD_LOCK" -eq 0 ]; then
+    fm_lock_release "$LOCK"
+  fi
+  ;;
+list)
+  RECENT=20
+  if [ "${1:-}" = --recent ]; then
+    RECENT=${2:-}
+    case "$RECENT" in '' | *[!0-9]* | 0) usage ;; esac
+    shift 2 || usage
+  fi
+  [ "$#" -eq 0 ] || usage
+  fm_lock_acquire_wait "$LOCK"
+  if ! last_seq >/dev/null; then
+    fm_lock_release "$LOCK"
+    echo "error: refusing read because the outcome store is malformed or non-sequential" >&2
+    exit 1
+  fi
+  if [ -s "$STORE" ]; then
+    tail -n "$RECENT" "$STORE"
+  fi
+  fm_lock_release "$LOCK"
+  ;;
+startup-replay)
+  [ "$#" -eq 0 ] || usage
+  fm_lock_acquire_wait "$LOCK"
+  UNREAD=$(print_unread)
+  if [ -n "$UNREAD" ]; then
+    REPLAYABLE=$(printf '%s\n' "$UNREAD" | jq -sc '
         map(.verdict) as $verdicts
         | ($verdicts | index("captain")) as $captain
         | .[0:($captain // length)][]
       ')
-      VISIBLE=$(printf '%s\n' "$REPLAYABLE" | jq -c 'select(.silent != true)')
-      if [ -n "$VISIBLE" ]; then
-        printf 'BRANCH OUTCOMES (handled by the supervision branch, not yet seen by this session):\n'
-        printf '%s\n' "$VISIBLE"
-      fi
-      LAST=$(record_seq "$(printf '%s\n' "$REPLAYABLE" | tail -n 1)")
-      if [ -n "$LAST" ] && ! advance_cursor "$LAST"; then
-        fm_lock_release "$LOCK"
-        exit 1
-      fi
+    LAST=$(record_seq "$(printf '%s\n' "$REPLAYABLE" | tail -n 1)")
+    if [ -n "$LAST" ] && ! advance_cursor "$LAST"; then
+      fm_lock_release "$LOCK"
+      exit 1
     fi
-    fm_lock_release "$LOCK"
-    ;;
-  *) usage ;;
+  fi
+  fm_lock_release "$LOCK"
+  ;;
+*) usage ;;
 esac

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 860" width="1200" height="860" role="img" aria-labelledby="poster-title poster-desc">
   <title id="poster-title">Multi-brain agent architecture</title>
-  <desc id="poster-desc">One agent. Two branches of attention. Events are commits. A git-graph poster of one fix: routine notes merge with zero turns, and the requested outcome persists visibly before a sequence-keyed processing turn.</desc>
+  <desc id="poster-desc">One agent. Two branches of attention. Events are commits. A git-graph poster of one fix: routine notes merge silently with zero turns, and the requested outcome persists visibly before a sequence-keyed processing turn.</desc>
   <defs>
     <pattern id="poster-grid" width="36" height="36" patternUnits="userSpaceOnUse">
       <path d="M 36 0 L 0 0 0 36" fill="none" stroke="#8CAAE6" stroke-opacity="0.06" stroke-width="1"/>

@@ -1012,11 +1012,15 @@ export default function (pi: ExtensionAPI) {
     });
   }
 
+  // Routine outcomes remain durable and model-readable but never become
+  // captain-visible transcript rows. Visibility follows the verdict here,
+  // deterministically; it never depends on summary wording or the optional
+  // no-change-heartbeat metadata.
   function deliverRoutineOutcome(row: OutcomeRow): void {
     const message = {
       customType: "fm-branch-merge",
       content: `${MERGE_NOTE_BOAT} ${row.task}: ${row.summary}`,
-      display: !(row.task === "fleet" && row.silent),
+      display: false,
     };
     if (mainStreaming) pi.sendMessage(message, { deliverAs: "nextTurn" });
     else pi.sendMessage(message, {});
@@ -1177,7 +1181,7 @@ export default function (pi: ExtensionAPI) {
       name: "fm_branch_report",
       label: "Report supervision outcome",
       description:
-        "Record the outcome of one handled fleet event: write it durably to the outcome store, then merge it into the captain-facing main conversation. verdict captain persists an exact visible entry and opens one sequence-keyed processing turn on main that stays open until main acknowledges it; routine notes render unless silent marks a no-change heartbeat.",
+        "Record the outcome of one handled fleet event: write it durably to the outcome store, then merge it into the main conversation. verdict captain persists an exact visible entry and opens one sequence-keyed processing turn on main that stays open until main acknowledges it; routine outcomes remain hidden regardless of silent metadata.",
       parameters: Type.Object({
         task: Type.String({
           description:
@@ -2582,8 +2586,8 @@ ${context.command}
     },
   );
 
-  // Pi only calls this renderer for a message with display: true, which every
-  // routine note uses except an explicitly silent fleet heartbeat.
+  // New routine outcomes are display:false. Keep the renderer for historical
+  // display:true entries already persisted by older Firstmate versions.
   pi.registerMessageRenderer?.(
     "fm-branch-merge",
     (message, _options, theme) => {

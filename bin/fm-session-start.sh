@@ -231,27 +231,27 @@ REEMIT=0
 SESSION_SOURCE=
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --reemit)
-      REEMIT=1
-      shift
-      ;;
-    --source)
-      SESSION_SOURCE=${2:-}
-      if [ "$#" -ge 2 ]; then shift 2; else shift; fi
-      ;;
-    --source=*)
-      SESSION_SOURCE=${1#--source=}
-      shift
-      ;;
-    -h|--help)
-      sed -n '2,/^set -u$/p' "$SCRIPT_DIR/fm-session-start.sh" | sed 's/^# \{0,1\}//; $d'
-      exit 0
-      ;;
-    *)
-      printf 'fm-session-start: unknown argument: %s\n' "$1" >&2
-      printf 'usage: fm-session-start.sh [--reemit] [--source <source>]\n' >&2
-      exit 2
-      ;;
+  --reemit)
+    REEMIT=1
+    shift
+    ;;
+  --source)
+    SESSION_SOURCE=${2:-}
+    if [ "$#" -ge 2 ]; then shift 2; else shift; fi
+    ;;
+  --source=*)
+    SESSION_SOURCE=${1#--source=}
+    shift
+    ;;
+  -h | --help)
+    sed -n '2,/^set -u$/p' "$SCRIPT_DIR/fm-session-start.sh" | sed 's/^# \{0,1\}//; $d'
+    exit 0
+    ;;
+  *)
+    printf 'fm-session-start: unknown argument: %s\n' "$1" >&2
+    printf 'usage: fm-session-start.sh [--reemit] [--source <source>]\n' >&2
+    exit 2
+    ;;
   esac
 done
 
@@ -261,9 +261,9 @@ done
 # that one as never emitted. Keep it in the exact order the digest prints.
 SESSION_START_STAGES='lock bootstrap wake-queue supervision-instructions read-once fleet-state network-checks context next-step'
 
-stage() {  # <stage-name>: breadcrumb for the parent's truncation banner
+stage() { # <stage-name>: breadcrumb for the parent's truncation banner
   [ -n "${FM_SESSION_START_STAGE_FILE:-}" ] || return 0
-  printf '%s\n' "$1" > "$FM_SESSION_START_STAGE_FILE" 2>/dev/null || true
+  printf '%s\n' "$1" >"$FM_SESSION_START_STAGE_FILE" 2>/dev/null || true
 }
 
 # shellcheck source=bin/fm-timeout-lib.sh
@@ -276,7 +276,7 @@ if [ -z "${FM_SESSION_START_STAGE_FILE:-}" ]; then
   # A non-positive or non-numeric budget is not a budget (`timeout 0` disables
   # the deadline outright), so an unusable value falls back to the default
   # rather than silently removing the bound.
-  case "$SESSION_START_BUDGET" in ''|*[!0-9]*|0) SESSION_START_BUDGET=120 ;; esac
+  case "$SESSION_START_BUDGET" in '' | *[!0-9]* | 0) SESSION_START_BUDGET=120 ;; esac
   SESSION_START_STAGE_FILE=$(mktemp "${TMPDIR:-/tmp}/fm-session-start-stage.XXXXXX" 2>/dev/null) || SESSION_START_STAGE_FILE=
   if [ -z "$SESSION_START_STAGE_FILE" ]; then
     # Without a breadcrumb the bound still holds; only the banner's precision
@@ -352,9 +352,9 @@ PRIMARY_HARNESS=$("$SCRIPT_DIR/fm-harness.sh" 2>/dev/null || printf unknown)
 if fm_tasks_axi_compatible; then TASKS_AXI_COMPATIBLE=1; else TASKS_AXI_COMPATIBLE=0; fi
 
 STATUS_TAIL=${FM_SESSION_START_STATUS_TAIL:-5}
-case "$STATUS_TAIL" in ''|*[!0-9]*) STATUS_TAIL=5 ;; esac
+case "$STATUS_TAIL" in '' | *[!0-9]*) STATUS_TAIL=5 ;; esac
 QUEUED_LIMIT=${FM_SESSION_START_QUEUED_LIMIT:-20}
-case "$QUEUED_LIMIT" in ''|*[!0-9]*|0) QUEUED_LIMIT=20 ;; esac
+case "$QUEUED_LIMIT" in '' | *[!0-9]* | 0) QUEUED_LIMIT=20 ;; esac
 BACKLOG_FIELDS=blocked_by,hold_kind,hold_reason
 
 RULE='================================================================================'
@@ -541,13 +541,19 @@ hash_file_sha256() {
     digest=$(shasum -a 256 "$file" 2>/dev/null | awk '
       length($1) == 64 && $1 !~ /[^[:xdigit:]]/ { print "sha256:" $1; found=1; exit }
       END { if (!found) exit 1 }
-    ') && [ -n "$digest" ] && { printf '%s\n' "$digest"; return 0; }
+    ') && [ -n "$digest" ] && {
+      printf '%s\n' "$digest"
+      return 0
+    }
   fi
   if command -v sha256sum >/dev/null 2>&1; then
     digest=$(sha256sum "$file" 2>/dev/null | awk '
       length($1) == 64 && $1 !~ /[^[:xdigit:]]/ { print "sha256:" $1; found=1; exit }
       END { if (!found) exit 1 }
-    ') && [ -n "$digest" ] && { printf '%s\n' "$digest"; return 0; }
+    ') && [ -n "$digest" ] && {
+      printf '%s\n' "$digest"
+      return 0
+    }
   fi
   return 1
 }
@@ -555,19 +561,19 @@ hash_file_sha256() {
 # The baseline describes instructions this true session started with, not the
 # most recently emitted instructions. It is intentionally immutable for this
 # lock owner: every later stale-context rebuild needs the current file again.
-write_agents_baseline() {  # <lock-pid> <agents-hash>
+write_agents_baseline() { # <lock-pid> <agents-hash>
   local lock_pid=$1 agents_hash=$2 tmp
   [ -n "$lock_pid" ] && [ -n "$agents_hash" ] || return 1
   tmp=$(mktemp "$STATE/.session-start-agents-baseline.XXXXXX" 2>/dev/null) || return 1
-  if printf '%s\n%s\n' "$lock_pid" "$agents_hash" > "$tmp" 2>/dev/null \
-    && mv -f "$tmp" "$AGENTS_BASELINE_FILE" 2>/dev/null; then
+  if printf '%s\n%s\n' "$lock_pid" "$agents_hash" >"$tmp" 2>/dev/null &&
+    mv -f "$tmp" "$AGENTS_BASELINE_FILE" 2>/dev/null; then
     return 0
   fi
   rm -f "$tmp" 2>/dev/null || true
   return 1
 }
 
-agents_baseline_drifted() {  # <rebuilding-session-pid>
+agents_baseline_drifted() { # <rebuilding-session-pid>
   local lock_pid=$1 baseline_pid baseline_hash current_hash
   [ -f "$AGENTS_BASELINE_FILE" ] && [ ! -L "$AGENTS_BASELINE_FILE" ] || return 0
   baseline_pid=$(sed -n '1p' "$AGENTS_BASELINE_FILE" 2>/dev/null || true)
@@ -581,16 +587,16 @@ agents_baseline_drifted() {  # <rebuilding-session-pid>
 # Only run-tier source pairs with both a stale native instruction cache and a
 # working Firstmate delivery path arrive here. Claude fresh-reads on reset, and
 # Codex has no tracked interactive reset delivery path.
-agents_refresh_required() {  # <rebuilding-session-pid>
+agents_refresh_required() { # <rebuilding-session-pid>
   local lock_pid=$1
   case "$PRIMARY_HARNESS:$SESSION_SOURCE" in
-    pi:compact|pi-signed:compact) ;;
-    *) return 1 ;;
+  pi:compact | pi-signed:compact) ;;
+  *) return 1 ;;
   esac
   agents_baseline_drifted "$lock_pid"
 }
 
-print_agents_refresh_if_required() {  # <rebuilding-session-pid>
+print_agents_refresh_if_required() { # <rebuilding-session-pid>
   local lock_pid=$1
   agents_refresh_required "$lock_pid" || return 0
   section "CURRENT AGENTS.md - INSTRUCTION REFRESH"
@@ -723,8 +729,8 @@ if [ "$READ_ONLY" -eq 1 ]; then
   [ -n "$GUARD_OUT" ] && printf '%s\n' "$GUARD_OUT"
 else
   # Pi supervision-branch recovery, locked path only: clear leases whose
-  # supervising session died, and surface outcomes the branch stored durably
-  # that never reached main (docs/pi-supervision-branch.md). Gated to the
+  # supervising session died, and consume leading routine outcomes that the
+  # branch stored before interruption (docs/pi-supervision-branch.md). Gated to the
   # pi/pi-signed primary so a non-Pi home runs neither step - homes on any
   # other harness stay entirely untouched (captain-decided criterion).
   if [ "$PRIMARY_HARNESS" = pi ] || [ "$PRIMARY_HARNESS" = pi-signed ]; then
@@ -760,8 +766,8 @@ if [ "$PRIMARY_HARNESS" = pi ] || [ "$PRIMARY_HARNESS" = pi-signed ]; then
   [ "$PRIMARY_HARNESS" != pi ] || PI_RESTART_COMMAND='plain pi'
   PI_WATCH_VERSION=$(fm_pi_extension_version "$PI_EXT" || printf '')
   PI_TURNEND_VERSION=$(fm_pi_extension_version "$PI_TURNEND_EXT" || printf '')
-  if ! fm_pi_extension_loaded "$PI_WATCH_MARKER" "$PI_WATCH_VERSION" "$PI_LOCK" \
-    || ! fm_pi_extension_loaded "$PI_TURNEND_MARKER" "$PI_TURNEND_VERSION" "$PI_LOCK"; then
+  if ! fm_pi_extension_loaded "$PI_WATCH_MARKER" "$PI_WATCH_VERSION" "$PI_LOCK" ||
+    ! fm_pi_extension_loaded "$PI_TURNEND_MARKER" "$PI_TURNEND_VERSION" "$PI_LOCK"; then
     printf 'PI_WATCH_EXTENSION: not loaded - approve Pi project trust once per clone, then restart %s so %s and %s auto-load for turn-end guard and background wake coverage; use -e %s -e %s only if project hooks are not trusted\n' "$PI_RESTART_COMMAND" "$PI_TURNEND_EXT" "$PI_EXT" "$PI_TURNEND_EXT" "$PI_EXT"
   fi
 fi
@@ -864,8 +870,8 @@ fi
 # here rather than from conversation memory. fm-public-followup-lib.sh owns both
 # gates: a home that never opted into the relay runs one [ -f ] test, prints no
 # subsection, and never reaches fm-public-followup.sh.
-if fm_pf_relay_active "$FM_HOME" \
-  && { fm_pf_has_registrations "$STATE" || fm_pf_has_events "$STATE"; }; then
+if fm_pf_relay_active "$FM_HOME" &&
+  { fm_pf_has_registrations "$STATE" || fm_pf_has_events "$STATE"; }; then
   PUBLIC_FOLLOWUP=$("$SCRIPT_DIR/fm-public-followup.sh" pending 2>/dev/null) || PUBLIC_FOLLOWUP=
   if [ -n "$PUBLIC_FOLLOWUP" ]; then
     subsection "Public commitments"
@@ -934,7 +940,7 @@ This script never starts supervision itself.
 
 EOF
 else
-cat <<EOF
+  cat <<EOF
 Follow the supervision operating instructions block above for harness '$PRIMARY_HARNESS'.
 This script never starts supervision itself.
 
@@ -949,12 +955,12 @@ if [ "$READ_ONLY" -eq 0 ] && [ "$REEMIT" -eq 0 ]; then
   COMPLETION_RECORDED=0
   COMPLETION_PID=$(cat "$STATE/.lock" 2>/dev/null || true)
   case "$COMPLETION_PID" in
-    ''|*[!0-9]*) COMPLETION_PID= ;;
+  '' | *[!0-9]*) COMPLETION_PID= ;;
   esac
   COMPLETION_TMP=$(mktemp "$STATE/.session-start-complete.XXXXXX" 2>/dev/null || true)
-  if [ -n "$COMPLETION_PID" ] && [ -n "$COMPLETION_TMP" ] \
-    && printf '%s\n' "$COMPLETION_PID" > "$COMPLETION_TMP" 2>/dev/null \
-    && mv -f "$COMPLETION_TMP" "$COMPLETION_FILE" 2>/dev/null; then
+  if [ -n "$COMPLETION_PID" ] && [ -n "$COMPLETION_TMP" ] &&
+    printf '%s\n' "$COMPLETION_PID" >"$COMPLETION_TMP" 2>/dev/null &&
+    mv -f "$COMPLETION_TMP" "$COMPLETION_FILE" 2>/dev/null; then
     COMPLETION_RECORDED=1
   else
     [ -z "$COMPLETION_TMP" ] || rm -f "$COMPLETION_TMP" 2>/dev/null || true
