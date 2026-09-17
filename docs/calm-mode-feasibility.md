@@ -271,6 +271,7 @@ grok 0.2.106 (bde89716f679)
 | Codex CLI 0.144.6 | Not feasible through the inspected supported project surface. | The tracked hooks expose session, pre-tool, and stop handling, while the plugin and feature inventories expose no TUI tool-row renderer or transcript redraw control. |
 | OpenCode 1.17.18 | Not feasible without violating the preservation boundary. | Plugins expose events and tool execution hooks, not a built-in transcript-row renderer; same-name tool replacement changes execution rather than presentation alone. |
 | Pi (verified 0.81.1 through 0.82.0) | Partially feasible with two API-probed exported-class adapters. | Public APIs control working visibility, collapsed labels, known tool slots, custom entries, and expansion redraws; exported assistant and interactive-mode classes provide the collapsed-thinking and operational-user layout boundaries, gated on the exact method's presence rather than a version number, while generic user, tool, and status filtering remains unavailable. |
+| omp 18.2.0 (a Pi fork; runtime v18.1.15) | Feasible through the same API-probed exported-class adapters as Pi, shipped as the `.omp/extensions/fm-calm.ts` extension. | omp auto-discovers the extension from `<cwd>/.omp/extensions` with no trust gate, exposes the same shared built-in tool renderer functions, `ReadToolGroupComponent`, `AssistantMessageComponent`, and `InteractiveMode` classes Calm patches, and lacks `setWorkingVisible`/`setHiddenThinkingLabel`, so Calm gates the stock loader through `InteractiveMode.ensureLoadingAnimation`; the [2026-09-17 record](#2026-09-17-omp-1820-calm-feasibility-and-the-shipped-extension) owns the token-free live-guard evidence. |
 | Grok CLI 0.2.106 | Not feasible through the inspected supported project surface. | Project hooks expose lifecycle and tool interception, while the plugin CLI exposes no row-renderer contract; `--minimal` changes the whole screen mode rather than selected transcript rows. |
 
 These conclusions are deliberately limited to the named versions and supported surfaces.
@@ -293,6 +294,7 @@ Quoted current markers, ASCII-only labels, ordinary text before a marker, unrela
 `tests/fm-calm-claude-mod.test.sh` needs no Claude Code binary: it proves the mod is one hooks module with no command, skill, agent, or classic hook path around its opt-in, that Pi's working ship renders byte-for-byte the shared sprite core painted in ANSI at every width and step, that the Raster packing lays that frame out exactly, that the mod resolves its home like Pi, that its live and restored working-note classifiers enforce the visibility boundaries [`calm.md`](calm.md#claude-code) owns, and that its operational-input classifier agrees with `bin/fm-operational-input.sh` on a corpus the shell owner itself encodes plus legacy shapes and near misses.
 `tests/fm-calm-claude-mod-plugin.test.sh` runs wherever `claude` is installed without spending a model turn: strict `claude plugin validate` on the folder and on the `.claude/skills` auto-load path, then the mod's own `claude plugin test` suites, which drive the hooks module in the engine's host against a mocked clock, environment, file system, and drawing surface.
 `tests/fm-calm-claude-mod-live-e2e.test.sh` is the opt-in credentialed guard in a real Claude Code TUI under tmux: flag off is a complete no-op with the preference already on, flag on shows the moving boat, hides tool and operational rows, toggles and persists through `/calm`, and `claude --continue` restores the hidden rows.
+`tests/fm-calm-omp-extension.test.sh` is the token-free omp live guard: default-on wherever omp is installed, it loads the real extension into `omp --mode rpc` and asserts that all six built-in tool rows and the grouped-read rows render empty while Calm is on and restore stock rendering while off or exporting, exiting from `session_start` before any credentialed call.
 
 The relevant commands are:
 
@@ -304,6 +306,7 @@ tests/fm-pi-primary-types.test.sh
 tests/fm-calm-claude-mod.test.sh
 tests/fm-calm-claude-mod-plugin.test.sh
 FM_CLAUDE_CALM_LIVE_E2E=1 tests/fm-calm-claude-mod-live-e2e.test.sh
+tests/fm-calm-omp-extension.test.sh
 ```
 
 ## 2026-07-23 verification record
@@ -744,3 +747,28 @@ The flag-off session's settled screen, with the preference `on` on disk, drew Cl
 
 ✻ Sautéed for 8s · done 11:07 AM
 ```
+
+## 2026-09-17 omp 18.2.0 Calm feasibility and the shipped extension
+
+omp is a Pi fork whose extension surface imports `@oh-my-pi/pi-coding-agent` and `@oh-my-pi/pi-tui`, auto-discovered from `<cwd>/.omp/extensions` with no trust gate.
+Calm ships as `.omp/extensions/fm-calm.ts` with its omp-specific adapters under `.omp/extensions/lib/`, and reuses the Pi tree for everything shared: the package-free visibility policy in `.pi/extensions/lib/fm-calm-visibility-core.ts` (which the Pi and omp `fm-calm-visibility.ts` wrappers both re-export), the operational-input classifier in `.pi/extensions/lib/fm-operational-input.ts`, and the standard-ANSI working-ship painter and sprite geometry in `.pi/extensions/lib/fm-calm-working-ship.ts`.
+omp exposes no `setWorkingVisible` or `setHiddenThinkingLabel`, so Calm gates the stock loader through `InteractiveMode.ensureLoadingAnimation` and hides thinking by policy in the assistant-layout adapter; it adapts the shared built-in tool renderer functions and `ReadToolGroupComponent.render` in place rather than replacing tool definitions, and the `fm_watch_arm_omp` tool shell follows the `firstmate:calm-presentation` event from `.omp/extensions/fm-primary-omp-watch.ts`.
+
+The runtime symbol probe confirmed every seam Calm patches is present in the installed omp (binary release v18.1.15, reporting `omp/18.2.0`): the six built-in tool renderer functions, `ReadToolGroupComponent`, `AssistantMessageComponent`, `InteractiveMode` with `ensureLoadingAnimation` and `addMessageToChat`, `UserMessageComponent`, `getMarkdownTheme`, `registerMessageRenderer`, and `Container`/`visibleWidth` from pi-tui, while `setWorkingVisible` and `registerEntryRenderer` are absent as expected.
+
+The token-free live guard loaded the real extension into `omp --mode rpc` and exited from `session_start` before any credentialed call:
+
+```text
+$ tests/fm-calm-omp-extension.test.sh
+omp runtime: omp/18.2.0
+PASS read: native ownership, hide, export, restore
+PASS bash: native ownership, hide, export, restore
+PASS edit: native ownership, hide, export, restore
+PASS write: native ownership, hide, export, restore
+PASS grep: native ownership, hide, export, restore
+PASS glob: native ownership, hide, export, restore
+PASS grouped read: hide and restore
+ok - omp Calm hides native tool rows and restores stock rendering on the installed omp
+```
+
+The load also emitted the `setWidget` request for `firstmate-calm-working-ship` and the `setStatus` reset at `session_start`, confirming the working-ship widget and status path install on omp.
