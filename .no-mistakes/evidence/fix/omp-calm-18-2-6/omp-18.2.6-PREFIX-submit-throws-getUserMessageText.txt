@@ -1,0 +1,39 @@
+
+╭─── omp v18.2.6 ──────────────────────────────────────────────────────────────────────────────────╮
+│                          │ Tips                                                                  │
+│      Welcome back!       │ # for prompt actions                                                  │
+│                          │ / for commands                                                        │
+│       ████████████       │ ! to run bash                                                         │
+│          ██  ██          │ $ to run python                                                       │
+│          ██  ██          │ ───────────────────────────────────────────────────────────────────── │
+│          ▒▒  ██          │ LSP Servers                                                           │
+│              ██          │ No LSP servers                                                        │
+│                          │                                                                       │
+│         Unknown          │                                                                       │
+│         Unknown          │                                                                       │
+│                          │ ───────────────────────────────────────────────────────────────────── │
+│                          │ Recent sessions                                                       │
+│                          │ No recent sessions                                                    │
+│                          │                                                                       │
+│                          │                                                                       │
+│                          │                                                                       │
+│                          │                                                                       │
+╰──────────────────────────┴────────────────[3[<u[>4;0m[0 q9;38;5;243m───────────────────────────────────────────────────────╯
+ Tip: Please use nerdfont 😭.
+
+
+ Warning: No models available. Use /login or set an API key environment variable. Then use /model to select a model.    
+
+ π > ⬢ no-model > 🗑 calm-prefix-omhp5qjl/project > ◫ 16K/? ⟲ ▶──────────────────────────────────────────────────────────
+╰─                                                                                                                       Warning: No models available. Use /login or set an API key environment variable. Then use /model to select a model.    
+
+
+ π > ⬢ no-model > 🗑 calm-prefix-omhp5qjl/project > ◫ 16K/? ⟲ ▶──────────────────────────────────────────────────────────
+╰─                                                                                                                      [>4;0m
+[Unhandled Rejection] TypeError: this.getUserMessageText is not a function. (In 'this.getUserMessageText(message)', 'this.getUserMessageText' is undefined)
+    at <anonymous> (/private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/calm-prefix-omhp5qjl/project/.omp/extensions/lib/fm-calm-operational-user-layout.ts?mtime=1789923649759:134:23)
+    at <anonymous> (/$bunfs/root/omp-darwin-arm64:522401:32)
+    at #dt (/$bunfs/root/omp-darwin-arm64:522322:8)
+    at startPendingSubmission (/$bunfs/root/omp-darwin-arm64:522400:27)
+    at <anonymous> (/$bunfs/root/omp-darwin-arm64:454126:50)
+    at processTicksAndRejections (native:7:39)

@@ -1,0 +1,71 @@
+
+╭─── omp v18.2.6 ──────────────────────────────────────────────────────────────────────────────────╮
+│                          │ Tips                                                                  │
+│      Welcome back!       │ # for prompt actions                                                  │
+│                          │ / for commands                                                        │
+│       ████████████       │ ! to run bash                                                         │
+│          ██  ██          │ $ to run python                                                       │
+│          ██  ██          │ ───────────────────────────────────────────────────────────────────── │
+│          ▒▒  ██          │ LSP Servers                                                           │
+│              ██          │ No LSP servers                                                        │
+│                          │                                                                       │
+│         Unknown          │                                                                       │
+│         Unknown          │                                                                       │
+│                          │ ───────────────────────────────────────────────────────────────────── │
+│                          │ Recent sessions                                                       │
+│                          │ No recent sessions                                                    │
+│                          │                                                                       │
+│                          │                                                                       │
+│                          │                                                                       │
+│                          │                                                                       │
+╰──────────────────────────┴───────────────────────────────────────────────────────────────────────╯
+ Tip: Press shift+tab to cycle through reasoning effort levels
+
+
+ Warning: No models available. Use /login or set an API key environment variable. Then use /model to select a model.    
+
+                                                                                                                        
+ hello calm test                                                                                                        
+                                                                                                                        
+
+ Error: No model selected.                                                                                              
+                                                                                                                        
+ Use /login, set an API key environment variable, or create                                                             
+ /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/calm-render-6xeiitn1/home/.omp/agent/agent.db                         
+                                                                                                                        
+ Then use /model to select a model.                                                                                     
+
+ Error: No model selected.                                                                                              
+                                                                                                                        
+ Use /login, set an API key environment variable, or create                                                             
+ /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/calm-render-6xeiitn1/home/.omp/agent/agent.db                         
+                                                                                                                        
+ Then use /model to select a model.                                                                                     
+
+ Calm off: ordinary omp transcript presentation restored.                                                               
+
+ π > ⬢ no-model > 🗑 calm-render-6xeiitn1/project > ◫ 16K/? ⟲ ▶──────────────────────────────────────────────────────────
+╰─                                                                                                                       Warning: No models available. Use /login or set an API key environment variable. Then use /model to select a model.    
+
+                                                                                                                        
+ hello calm test                                                                                                        
+                                                                                                                        
+
+ Error: No model selected.                                                                                              
+                                                                                                                        
+ Use /login, set an API key environment variable, or create                                                             
+ /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/calm-render-6xeiitn1/home/.omp/agent/agent.db                         
+                                                                                                                        
+ Then use /model to select a model.                                                                                     
+
+ Error: No model selected.                                                                                              
+                                                                                                                        
+ Use /login, set an API key environment variable, or create                                                             
+ /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/calm-render-6xeiitn1/home/.omp/agent/agent.db                         
+                                                                                                                        
+ Then use /model to select a model.                                                                                     
+
+ Calm on: quieter transcript presentation for this Firstmate home.                                                      
+
+ π > ⬢ no-model > 🗑 calm-render-6xeiitn1/project > ◫ 16K/? ⟲ ▶──────────────────────────────────────────────────────────
+╰─                                                                                                                      
