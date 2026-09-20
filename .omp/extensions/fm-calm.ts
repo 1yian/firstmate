@@ -146,7 +146,7 @@ function installCalmToolComponents(): void {
 // Rows already painted, and rows retired to terminal scrollback, do not repaint just
 // because the gate above changed answer. omp's own tool-visibility toggle drives the
 // transcript container and replays native history, so Calm drives the same pair on
-// every state change. The instance is captured from a patched method because omp
+// every state change. The instance is captured from addMessageToChat because omp
 // hands extensions no InteractiveMode reference.
 const CALM_CAPTURE_PATCH = Symbol.for("firstmate:calm-interactive-capture:omp");
 
@@ -166,19 +166,14 @@ function installInteractiveModeCapture(): void {
     }
     const prototype: Record<string | symbol, unknown> = componentClass.prototype;
     if (prototype[CALM_CAPTURE_PATCH] !== undefined) return;
-    let wrapped = 0;
-    for (const method of ["addMessageToChat", "setToolsExpanded"]) {
-      const original = prototype[method];
-      if (typeof original !== "function") continue;
-      prototype[method] = function (this: InteractiveModeInstance, ...args: unknown[]) {
-        interactiveMode = this;
-        return original.apply(this, args);
-      };
-      wrapped += 1;
+    const original = prototype.addMessageToChat;
+    if (typeof original !== "function") {
+      throw new Error("omp does not expose InteractiveMode.addMessageToChat");
     }
-    if (wrapped === 0) {
-      throw new Error("omp exposes no InteractiveMode method to capture");
-    }
+    prototype.addMessageToChat = function (this: InteractiveModeInstance, ...args: unknown[]) {
+      interactiveMode = this;
+      return original.apply(this, args);
+    };
     prototype[CALM_CAPTURE_PATCH] = true;
   });
 }
