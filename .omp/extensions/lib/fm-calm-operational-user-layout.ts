@@ -25,7 +25,6 @@ type ChatContainer = {
 };
 type InteractiveModePresentation = {
   chatContainer?: ChatContainer;
-  ctx?: { chatContainer?: ChatContainer };
 };
 type InteractiveModePrototype = {
   addMessageToChat(
@@ -116,7 +115,7 @@ export function installCalmOperationalUserLayout(): void {
     message: UserMessageLike,
     options?: AddMessageOptions,
   ): unknown {
-    const children = (this.chatContainer ?? this.ctx?.chatContainer)?.children;
+    const children = this.chatContainer?.children;
     const before = children?.length ?? 0;
     const result = originalAddMessageToChat.call(this, message, options);
     if (message.role !== "user" || !contentIsTextOnly(message.content)) return result;

@@ -9,9 +9,9 @@
 //     (./lib/fm-calm-working-loader.ts); thinking hide is policy-only in the assistant
 //     layout adapter.
 //   - agent_end without a continuation replaces Pi's agent_settled for run lifetime.
-//   - Native tool renderers are adapted in place rather than by replacing tool
-//     definitions, because omp exposes shared renderer functions with a first-wins
-//     ToolDefinition registry like Pi.
+//   - Tool rows are gated via ToolExecutionComponent.render and
+//     ReadToolGroupComponent.render rather than per-name renderer functions and
+//     a first-wins ToolDefinition registry.
 //   - No supervision-branch tools exist; fm_watch_arm_omp calm rendering is owned by
 //     fm-primary-omp-watch.ts, which listens for FIRSTMATE_CALM_PRESENTATION_EVENT.
 //   - The standard-ANSI working-ship widget and sprite geometry are shared verbatim
