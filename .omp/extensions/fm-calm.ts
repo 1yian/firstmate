@@ -30,7 +30,7 @@ import {
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as OmpCodingAgent from "@oh-my-pi/pi-coding-agent";
-import { Container, type TUI } from "@oh-my-pi/pi-tui";
+import type { TUI } from "@oh-my-pi/pi-tui";
 import { installCalmAssistantLayout } from "./lib/fm-calm-assistant-layout.ts";
 import { installCalmOperationalUserLayout } from "./lib/fm-calm-operational-user-layout.ts";
 import {
@@ -105,85 +105,101 @@ function installCalmPresentationAdapter(name: string, install: () => void): void
 }
 
 // Adapt presentation only: native schemas, approval policy, and execution stay owned by
-// omp. omp exposes one shared renderer function per built-in tool name, so patching the
-// function reaches every tool row without ever replacing a tool definition.
-const CALM_TOOL_RENDERERS = [
-  "readToolRenderer",
-  "bashToolRenderer",
-  "editToolRenderer",
-  "writeToolRenderer",
-  "grepToolRenderer",
-  "globToolRenderer",
-] as const;
-const CALM_TOOL_RENDERER_PATCH = Symbol.for("firstmate:calm-tool-renderer:omp");
+// omp. omp routes every tool row through ToolExecutionComponent and grouped reads
+// through ReadToolGroupComponent, so gating those two renders covers every tool
+// without replacing a tool definition or tracking built-in names.
+const CALM_TOOL_COMPONENTS = ["ToolExecutionComponent", "ReadToolGroupComponent"] as const;
+const CALM_TOOL_COMPONENT_PATCH = Symbol.for("firstmate:calm-tool-component:omp");
 
-type ToolRenderer = {
-  renderCall: (...args: unknown[]) => unknown;
-  renderResult: (...args: unknown[]) => unknown;
-  [CALM_TOOL_RENDERER_PATCH]?: { hides: typeof calmPresentationHides };
+type ToolComponentPrototype = {
+  render: (width: number) => string[];
+  [CALM_TOOL_COMPONENT_PATCH]?: { hides: typeof calmPresentationHides };
 };
 
-function installCalmToolRenderers(): void {
-  const renderers = OmpCodingAgent as unknown as Record<string, ToolRenderer | undefined>;
-  for (const name of CALM_TOOL_RENDERERS) {
+function installCalmToolComponents(): void {
+  const ompExports = OmpCodingAgent as unknown as Record<string, unknown>;
+  for (const name of CALM_TOOL_COMPONENTS) {
     installCalmPresentationAdapter(name, () => {
-      const renderer = renderers[name];
-      if (
-        !renderer ||
-        typeof renderer.renderCall !== "function" ||
-        typeof renderer.renderResult !== "function"
-      ) {
+      const componentClass = ompExports[name];
+      if (typeof componentClass !== "function") {
         throw new Error(`omp does not expose ${name}`);
       }
-      const installed = renderer[CALM_TOOL_RENDERER_PATCH];
+      const prototype: ToolComponentPrototype | undefined = componentClass.prototype;
+      if (!prototype || typeof prototype.render !== "function") {
+        throw new Error(`omp does not expose ${name}.render`);
+      }
+      const installed = prototype[CALM_TOOL_COMPONENT_PATCH];
       if (installed) {
         installed.hides = calmPresentationHides;
         return;
       }
       const patch = { hides: calmPresentationHides };
-      const originalCall = renderer.renderCall;
-      const originalResult = renderer.renderResult;
-      renderer.renderCall = function (this: unknown, ...args: unknown[]) {
-        return patch.hides("assistant-tool-call") ? new Container() : originalCall.apply(this, args);
+      const original = prototype.render;
+      prototype.render = function (this: unknown, width: number): string[] {
+        return patch.hides("assistant-tool-call") ? [] : original.call(this, width);
       };
-      renderer.renderResult = function (this: unknown, ...args: unknown[]) {
-        return patch.hides("tool-result") ? new Container() : originalResult.apply(this, args);
-      };
-      renderer[CALM_TOOL_RENDERER_PATCH] = patch;
+      prototype[CALM_TOOL_COMPONENT_PATCH] = patch;
     });
   }
-  installCalmPresentationAdapter("grouped-read", () => {
-    const groupComponent = OmpCodingAgent.ReadToolGroupComponent as unknown as
-      | {
-          prototype: {
-            render: (width: number) => string[];
-            [CALM_TOOL_RENDERER_PATCH]?: { hides: typeof calmPresentationHides };
-          };
-        }
-      | undefined;
-    const prototype = groupComponent?.prototype;
-    if (!prototype || typeof prototype.render !== "function") {
-      throw new Error("omp does not expose ReadToolGroupComponent.render");
+}
+
+// Rows already painted, and rows retired to terminal scrollback, do not repaint just
+// because the gate above changed answer. omp's own tool-visibility toggle drives the
+// transcript container and replays native history, so Calm drives the same pair on
+// every state change. The instance is captured from a patched method because omp
+// hands extensions no InteractiveMode reference.
+const CALM_CAPTURE_PATCH = Symbol.for("firstmate:calm-interactive-capture:omp");
+
+type InteractiveModeInstance = {
+  chatContainer?: { setToolActivityVisible?: (visible: boolean) => void };
+  ui?: { resetDisplay?: () => void };
+};
+
+let interactiveMode: InteractiveModeInstance | undefined;
+
+function installInteractiveModeCapture(): void {
+  installCalmPresentationAdapter("interactive-mode-capture", () => {
+    const ompExports = OmpCodingAgent as unknown as Record<string, unknown>;
+    const componentClass = ompExports.InteractiveMode;
+    if (typeof componentClass !== "function") {
+      throw new Error("omp does not expose InteractiveMode");
     }
-    const installed = prototype[CALM_TOOL_RENDERER_PATCH];
-    if (installed) {
-      installed.hides = calmPresentationHides;
-      return;
+    const prototype: Record<string | symbol, unknown> = componentClass.prototype;
+    if (prototype[CALM_CAPTURE_PATCH] !== undefined) return;
+    let wrapped = 0;
+    for (const method of ["addMessageToChat", "setToolsExpanded"]) {
+      const original = prototype[method];
+      if (typeof original !== "function") continue;
+      prototype[method] = function (this: InteractiveModeInstance, ...args: unknown[]) {
+        interactiveMode = this;
+        return original.apply(this, args);
+      };
+      wrapped += 1;
     }
-    const patch = { hides: calmPresentationHides };
-    const original = prototype.render;
-    prototype.render = function (this: unknown, width: number) {
-      return patch.hides("assistant-tool-call") ? [] : original.call(this, width);
-    };
-    prototype[CALM_TOOL_RENDERER_PATCH] = patch;
+    if (wrapped === 0) {
+      throw new Error("omp exposes no InteractiveMode method to capture");
+    }
+    prototype[CALM_CAPTURE_PATCH] = true;
   });
+}
+
+function refreshCalmToolActivity(active: boolean): void {
+  const container = interactiveMode?.chatContainer;
+  if (container && typeof container.setToolActivityVisible === "function") {
+    container.setToolActivityVisible(!active);
+  }
+  const ui = interactiveMode?.ui;
+  if (ui && typeof ui.resetDisplay === "function") {
+    ui.resetDisplay();
+  }
 }
 
 export default function (pi: ExtensionAPI) {
   installCalmPresentationAdapter("collapsed-thinking", installCalmAssistantLayout);
   installCalmPresentationAdapter("operational-user-row", installCalmOperationalUserLayout);
   installCalmPresentationAdapter("working-loader", installCalmWorkingLoaderGate);
-  installCalmToolRenderers();
+  installCalmToolComponents();
+  installInteractiveModeCapture();
 
   let exportRendering = false;
   let removeTerminalInputHandler: (() => void) | undefined;
@@ -261,6 +277,7 @@ export default function (pi: ExtensionAPI) {
   pi.on?.("session_start", (_event, ctx) => {
     exportRendering = false;
     setCalmPresentation(loadCalmPreference());
+    refreshCalmToolActivity(calmPresentationIsActive());
     setCalmStockExportRendering(false);
     publishPresentationState();
     agentRunActive = false;
@@ -319,6 +336,7 @@ export default function (pi: ExtensionAPI) {
       const active = !calmPresentationIsActive();
       persistCalmPreference(active);
       setCalmPresentation(active);
+      refreshCalmToolActivity(active);
       publishPresentationState();
       applyWorkingPresentation(ctx.ui, true);
       if (active) clearLiveWorkingLoader(ctx.ui);

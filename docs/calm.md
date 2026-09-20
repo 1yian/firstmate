@@ -68,13 +68,13 @@ FM_PI_LIVE_E2E=1 tests/fm-pi-primary-live-e2e.test.sh
 Calm on omp is the `.omp/extensions/fm-calm.ts` extension, which omp auto-discovers from `<cwd>/.omp/extensions` with no trust gate.
 It shares the whole Calm policy with Pi: the same `/calm` command toggles the same `config/calm` preference, the transcript-class allowlist lives in the shared `.pi/extensions/lib/fm-calm-visibility-core.ts`, and the working boat is the same two-row sailboat Pi draws, from the same shared sprite geometry, in the same standard ANSI blue water and yellow boat.
 While Calm is active and an agent run is under way, omp's stock working spinner is hidden and the boat is shown in its place; the boat disappears when the run settles, aborts, or fails.
-Calm hides collapsed thinking, mid-turn assistant working notes, the omp built-in tool call and result rows (`read`, `bash`, `edit`, `write`, `grep`, `glob`) and their grouped-read rows, the `fm_watch_arm_omp` tool shell, and canonically classified Firstmate operational user rows, all at zero height.
+Calm hides collapsed thinking, mid-turn assistant working notes, every omp tool call and result row and its grouped-read rows, the `fm_watch_arm_omp` tool shell, and canonically classified Firstmate operational user rows, all at zero height.
 Calm changes presentation only: native tool schemas, approval policy, and execution stay owned by omp, and input delivery, ordering, model context, session storage, and `/export` and `/share` operation remain unchanged, so every hidden input remains in model context, session data, and exported artifacts.
 
 omp differs from Pi in the seams Calm patches, which is why it is a separate extension rather than the Pi one:
 
 - omp exposes no `setWorkingVisible` or `setHiddenThinkingLabel`, so Calm gates the stock loader through `InteractiveMode.ensureLoadingAnimation` and hides thinking by policy in the assistant-layout adapter.
-- omp adapts the shared built-in tool renderer functions in place instead of replacing tool definitions, and the `fm_watch_arm_omp` shell follows the `firstmate:calm-presentation` event from `fm-primary-omp-watch.ts`.
+- omp adapts `ToolExecutionComponent.render` and `ReadToolGroupComponent.render` in place instead of replacing tool definitions, so every tool omp routes through those components is covered rather than a fixed list of built-in names, and the `fm_watch_arm_omp` shell follows the `firstmate:calm-presentation` event from `fm-primary-omp-watch.ts`.
 - The Pi supervision branch does not exist on omp, so Calm has no branch rows to hide.
 
 Each presentation adapter probes the exact omp API it patches when Calm loads.

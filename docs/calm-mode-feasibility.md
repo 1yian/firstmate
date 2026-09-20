@@ -772,3 +772,41 @@ ok - omp Calm hides native tool rows and restores stock rendering on the install
 ```
 
 The load also emitted the `setWidget` request for `firstmate-calm-working-ship` and the `setStatus` reset at `session_start`, confirming the working-ship widget and status path install on omp.
+
+## 2026-09-20 omp 18.2.6 seam drift and the repair
+
+omp self-updated in place from the binary reporting `omp/18.2.0` to `omp/18.2.6`, and that release removed three seams the shipped extension patched.
+Calm degraded silently rather than failing loudly, because each adapter is installed through the probe-and-skip wrapper: every skipped adapter logged its diagnostic and Calm kept running with the rows it could no longer hide left visible.
+
+The removed seams, confirmed by runtime probe against the installed `omp/18.2.6`:
+
+| Seam the extension patched | 18.2.6 |
+| --- | --- |
+| `readToolRenderer`, `editToolRenderer`, `writeToolRenderer`, `grepToolRenderer` | absent from the binary |
+| `bashToolRenderer`, `globToolRenderer` | present in the binary, not exported |
+| `InteractiveMode.prototype.getUserMessageText` | `undefined` |
+| `InteractiveMode.prototype.getMarkdownThemeWithSettings`, `outputPad` | `undefined` |
+| `UserMessageComponent` constructor | `(text, { synthetic, imageLinks })`, no longer `(text, theme, pad)` |
+
+`getUserMessageText` was called unguarded inside the patched `addMessageToChat`, so it threw at submit time rather than at install time; the probe-and-skip wrapper only covers the install path, and the unhandled rejection killed the turn.
+
+The repair replaces the per-name renderer list with the two components omp routes every tool row through, `ToolExecutionComponent.render` and `ReadToolGroupComponent.render`, so coverage follows omp's own routing instead of a fixed list of built-in names and no longer drifts when a built-in is renamed.
+The operational-user adapter stops constructing its own component: it lets omp build the row, then gates that row's `render`, which removes the dependency on the changed constructor, the absent theme accessor, and the absent pad.
+Render gating alone does not repaint rows already painted or retired to terminal scrollback, so Calm also drives `chatContainer.setToolActivityVisible` and `ui.resetDisplay` on every state change, the same pair omp's own tool-visibility toggle uses to replay native history.
+
+`toolRenderers` is exported inside the bundle but not re-exported from `@oh-my-pi/pi-coding-agent` or `@oh-my-pi/pi-tui`, so it is not a reachable seam from an extension; `display.hideToolActivity` is reachable through the exported `settings` singleton but is read once into `InteractiveMode` state at construction, so it cannot express a mid-session toggle and was rejected for that reason.
+
+`tests/fm-calm-omp-extension.test.sh` is the regression boundary: it fails on the pre-repair tree against `omp/18.2.6` and passes after the repair.
+
+```text
+$ tests/fm-calm-omp-extension.test.sh
+omp runtime: omp/18.2.6
+PASS read: native ownership, hide, export, restore
+PASS bash: native ownership, hide, export, restore
+PASS edit: native ownership, hide, export, restore
+PASS write: native ownership, hide, export, restore
+PASS grep: native ownership, hide, export, restore
+PASS glob: native ownership, hide, export, restore
+PASS grouped read: hide and restore
+ok - omp Calm hides native tool rows and restores stock rendering on the installed omp
+```
