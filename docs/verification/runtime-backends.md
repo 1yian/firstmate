@@ -640,6 +640,32 @@ tests/fm-composer-codex-idle-live-e2e.test.sh
 The verification machine runs its fleet on Herdr and has no tmux installed, so on 2026-09-15 that guard reported `skip: live: tmux absent` there, and the Herdr capture above is this entry's live evidence.
 The guard also notes whether the starfield and the placeholder were actually drawn during its read, because codex need not animate them under every model or mode; a refresh on a tmux host should record that note beside the verdict rather than assume the starfield was exercised.
 
+### Pi worker composer pin
+
+Verified on 2026-09-24 on macOS 27.0 arm64 with Pi 0.87.1, pi-zentui 0.25.1 enabled in the user-level Pi settings with its default editor, tmux 3.6a, and Herdr 0.9.0.
+pi-zentui's default editor replaces Pi's native composer with a left-rail box that also draws a model metadata row inside it; the shared classifier reads that idle box as `pending`, which skips steering doorbells and treats an idle worker as holding typed text.
+`.pi/fm-worker-plain-composer.ts`, loaded by `bin/fm-spawn.sh` on every Pi-family worker launch, keeps the native composer while leaving pi-zentui's footer and message styles in place.
+A reset issued from that extension's own `session_start` handler is not enough, because Pi loads `-e` extensions before settings packages and runs `session_start` handlers in load order; replacing the pin with such a reset made the guard below fail at startup (`last verdict: unknown`).
+
+The live guard launches the installed Pi in an isolated tmux server, proves a stub third-party editor blinds the classifier without the pin, then requires the pinned composer to read `empty` idle and `pending` with typed text through `/new` and `/reload`, and finally launches the operator's own Pi configuration with the pin:
+
+```sh
+tests/fm-composer-pi-worker-editor-live-e2e.test.sh
+```
+
+Observed output:
+
+```text
+# pi (0.87.1): stub third-party editor without the pin classifies unknown
+ok - pi (0.87.1): the worker pin keeps the native composer (idle empty, typed pending) through /new and /reload under a third-party editor
+ok - pi (0.87.1): the operator's own Pi configuration launched with the worker pin classifies empty
+ok - live Pi worker composer guard verified 2 live surface(s)
+```
+
+On the same machine, a real Pi worker spawned through `bin/fm-spawn.sh --backend herdr` into an isolated Herdr lab session, reading the pane with `fm_backend_composer_state herdr <pane>`, classified the idle composer `empty`, typed-but-unsubmitted text `pending`, and the cleared composer `empty`; two `bin/fm-send.sh` steers were rung into the idle pane and acknowledged by the worker, `bin/fm-control.sh relaunch` replaced it with a pinned worker whose idle composer again read `empty`, and `bin/fm-control.sh exit` left the endpoint `dead`.
+A plain `pi` started in the same lab session outside Firstmate still rendered pi-zentui's editor and read `pending`, confirming the pin does not reach sessions Firstmate did not launch.
+`tests/fm-composer-matrix-live-e2e.test.sh` launches its Pi row with the same pin, so that row reflects the worker launch.
+
 ## Steering-inbox doorbell
 
 The steering channel's one behavioral assumption - a real worker agent follows the constant self-describing doorbell line (list the inbox, read and act on its records in numeric order, then `mv` each into `handled/`) - was verified on 2026-08-23 against every installed verified harness, on tmux 3.6a, macOS arm64, on an isolated private socket, driving the REAL `bin/fm-send.sh` end to end (durable record plus doorbell, with one mid-wait re-ring playing the watcher's role).

@@ -115,8 +115,13 @@ check_harness_idle_empty() {  # <name> <launch-cmd...>
 }
 
 # --- 1. Every installed verified harness must reach a proven-empty composer --
+# Pi launches with the worker composer pin bin/fm-spawn.sh adds, so a
+# user-installed editor extension cannot hide the native box this matrix
+# proves; tests/fm-composer-pi-worker-editor-live-e2e.test.sh owns the pin.
 for h in claude codex opencode pi grok kimi muse; do
-  if command -v "$h" >/dev/null 2>&1; then
+  if [ "$h" = pi ] && command -v pi >/dev/null 2>&1; then
+    check_harness_idle_empty pi pi -e "$ROOT/.pi/fm-worker-plain-composer.ts"
+  elif command -v "$h" >/dev/null 2>&1; then
     check_harness_idle_empty "$h" "$h"
   else
     note "harness absent, not verified here: $h"

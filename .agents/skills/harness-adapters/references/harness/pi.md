@@ -41,6 +41,12 @@ The extension listens for Pi's `turn_end` event, not `agent_end`, so supervision
 Native-harness progress uses the separate generation-bound marker owned by `../../../bin/fm-busy-event.sh`; it never fabricates Pi turn completion.
 Pi sets `PI_CODING_AGENT=true` for its children as its harness-detection marker.
 
+## Worker composer pin
+
+Every Pi-family worker launch, secondmates and relaunches included, also loads the tracked `../../../.pi/fm-worker-plain-composer.ts` with `-e`, so the worker renders Pi's native composer even when the user-level Pi config installs a third-party editor such as pi-zentui's, which `../../../bin/fm-composer-lib.sh` cannot read.
+Only the editor is pinned; footers, message styles, and the primary session keep the user's configuration, and the file's header owns the load-order mechanism.
+`../../../tests/fm-composer-pi-worker-editor-live-e2e.test.sh` is the live guard, and the dated result lives in `../../../docs/verification/runtime-backends.md`.
+
 ## Primary integration
 
 The primary turn-end behavior was verified on 2026-07-09 with Pi 0.80.5.
@@ -55,6 +61,6 @@ Native-harness adapters can discover the same guarded FirstMate tools and operat
 The tool result and clean-exit fallback are owned by `../../../docs/supervision-protocols/pi.md`.
 `../../../bin/fm-session-start.sh` reports when the live Pi-family session has not loaded both extensions and points at the selected executable after project trust as the fix, with `-e` as a trust-free fallback.
 
-When a secondmate is launched on Pi or Pi-signed, `../../../bin/fm-spawn.sh --secondmate` launches the selected executable with both `-e .pi/extensions/fm-primary-turnend-guard.ts` and `-e .pi/extensions/fm-primary-pi-watch.ts`.
+When a secondmate is launched on Pi or Pi-signed, `../../../bin/fm-spawn.sh --secondmate` launches the selected executable with both `-e .pi/extensions/fm-primary-turnend-guard.ts` and `-e .pi/extensions/fm-primary-pi-watch.ts`, plus the worker composer pin above.
 Both files already exist in the secondmate home's git worktree.
 The PreToolUse-equivalent watcher-arm seatbelt returns `{block: true}` from the `tool_call` event.
