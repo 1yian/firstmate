@@ -266,7 +266,6 @@ export default function (pi: any) {
   let sessionRef: any = null;    // ctx.session captured at session_start, for abort()
   let inboundTimer: any = null;
   let outboundTimer: any = null;
-  let watchdogTimer: any = null;
 
   const fs = (globalThis as any).require?.("node:fs") ?? require("node:fs");
   const os = (globalThis as any).require?.("node:os") ?? require("node:os");
@@ -325,7 +324,6 @@ export default function (pi: any) {
   }
 
   let draining = false;
-  let lastDrainOk = Date.now();   // watchdog heartbeat: updated every completed tick
   async function drainLog() {
     if (draining) return;            // don't let a slow post overlap the next tick
     draining = true;
@@ -401,7 +399,6 @@ export default function (pi: any) {
       try { dbg(`drainLog error: ${String(e).slice(0, 160)}`); } catch {}
     } finally {
       draining = false;
-      lastDrainOk = Date.now();   // tick completed (even on handled error); watchdog stays quiet
     }
   }
 
@@ -495,7 +492,7 @@ export default function (pi: any) {
     // /resume, /fork within the same process, so guard against re-announcing.
     if (!announcedOnline) {
       announcedOnline = true;
-      dbg("bridge online (build: outbound-hardened v3 self-healing)");
+      dbg("bridge online (build: outbound-hardened v2)");
       try { await postToDiscord("firstmate bridge online."); } catch (e) { dbg(`online post failed: ${String(e).slice(0,120)}`); }
     }
     // pull the cursor to "now" so we don't replay history
@@ -503,27 +500,7 @@ export default function (pi: any) {
     if (Array.isArray(latest) && latest[0]) lastMessageId = latest[0].id;
     // Start the timers once; a session_start from /new must not stack duplicates.
     if (!inboundTimer) inboundTimer = setInterval(() => void pollInbound(ctx), 2000);
-    // Outbound: self-rescheduling tick, not a bare setInterval. Each tick always
-    // schedules the next one in finally, so a rejected drainLog can never kill the
-    // loop. A watchdog re-arms if ticks stall (e.g. draining stuck true) so outbound
-    // self-heals instead of silently dying on long uptime.
-    if (!outboundTimer) {
-      const tick = () => {
-        drainLog().catch((e) => { try { dbg(`drainLog rejected: ${String(e).slice(0,140)}`); } catch {} })
-          .finally(() => { outboundTimer = setTimeout(tick, 1000); });
-      };
-      tick();
-      if (!watchdogTimer) watchdogTimer = setInterval(() => {
-        // If no completed tick for 15s, the loop is wedged: force-clear and re-arm.
-        if (Date.now() - lastDrainOk > 15000) {
-          try { dbg(`outbound watchdog: ${Math.round((Date.now()-lastDrainOk)/1000)}s since last tick, re-arming`); } catch {}
-          draining = false;
-          if (outboundTimer) { clearTimeout(outboundTimer); }
-          lastDrainOk = Date.now();
-          tick();
-        }
-      }, 10000);
-    }
+    if (!outboundTimer) outboundTimer = setInterval(() => void drainLog(), 1000);
   });
 
   pi.on?.("agent_start", () => {

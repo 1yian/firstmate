@@ -26,16 +26,6 @@
 
 const API = "https://discord.com/api/v10";
 
-// Lightweight always-on diagnostics: append one line to a fixed file so an
-// outbound wedge is inspectable without attaching to the live OMP process.
-// Best-effort; never throws.
-function dbg(msg: string) {
-  try {
-    const fs2 = (globalThis as any).require?.("node:fs") ?? require("node:fs");
-    fs2.appendFileSync("/tmp/fm-bridge-debug.log", `${new Date().toISOString()} ${msg}\n`);
-  } catch {}
-}
-
 // Read config from process.env first, then fall back to the firstmate home's
 // .env file. firstmate does NOT source .env into the OMP process (it reads keys
 // on demand via fm-env-lib.sh), so process.env.BRIDGE_* is normally empty and we
@@ -81,27 +71,13 @@ async function dGET(path: string): Promise<any> {
   if (!r.ok) return null;
   return r.json();
 }
-async function dPOST(path: string, body: unknown, _attempt = 0): Promise<any> {
+async function dPOST(path: string, body: unknown): Promise<any> {
   const r = await fetch(`${API}${path}`, {
     method: "POST",
     headers: { Authorization: `Bot ${TOKEN}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  // Rate limited: honor retry_after and retry a few times before giving up.
-  if (r.status === 429) {
-    let waitMs = 1000;
-    try {
-      const j: any = JSON.parse(await r.text());
-      if (typeof j?.retry_after === "number") waitMs = Math.ceil(j.retry_after * 1000) + 250;
-    } catch {}
-    if (_attempt < 5) {
-      await new Promise((res) => setTimeout(res, waitMs));
-      return dPOST(path, body, _attempt + 1);
-    }
-    throw new Error(`dPOST ${path} rate-limited, gave up after ${_attempt} retries`);
-  }
-  // Hard failure: throw so the outbound drain does NOT advance past this message.
-  if (!r.ok) throw new Error(`dPOST ${path} failed HTTP ${r.status}`);
+  if (!r.ok) return null;
   // Some endpoints (e.g. POST /typing) return 204 No Content; parsing throws.
   const text = await r.text();
   if (!text) return null;
@@ -132,7 +108,7 @@ async function postToDiscord(text: string) {
 }
 
 async function showTyping() {
-  try { await dPOST(`/channels/${CHANNEL}/typing`, {}); } catch {}
+  await dPOST(`/channels/${CHANNEL}/typing`, {});
 }
 
 // ---- Media helpers ----
@@ -266,7 +242,6 @@ export default function (pi: any) {
   let sessionRef: any = null;    // ctx.session captured at session_start, for abort()
   let inboundTimer: any = null;
   let outboundTimer: any = null;
-  let watchdogTimer: any = null;
 
   const fs = (globalThis as any).require?.("node:fs") ?? require("node:fs");
   const os = (globalThis as any).require?.("node:os") ?? require("node:os");
@@ -324,84 +299,54 @@ export default function (pi: any) {
     return newestLog();
   }
 
-  let draining = false;
-  let lastDrainOk = Date.now();   // watchdog heartbeat: updated every completed tick
-  async function drainLog() {
-    if (draining) return;            // don't let a slow post overlap the next tick
-    draining = true;
-    try {
-      // Re-resolve each tick so a rotated/forked session file is picked up.
-      const active = newestLog();
-      if (active && active !== logPath) {
-        // switched to a new session file: start from its current end to avoid replay
-        logPath = active;
-        try { logOffset = fs.statSync(active).size; } catch { logOffset = 0; }
-        return; // next tick reads new content
-      }
-      if (!logPath || !fs.existsSync(logPath)) return;
-      const size = fs.statSync(logPath).size;
-      if (size <= logOffset) return;
-      const fd = fs.openSync(logPath, "r");
-      const buf = Buffer.alloc(size - logOffset);
-      fs.readSync(fd, buf, 0, buf.length, logOffset);
-      fs.closeSync(fd);
-
-      // Only consume up to the LAST complete line. The pane writes the JSONL
-      // incrementally, so the final line in this window is often a half-written
-      // record; parsing it fails and, if we advanced past it, its second half
-      // would fall below the offset and be lost forever. Keep the trailing
-      // partial line for the next tick.
-      const chunk = buf.toString("utf8");
-      const lastNl = chunk.lastIndexOf("\n");
-      if (lastNl < 0) return;         // no complete line yet; wait for more bytes
-      const complete = chunk.slice(0, lastNl);   // through the last newline
-      const consumedBytes = Buffer.byteLength(chunk.slice(0, lastNl + 1), "utf8");
-
-      let advanced = 0;               // bytes successfully posted, for offset commit
-      for (const line of complete.split("\n")) {
-        const lineBytes = Buffer.byteLength(line + "\n", "utf8");
-        if (!line.trim()) { advanced += lineBytes; continue; }
-        let j: any;
-        try { j = JSON.parse(line); } catch { advanced += lineBytes; continue; }
-        const m = j?.message;
-        if (!m || m.role !== "assistant") { advanced += lineBytes; continue; }
-        const content = m.content;
-        if (!Array.isArray(content)) { advanced += lineBytes; continue; }
-        const text = content
-          .filter((b: any) => b && b.type === "text" && typeof b.text === "string")
-          .map((b: any) => b.text)
-          .join("\n")
-          .trim();
-        if (!text) { advanced += lineBytes; continue; }
-        const { clean, paths } = extractMedia(text);
-        try {
-          if (paths.length === 0) {
-            await postToDiscord(clean);
-          } else {
-            let firstNoteUsed = false;
-            for (const p of paths) {
-              const note = !firstNoteUsed ? clean : "";
-              const ok = await uploadToDiscord(p, note);
-              firstNoteUsed = true;
-              if (!ok && note) await postToDiscord(note);
-            }
+  function drainLog() {
+    // Re-resolve each tick so a rotated/forked session file is picked up.
+    const active = newestLog();
+    if (active && active !== logPath) {
+      // switched to a new session file: start from its current end to avoid replay
+      logPath = active;
+      try { logOffset = fs.statSync(active).size; } catch { logOffset = 0; }
+      return; // next tick reads new content
+    }
+    if (!logPath || !fs.existsSync(logPath)) return;
+    const size = fs.statSync(logPath).size;
+    if (size <= logOffset) return;
+    const fd = fs.openSync(logPath, "r");
+    const buf = Buffer.alloc(size - logOffset);
+    fs.readSync(fd, buf, 0, buf.length, logOffset);
+    fs.closeSync(fd);
+    logOffset = size;
+    for (const line of buf.toString("utf8").split("\n")) {
+      if (!line.trim()) continue;
+      let j: any;
+      try { j = JSON.parse(line); } catch { continue; }
+      const m = j?.message;
+      if (!m || m.role !== "assistant") continue;
+      const content = m.content;
+      if (!Array.isArray(content)) continue;
+      const text = content
+        .filter((b: any) => b && b.type === "text" && typeof b.text === "string")
+        .map((b: any) => b.text)
+        .join("\n")
+        .trim();
+      if (!text) continue;
+      // Outbound media: MEDIA:/abs/path lines become Discord attachments.
+      const { clean, paths } = extractMedia(text);
+      if (paths.length === 0) {
+        void postToDiscord(clean);
+      } else {
+        (async () => {
+          let firstNoteUsed = false;
+          for (const p of paths) {
+            const note = !firstNoteUsed ? clean : "";
+            const ok = await uploadToDiscord(p, note);
+            firstNoteUsed = true;
+            if (!ok && !firstNoteUsed) void postToDiscord(clean);
           }
-        } catch (e) {
-          // Post failed (rate-limit exhausted / network). Commit only what we
-          // already posted and STOP; leave this line for the next tick so it
-          // retries instead of being silently dropped.
-          logOffset += advanced;
-          try { dbg(`outbound post failed, will retry: ${String(e).slice(0, 120)}`); } catch {}
-          return;
-        }
-        advanced += lineBytes;
+          // If no upload consumed the text (all failed) but there was text, still post it.
+          if (clean && paths.length && !firstNoteUsed) void postToDiscord(clean);
+        })();
       }
-      logOffset += consumedBytes;      // all complete lines handled; commit
-    } catch (e) {
-      try { dbg(`drainLog error: ${String(e).slice(0, 160)}`); } catch {}
-    } finally {
-      draining = false;
-      lastDrainOk = Date.now();   // tick completed (even on handled error); watchdog stays quiet
     }
   }
 
@@ -495,35 +440,14 @@ export default function (pi: any) {
     // /resume, /fork within the same process, so guard against re-announcing.
     if (!announcedOnline) {
       announcedOnline = true;
-      dbg("bridge online (build: outbound-hardened v3 self-healing)");
-      try { await postToDiscord("firstmate bridge online."); } catch (e) { dbg(`online post failed: ${String(e).slice(0,120)}`); }
+      await postToDiscord("firstmate bridge online.");
     }
     // pull the cursor to "now" so we don't replay history
     const latest = await dGET(`/channels/${CHANNEL}/messages?limit=1`);
     if (Array.isArray(latest) && latest[0]) lastMessageId = latest[0].id;
     // Start the timers once; a session_start from /new must not stack duplicates.
     if (!inboundTimer) inboundTimer = setInterval(() => void pollInbound(ctx), 2000);
-    // Outbound: self-rescheduling tick, not a bare setInterval. Each tick always
-    // schedules the next one in finally, so a rejected drainLog can never kill the
-    // loop. A watchdog re-arms if ticks stall (e.g. draining stuck true) so outbound
-    // self-heals instead of silently dying on long uptime.
-    if (!outboundTimer) {
-      const tick = () => {
-        drainLog().catch((e) => { try { dbg(`drainLog rejected: ${String(e).slice(0,140)}`); } catch {} })
-          .finally(() => { outboundTimer = setTimeout(tick, 1000); });
-      };
-      tick();
-      if (!watchdogTimer) watchdogTimer = setInterval(() => {
-        // If no completed tick for 15s, the loop is wedged: force-clear and re-arm.
-        if (Date.now() - lastDrainOk > 15000) {
-          try { dbg(`outbound watchdog: ${Math.round((Date.now()-lastDrainOk)/1000)}s since last tick, re-arming`); } catch {}
-          draining = false;
-          if (outboundTimer) { clearTimeout(outboundTimer); }
-          lastDrainOk = Date.now();
-          tick();
-        }
-      }, 10000);
-    }
+    if (!outboundTimer) outboundTimer = setInterval(() => drainLog(), 1000);
   });
 
   pi.on?.("agent_start", () => {
