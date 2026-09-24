@@ -35,7 +35,7 @@
 //    and cleared on session_shutdown, while the one-time "online" announcement,
 //    the bot identity, and the inbound cursor are process-scoped on globalThis.
 
-import { existsSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
@@ -69,10 +69,21 @@ interface DiscordMessage {
   message_snapshots?: Array<{ message?: { content?: string; attachments?: DiscordAttachment[] } }>;
 }
 
+interface PendingOutbound {
+  clean: string;
+  paths: string[];
+  uploadsDone: boolean;
+  noteDelivered: boolean;
+  sentParts: number;
+}
+
 interface ProcessBridgeState {
   announcedOnline: boolean;
   botUserId: string | null;
   lastMessageId: string | null;
+  outbound: PendingOutbound[];
+  draining: boolean;
+  lastDrainOk: number;
 }
 
 // Process-scoped state survives Pi's runtime replacement on /new, /resume, /fork, and reload.
@@ -82,10 +93,28 @@ function processState(): ProcessBridgeState {
   const holder = globalThis as unknown as Record<symbol, ProcessBridgeState | undefined>;
   let state = holder[key];
   if (!state) {
-    state = { announcedOnline: false, botUserId: null, lastMessageId: null };
+    state = {
+      announcedOnline: false,
+      botUserId: null,
+      lastMessageId: null,
+      outbound: [],
+      draining: false,
+      lastDrainOk: Date.now(),
+    };
     holder[key] = state;
   }
   return state;
+}
+
+// Lightweight always-on diagnostics: append one line to a fixed file so an
+// outbound wedge is inspectable without attaching to the live Pi process.
+// Best-effort; never throws.
+function dbg(msg: string): void {
+  try {
+    appendFileSync("/tmp/fm-bridge-debug.log", `${new Date().toISOString()} ${msg}\n`);
+  } catch {
+    return;
+  }
 }
 
 // Read config from process.env first, then fall back to the firstmate home's
@@ -228,10 +257,10 @@ export default function (pi: ExtensionAPI) {
   let runtimeCtx: ExtensionContext | null = null;
   let inboundTimer: ReturnType<typeof setInterval> | null = null;
   let typingTimer: ReturnType<typeof setInterval> | null = null;
+  let outboundTimer: ReturnType<typeof setTimeout> | null = null;
+  let watchdogTimer: ReturnType<typeof setInterval> | null = null;
   let polling = false;
   let working = false;
-  // Serialize outbound posts so replies reach the channel in transcript order.
-  let outboundChain: Promise<unknown> = Promise.resolve();
 
   async function dGET(path: string): Promise<unknown> {
     try {
@@ -243,17 +272,33 @@ export default function (pi: ExtensionAPI) {
     }
   }
 
-  async function dPOST(path: string, body: unknown): Promise<unknown> {
+  async function dPOST(path: string, body: unknown, attempt = 0): Promise<unknown> {
+    const r = await fetch(`${API}${path}`, {
+      method: "POST",
+      headers: { Authorization: `Bot ${TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    // Rate limited: honor retry_after and retry a few times before giving up.
+    if (r.status === 429) {
+      let waitMs = 1000;
+      try {
+        const j = JSON.parse(await r.text()) as { retry_after?: unknown } | null;
+        if (typeof j?.retry_after === "number") waitMs = Math.ceil(j.retry_after * 1000) + 250;
+      } catch {
+        waitMs = 1000;
+      }
+      if (attempt < 5) {
+        await new Promise((res) => setTimeout(res, waitMs));
+        return dPOST(path, body, attempt + 1);
+      }
+      throw new Error(`dPOST ${path} rate-limited, gave up after ${attempt} retries`);
+    }
+    // Hard failure: throw so the outbound drain does NOT advance past this message.
+    if (!r.ok) throw new Error(`dPOST ${path} failed HTTP ${r.status}`);
+    // Some endpoints (e.g. POST /typing) return 204 No Content; parsing would throw.
+    const text = await r.text();
+    if (!text) return null;
     try {
-      const r = await fetch(`${API}${path}`, {
-        method: "POST",
-        headers: { Authorization: `Bot ${TOKEN}`, "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!r.ok) return null;
-      // Some endpoints (e.g. POST /typing) return 204 No Content; parsing would throw.
-      const text = await r.text();
-      if (!text) return null;
       return JSON.parse(text);
     } catch {
       return null;
@@ -267,7 +312,11 @@ export default function (pi: ExtensionAPI) {
   }
 
   async function showTyping(): Promise<void> {
-    await dPOST(`/channels/${CHANNEL}/typing`, {});
+    try {
+      await dPOST(`/channels/${CHANNEL}/typing`, {});
+    } catch {
+      return;
+    }
   }
 
   // Download a Discord attachment URL to a local file, return its path.
@@ -325,23 +374,81 @@ export default function (pi: ExtensionAPI) {
   }
 
   // ---- Outbound: post one assistant message's text, uploading referenced media ----
-  async function deliverAssistantText(text: string): Promise<void> {
-    const { clean, paths } = extractMedia(text);
-    if (paths.length === 0) {
-      await postToDiscord(clean);
-      return;
-    }
-    let noteDelivered = !clean;
-    for (const p of paths) {
-      const ok = await uploadToDiscord(p, noteDelivered ? "" : clean);
-      if (ok) noteDelivered = true;
+  async function deliverOutbound(item: PendingOutbound): Promise<void> {
+    if (item.paths.length && !item.uploadsDone) {
+      item.noteDelivered = !item.clean;
+      for (const p of item.paths) {
+        const ok = await uploadToDiscord(p, item.noteDelivered ? "" : item.clean);
+        if (ok) item.noteDelivered = true;
+      }
+      item.uploadsDone = true;
     }
     // If no upload carried the text (all failed), still post it.
-    if (!noteDelivered) await postToDiscord(clean);
+    const text = item.paths.length && item.noteDelivered ? "" : item.clean.trim();
+    const parts = text ? chunk(text) : [];
+    for (let i = item.sentParts; i < parts.length; i++) {
+      await dPOST(`/channels/${CHANNEL}/messages`, { content: parts[i] });
+      item.sentParts = i + 1;
+    }
   }
 
   function queueOutbound(text: string): void {
-    outboundChain = outboundChain.then(() => deliverAssistantText(text)).catch(() => {});
+    const { clean, paths } = extractMedia(text);
+    shared.outbound.push({ clean, paths, uploadsDone: false, noteDelivered: false, sentParts: 0 });
+    void drainOutbound();
+  }
+
+  async function drainOutbound(): Promise<void> {
+    if (shared.draining) return; // don't let a slow post overlap the next tick
+    shared.draining = true;
+    try {
+      while (shared.outbound.length) {
+        const item = shared.outbound[0];
+        try {
+          await deliverOutbound(item);
+        } catch (e) {
+          // Post failed (rate-limit exhausted / network). Keep this message at the
+          // head of the queue and STOP; the next tick retries it instead of
+          // silently dropping it.
+          dbg(`outbound post failed, will retry: ${String(e).slice(0, 120)}`);
+          return;
+        }
+        if (shared.outbound[0] === item) shared.outbound.shift();
+      }
+    } catch (e) {
+      dbg(`drainOutbound error: ${String(e).slice(0, 160)}`);
+    } finally {
+      shared.draining = false;
+      shared.lastDrainOk = Date.now(); // watchdog heartbeat: updated every completed tick
+    }
+  }
+
+  // Outbound: self-rescheduling tick, not a bare setInterval. Each tick always
+  // schedules the next one in finally, so a rejected drain can never kill the
+  // loop. A watchdog re-arms if ticks stall (e.g. draining stuck true) so outbound
+  // self-heals instead of silently dying on long uptime.
+  function startOutbound(ctx: ExtensionContext): void {
+    if (outboundTimer) return;
+    const tick = (): void => {
+      drainOutbound()
+        .catch((e) => dbg(`drainOutbound rejected: ${String(e).slice(0, 140)}`))
+        .finally(() => {
+          if (runtimeCtx === ctx) outboundTimer = setTimeout(tick, 1000);
+        });
+    };
+    tick();
+    if (!watchdogTimer) {
+      watchdogTimer = setInterval(() => {
+        // If no completed tick for 15s, the loop is wedged: force-clear and re-arm.
+        if (Date.now() - shared.lastDrainOk > 15000) {
+          dbg(`outbound watchdog: ${Math.round((Date.now() - shared.lastDrainOk) / 1000)}s since last tick, re-arming`);
+          shared.draining = false;
+          if (outboundTimer) clearTimeout(outboundTimer);
+          shared.lastDrainOk = Date.now();
+          tick();
+        }
+      }, 10000);
+    }
   }
 
   // ---- Inbound: poll channel for new messages, inject each as a user turn ----
@@ -443,7 +550,12 @@ export default function (pi: ExtensionAPI) {
     // every /new, /resume, and /fork within the same process.
     if (!shared.announcedOnline) {
       shared.announcedOnline = true;
-      await postToDiscord("firstmate bridge online.");
+      dbg("bridge online (build: pi outbound-hardened)");
+      try {
+        await postToDiscord("firstmate bridge online.");
+      } catch (e) {
+        dbg(`online post failed: ${String(e).slice(0, 120)}`);
+      }
     }
     // First start in this process: pull the cursor to "now" so history is not replayed.
     // A later runtime keeps the process cursor, so messages sent during a session switch still arrive.
@@ -453,6 +565,7 @@ export default function (pi: ExtensionAPI) {
     }
     if (runtimeCtx !== ctx) return; // shut down while awaiting
     if (!inboundTimer) inboundTimer = setInterval(() => void pollInbound(), INBOUND_POLL_MS);
+    startOutbound(ctx);
   });
 
   pi.on("message_end", (event) => {
@@ -482,6 +595,14 @@ export default function (pi: ExtensionAPI) {
     if (inboundTimer) {
       clearInterval(inboundTimer);
       inboundTimer = null;
+    }
+    if (outboundTimer) {
+      clearTimeout(outboundTimer);
+      outboundTimer = null;
+    }
+    if (watchdogTimer) {
+      clearInterval(watchdogTimer);
+      watchdogTimer = null;
     }
   });
 }
