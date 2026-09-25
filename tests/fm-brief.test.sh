@@ -316,6 +316,14 @@ test_faster_paths_use_configured_authority_without_stacked_review() {
     "local-only brief retained a personal review stacked on the selected delivery path"
   assert_no_grep "pass \`--intent\` as only this brief's \`## Captain's intent\`" "$home/data/$id/brief.md" \
     "local-only brief must not include the no-mistakes --intent contract"
+  assert_grep "git checkout -b $id\`" "$brief" \
+    "local-only brief must create the plain task-id slug branch"
+  assert_grep "Work only on your \`$id\` branch" "$brief" \
+    "local-only rule one must name the plain slug branch"
+  assert_grep "append \`done: ready in branch $id\`" "$brief" \
+    "local-only definition of done must name the plain slug branch"
+  assert_no_grep "fm/$id" "$brief" \
+    "local-only brief must not name a legacy fm/ branch"
   id="brief-direct-intent-a4"
   FM_HOME="$home" "$ROOT/bin/fm-brief.sh" "$id" direct-proj --mode direct-PR >/dev/null 2>&1
   assert_no_grep "pass \`--intent\` as only this brief's \`## Captain's intent\`" "$home/data/$id/brief.md" \

@@ -59,8 +59,14 @@ if [ "${FAKE_GH_MANY:-0}" = 1 ]; then
 JSON
   exit 0
 fi
+if [ "${FAKE_GH_BRANCH_MIX:-0}" = 1 ]; then
+  cat <<'JSON'
+[{"number":9,"title":"Ship the thing","url":"https://github.com/kunchenguid/firstmate/pull/9","headRefName":"ship-task","reviewDecision":"APPROVED","mergeable":"MERGEABLE","statusCheckRollup":[{"conclusion":"SUCCESS","status":"COMPLETED"}]},{"number":10,"title":"Legacy branch","url":"https://github.com/kunchenguid/firstmate/pull/10","headRefName":"fm/legacy-task","reviewDecision":"","mergeable":"MERGEABLE","statusCheckRollup":[]},{"number":11,"title":"Outside work","url":"https://github.com/kunchenguid/firstmate/pull/11","headRefName":"outside-feature","reviewDecision":"","mergeable":"MERGEABLE","statusCheckRollup":[]}]
+JSON
+  exit 0
+fi
 cat <<'JSON'
-[{"number":9,"title":"Ship the thing","url":"https://github.com/kunchenguid/firstmate/pull/9","headRefName":"fm/ship-task","reviewDecision":"APPROVED","mergeable":"MERGEABLE","statusCheckRollup":[{"conclusion":"SUCCESS","status":"COMPLETED"}]}]
+[{"number":9,"title":"Ship the thing","url":"https://github.com/kunchenguid/firstmate/pull/9","headRefName":"ship-task","reviewDecision":"APPROVED","mergeable":"MERGEABLE","statusCheckRollup":[{"conclusion":"SUCCESS","status":"COMPLETED"}]}]
 JSON
 SH
   cat > "$fb/gh-axi" <<'SH'
@@ -1404,7 +1410,7 @@ test_include_prs_is_the_only_fetch_path() {
   local home fakebin json
   home=$(make_home prs); write_fixture "$home"
   fakebin=$(make_fakebin "$home"); : > "$home/net.log"
-  json=$(run "$home" "$fakebin" --include-prs --json)
+  json=$(FAKE_GH_BRANCH_MIX=1 run "$home" "$fakebin" --include-prs --json)
   # Now gh WAS called, exactly for pr list.
   grep -q '^gh pr list ' "$home/net.log" || fail "--include-prs must call gh pr list"
   printf '%s' "$json" | jq -e '
@@ -1413,6 +1419,12 @@ test_include_prs_is_the_only_fetch_path() {
   printf '%s' "$json" | jq -e '
     .candidate_prs | any(.[]; .num == "9" and .task == "ship-task" and .checks == "passing" and .review == "APPROVED")
   ' >/dev/null || fail "candidate_prs must carry the fetched PR cross-referenced to its task: $json"
+  # A plain-slug head maps only when it names a live task; a legacy fm/<id>
+  # head still maps by its prefix; any other head stays unattributed.
+  printf '%s' "$json" | jq -e '
+    (.candidate_prs | any(.[]; .num == "10" and .task == "legacy-task"))
+      and (.candidate_prs | any(.[]; .num == "11" and .task == "-"))
+  ' >/dev/null || fail "candidate_prs must map a legacy fm/ head and leave an unrelated head unattributed: $json"
   pass "--include-prs is the only path that fetches, and it enriches correctly"
 }
 

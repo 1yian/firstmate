@@ -3380,6 +3380,67 @@ test_local_merge_entrypoint_separates_an_unreadable_record_from_an_absent_one() 
   pass "the local merge entrypoint separates an unreadable authority record from an absent one"
 }
 
+# Local landing finds the task branch by name: the plain task-id slug a new
+# worker creates, or the legacy fm/<id> branch a task created before slug names
+# still carries. When both names exist, the branch the task worktree has checked
+# out wins over a stray same-named branch.
+test_local_merge_entrypoint_lands_slug_and_legacy_task_branches() {
+  local label branch home id repo wt landed
+  for label in slug legacy both; do
+    home=$(make_home "local-merge-branch-$label")
+    id="sample-local-branch-$label"
+    repo="$home/projects/sample-local"
+    wt="$home/projects/$id"
+    case "$label" in
+      slug) branch=$id ;;
+      *) branch="fm/$id" ;;
+    esac
+    fm_git_worktree "$repo" "$wt" "$branch"
+    if [ "$label" = both ]; then
+      # A stray plain-slug branch that must not outrank the worktree's own.
+      git -C "$repo" branch "$id" main
+    fi
+    printf '%s delivery\n' "$label" > "$wt/local.txt"
+    git -C "$wt" add local.txt
+    git -C "$wt" -c user.name='Firstmate Tests' -c user.email='tests@example.invalid' \
+      commit -qm "$label delivery"
+    fm_write_meta "$home/state/$id.meta" \
+      "window=firstmate:fm-$id" "endpoint_task_id=$id" "worktree=$wt" \
+      "project=$repo" "harness=codex" "kind=ship" "mode=local-only" \
+      "spawn_gen=fixture-$id"
+    rm -f "$home/data/backlog.md"
+
+    PATH="$home/fakebin:$PATH" FM_ROOT_OVERRIDE="$ROOT" FM_HOME="$home" \
+      FM_STATE_OVERRIDE="$home/state" FM_DATA_OVERRIDE="$home/data" \
+      FM_CONFIG_OVERRIDE="$home/config" "$ROOT/bin/fm-merge-local.sh" "$id" \
+      > "$home/land.out" 2> "$home/land.err" \
+      || fail "$label: the local merge did not land the $branch task branch: $(cat "$home/land.err")"
+    landed=$(git -C "$repo" rev-parse main)
+    [ "$landed" = "$(git -C "$repo" rev-parse "$branch")" ] \
+      || fail "$label: main did not fast-forward to the $branch task branch"
+    [ "$(git -C "$repo" show main:local.txt)" = "$label delivery" ] \
+      || fail "$label: main does not carry the task branch's delivery"
+  done
+
+  home=$(make_home local-merge-branch-missing)
+  id=sample-local-branch-missing
+  repo="$home/projects/sample-local"
+  fm_git_init_commit "$repo"
+  fm_write_meta "$home/state/$id.meta" \
+    "window=firstmate:fm-$id" "endpoint_task_id=$id" "worktree=$home/projects/$id" \
+    "project=$repo" "harness=codex" "kind=ship" "mode=local-only" \
+    "spawn_gen=fixture-$id"
+  if PATH="$home/fakebin:$PATH" FM_ROOT_OVERRIDE="$ROOT" FM_HOME="$home" \
+    FM_STATE_OVERRIDE="$home/state" FM_DATA_OVERRIDE="$home/data" \
+    FM_CONFIG_OVERRIDE="$home/config" "$ROOT/bin/fm-merge-local.sh" "$id" \
+    > "$home/missing.out" 2> "$home/missing.err"; then
+    fail "missing: the local merge succeeded with no task branch"
+  fi
+  assert_grep "neither branch $id nor legacy fm/$id exists" "$home/missing.err" \
+    "missing: the refusal did not name both branch candidates"
+  pass "the local merge entrypoint lands a plain-slug or legacy fm/ task branch and prefers the worktree's own"
+}
+
 test_merge_entrypoints_validate_identity_and_state_before_locking() {
   local home pr_state local_state bad_id rc
   home=$(make_home invalid-merge-entrypoint-inputs)
@@ -4063,6 +4124,7 @@ test_pr_merge_entrypoint_refuses_a_captain_held_task
 test_local_merge_entrypoint_refuses_a_captain_held_task
 test_pr_merge_entrypoint_separates_an_unreadable_record_from_an_absent_one
 test_local_merge_entrypoint_separates_an_unreadable_record_from_an_absent_one
+test_local_merge_entrypoint_lands_slug_and_legacy_task_branches
 test_merge_entrypoints_validate_identity_and_state_before_locking
 test_merge_entrypoints_refuse_a_reused_task_incarnation
 test_merge_entrypoints_serialize_forced_teardown_before_task_reads

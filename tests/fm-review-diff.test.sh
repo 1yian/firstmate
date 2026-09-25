@@ -11,6 +11,8 @@
 #   (d) pr= present but PR head unreachable -> fallback to local branch + warning
 #   (e) pr= + STALE recorded pr_head= + newer remote pull head -> must use fetched head
 #       (this is the class that bit reviewers holding merges over "missing" fixes)
+#   (f) plain task-id slug branch and legacy fm/<id> branch, both found by name
+#       even when the task worktree is detached
 set -u
 
 # shellcheck source=tests/lib.sh
@@ -20,8 +22,9 @@ fm_git_identity fmtest fmtest@example.invalid
 REVIEW_DIFF="$ROOT/bin/fm-review-diff.sh"
 TMP_ROOT=$(fm_test_tmproot fm-review-diff-tests)
 
+# make_case <name> [<task-branch>] - the task branch defaults to the plain slug.
 make_case() {
-  local name=$1 case_dir
+  local name=$1 branch=${2:-task-x1} case_dir
   case_dir="$TMP_ROOT/$name"
   mkdir -p "$case_dir/state"
 
@@ -36,7 +39,7 @@ make_case() {
 
   git clone -q "$case_dir/origin.git" "$case_dir/project"
   git -C "$case_dir/project" remote set-head origin main 2>/dev/null || true
-  git -C "$case_dir/project" worktree add -q -b fm/task-x1 "$case_dir/wt" main
+  git -C "$case_dir/project" worktree add -q -b "$branch" "$case_dir/wt" main
 
   touch "$case_dir/state/.last-watcher-beat"
   printf '%s\n' "$case_dir"
@@ -53,7 +56,8 @@ write_task_meta() {
 }
 
 stale_and_pr_commits() {
-  local case_dir=$1
+  local case_dir=$1 branch
+  branch=$(git -C "$case_dir/wt" symbolic-ref --short HEAD)
   printf 'stale-local\n' > "$case_dir/wt/feature.txt"
   git -C "$case_dir/wt" add feature.txt
   git -C "$case_dir/wt" commit -qm "stale local branch"
@@ -64,7 +68,7 @@ stale_and_pr_commits() {
   git -C "$case_dir/wt" commit -qm "pipeline fix on PR"
   PR_SHA=$(git -C "$case_dir/wt" rev-parse HEAD)
 
-  git -C "$case_dir/wt" checkout -q fm/task-x1
+  git -C "$case_dir/wt" checkout -q "$branch"
 }
 
 run_review_diff() {
@@ -97,7 +101,7 @@ test_stale_recorded_pr_head_loses_to_fetched_pull_head() {
   local case_dir out stale_sha
   case_dir=$(make_case stale-recorded)
   stale_and_pr_commits "$case_dir"
-  stale_sha=$(git -C "$case_dir/wt" rev-parse fm/task-x1)
+  stale_sha=$(git -C "$case_dir/wt" rev-parse task-x1)
   # Remote PR head is newer (pipeline fix); meta still points at the older local tip.
   git -C "$case_dir/wt" push -q origin "pr-head-tmp:refs/pull/9/head"
   write_task_meta "$case_dir" \
@@ -169,8 +173,30 @@ test_unreachable_pr_head_falls_back_with_warning() {
   pass "fm-review-diff falls back to local branch with a warning when PR head is unreachable"
 }
 
+test_task_branch_found_by_name_when_detached() {
+  local label branch case_dir out
+  for label in slug:task-x1 legacy:fm/task-x1; do
+    branch=${label#*:}
+    label=${label%%:*}
+    case_dir=$(make_case "detached-$label" "$branch")
+    stale_and_pr_commits "$case_dir"
+    write_task_meta "$case_dir"
+    # Detach the worktree so the current-HEAD fallback cannot supply the branch:
+    # only name resolution of the slug or legacy branch can find the work.
+    git -C "$case_dir/wt" checkout -q --detach main
+
+    out=$(run_review_diff "$case_dir" task-x1 2> "$case_dir/stderr") \
+      || fail "detached-$label: review diff failed: $(cat "$case_dir/stderr")"
+
+    assert_contains "$out" '+stale-local' "detached-$label: diff must use the $branch task branch"
+    assert_not_contains "$out" '+pr-fixed' "detached-$label: diff must not use an unrelated branch"
+  done
+  pass "fm-review-diff finds the plain-slug task branch and a legacy fm/<id> branch by name"
+}
+
 test_pr_meta_uses_pr_head_not_stale_local
 test_pr_meta_fetches_pull_head_without_recorded_sha
 test_stale_recorded_pr_head_loses_to_fetched_pull_head
 test_no_pr_meta_uses_local_branch
 test_unreachable_pr_head_falls_back_with_warning
+test_task_branch_found_by_name_when_detached
