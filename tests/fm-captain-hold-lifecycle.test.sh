@@ -3380,22 +3380,26 @@ test_local_merge_entrypoint_separates_an_unreadable_record_from_an_absent_one() 
   pass "the local merge entrypoint separates an unreadable authority record from an absent one"
 }
 
-# Local landing finds the task branch by name: the plain task-id slug a new
-# worker creates, or the legacy fm/<id> branch a task created before slug names
-# still carries. When both names exist, the branch the task worktree has checked
-# out wins over a stray same-named branch.
+# Local landing uses the recorded conventional branch when present, with the
+# plain id and legacy fm/<id> fallback for records predating branch metadata.
+# An unrelated branch must never outrank an existing task-owned branch.
 test_local_merge_entrypoint_lands_slug_and_legacy_task_branches() {
   local label branch home id repo wt landed
-  for label in slug legacy both; do
+  for label in conventional slug legacy both; do
     home=$(make_home "local-merge-branch-$label")
     id="sample-local-branch-$label"
     repo="$home/projects/sample-local"
     wt="$home/projects/$id"
     case "$label" in
+      conventional) branch=fix/local-branch-landing ;;
       slug) branch=$id ;;
       *) branch="fm/$id" ;;
     esac
     fm_git_worktree "$repo" "$wt" "$branch"
+    if [ "$label" = conventional ]; then
+      git -C "$repo" branch "$id" main
+      git -C "$repo" branch "fm/$id" main
+    fi
     if [ "$label" = both ]; then
       # A stray plain-slug branch that must not outrank the worktree's own.
       git -C "$repo" branch "$id" main
@@ -3408,6 +3412,9 @@ test_local_merge_entrypoint_lands_slug_and_legacy_task_branches() {
       "window=firstmate:fm-$id" "endpoint_task_id=$id" "worktree=$wt" \
       "project=$repo" "harness=codex" "kind=ship" "mode=local-only" \
       "spawn_gen=fixture-$id"
+    if [ "$label" = conventional ]; then
+      printf 'branch=%s\n' "$branch" >> "$home/state/$id.meta"
+    fi
     rm -f "$home/data/backlog.md"
 
     PATH="$home/fakebin:$PATH" FM_ROOT_OVERRIDE="$ROOT" FM_HOME="$home" \
@@ -3438,7 +3445,7 @@ test_local_merge_entrypoint_lands_slug_and_legacy_task_branches() {
   fi
   assert_grep "neither branch $id nor legacy fm/$id exists" "$home/missing.err" \
     "missing: the refusal did not name both branch candidates"
-  pass "the local merge entrypoint lands a plain-slug or legacy fm/ task branch and prefers the worktree's own"
+  pass "the local merge entrypoint lands recorded conventional, plain-id and legacy fm/ branches"
 }
 
 test_merge_entrypoints_validate_identity_and_state_before_locking() {

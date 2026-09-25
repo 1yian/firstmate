@@ -287,7 +287,7 @@ $(printf '%s' "$SNAP" | jq -r '.tasks[] | select(.kind != "secondmate") | .paths
 EOF
 
     for repo in $repos; do PR_REPOS_TOTAL=$((PR_REPOS_TOTAL + 1)); done
-    TASK_IDS=$(printf '%s' "$SNAP" | jq -c '[.tasks[] | select(.kind != "secondmate") | .id]')
+    TASK_BRANCHES=$(printf '%s' "$SNAP" | jq -c '[.tasks[] | select(.kind != "secondmate") | {id, branch}]')
     nrepos=0; npr=0; nwarn=0; ncapped=0; rows='[]'
     pr_fetch_limit=$((FM_BEARINGS_PR_LIMIT + 1))
     for repo in $repos; do
@@ -297,16 +297,19 @@ EOF
         --json number,title,url,headRefName,reviewDecision,mergeable,statusCheckRollup 2>/dev/null) \
         || { nwarn=$((nwarn + 1)); continue; }
       [ -n "$out" ] || out='[]'
-      # A PR maps to a task when its head is a live task's branch: the plain id
-      # slug, or the legacy fm/<id> name (bin/fm-task-branch-lib.sh).
+      # A PR maps to a task when its head is a live task's branch: the branch
+      # the task recorded, or for a task that recorded none its plain id or
+      # legacy fm/<id> name (bin/fm-task-branch-lib.sh).
       repo_result=$(printf '%s' "$out" | jq --arg repo "$repo" --argjson limit "$FM_BEARINGS_PR_LIMIT" \
-        --argjson task_ids "$TASK_IDS" '
+        --argjson tasks "$TASK_BRANCHES" '
         [ .[] | {
           num:(.number|tostring),
           repo:$repo,
           task:((.headRefName // "") as $h
-            | if ($task_ids | index($h)) != null then $h
-              elif ($h | startswith("fm/")) then ($h | ltrimstr("fm/"))
+            | ([$tasks[] | select(.branch == $h) | .id][0]) as $recorded
+            | if $recorded != null then $recorded
+              elif any($tasks[]; .branch == null and .id == $h) then $h
+              elif any($tasks[]; .branch == null and ("fm/" + .id) == $h) then ($h | ltrimstr("fm/"))
               else "-" end),
           url:(.url // "-"),
           review:(.reviewDecision // "none"),

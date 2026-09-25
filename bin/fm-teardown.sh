@@ -297,6 +297,8 @@ SUB_HOME_PARENT_MARKER=".fm-secondmate-parent"
 . "$SCRIPT_DIR/fm-pending-reply-lib.sh"
 # shellcheck source=bin/fm-nm-run-lib.sh
 . "$SCRIPT_DIR/fm-nm-run-lib.sh"
+# shellcheck source=bin/fm-task-branch-lib.sh
+. "$SCRIPT_DIR/fm-task-branch-lib.sh"
 if [ "$#" -lt 1 ] || ! fm_task_id_path_safe "$1"; then
   echo "error: invalid teardown request" >&2
   exit 2
@@ -1711,6 +1713,21 @@ teardown_treehouse_return() {
   return 1
 }
 
+# Recorded names identify the task even when validation detached HEAD. Older
+# records resolve by the historical names, with current HEAD for scout scratch.
+teardown_task_branch() {
+  local recorded
+  recorded=$(fm_task_branch_recorded "$META")
+  if [ -n "$recorded" ]; then
+    printf '%s\n' "$recorded"
+  elif [ -n "${TEARDOWN_WORKTREE_BRANCH_FOR_SAFETY:-}" ]; then
+    printf '%s\n' "$TEARDOWN_WORKTREE_BRANCH_FOR_SAFETY"
+  else
+    fm_task_branch_resolve "$WT" "$ID" "$WT" ||
+      git -C "$WT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD
+  fi
+}
+
 validate_worktree_teardown_safety() {
   local dirty_raw dirty unpushed_raw unpushed DEFAULT unmerged_raw unmerged branch
   [ -d "$WT" ] || return 0
@@ -1718,6 +1735,23 @@ validate_worktree_teardown_safety() {
   case "$KIND" in
     secondmate|scout) return 0 ;;
   esac
+
+  branch=$(teardown_task_branch)
+  # Landed-work checks inspect HEAD. Never use that proof to delete a different
+  # task branch tip. The cached identity permits the post-detach recheck
+  # after this teardown itself deleted the branch.
+  if [ "$branch" != HEAD ]; then
+    if git -C "$WT" show-ref --verify --quiet "refs/heads/$branch"; then
+      if [ "$(git -C "$WT" rev-parse "refs/heads/$branch")" != "$(git -C "$WT" rev-parse HEAD)" ]; then
+        echo "REFUSED: task branch $branch differs from the worktree HEAD; reconcile the task branch before cleanup." >&2
+        return 1
+      fi
+    elif [ "${TEARDOWN_WORKTREE_BRANCH_FOR_SAFETY:-}" != "$branch" ]; then
+      echo "REFUSED: recorded branch $branch is missing; reconcile the task branch before cleanup." >&2
+      return 1
+    fi
+    TEARDOWN_WORKTREE_BRANCH_FOR_SAFETY=$branch
+  fi
 
   if ! dirty_raw=$(git -C "$WT" status --porcelain 2>/dev/null); then
     if worktree_safety_blocked_by_lock "uncommitted changes"; then
@@ -1765,7 +1799,7 @@ validate_worktree_teardown_safety() {
   elif [ -n "$unpushed" ]; then
     branch=${TEARDOWN_WORKTREE_BRANCH_FOR_SAFETY:-}
     if [ -z "$branch" ]; then
-      branch=$(git -C "$WT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)
+      branch=$(teardown_task_branch)
       TEARDOWN_WORKTREE_BRANCH_FOR_SAFETY=$branch
     fi
     if ! work_is_landed "$branch"; then
@@ -3407,7 +3441,7 @@ if [ "$BACKEND" = orca ] && [ "$KIND" != secondmate ]; then
     ORCA_PATH_MATCH_VERIFIED=1
   fi
   if [ -d "$WT" ]; then
-    branch=$(git -C "$WT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)
+    branch=$(teardown_task_branch)
     if [ "$branch" != "HEAD" ]; then
       if git -C "$WT" checkout --detach -q 2>/dev/null; then
         git -C "$WT" branch -D "$branch" >/dev/null 2>&1 || true
@@ -3425,7 +3459,7 @@ if [ "$BACKEND" = orca ] && [ "$KIND" != secondmate ]; then
 elif [ "$KIND" != secondmate ] && ! teardown_owns_worktree; then
   :
 elif [ -d "$WT" ] && [ "$KIND" != secondmate ]; then
-  branch=$(git -C "$WT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo HEAD)
+  branch=$(teardown_task_branch)
   if [ "$branch" != "HEAD" ]; then
     if git -C "$WT" checkout --detach -q 2>/dev/null; then
       git -C "$WT" branch -D "$branch" >/dev/null 2>&1 || true

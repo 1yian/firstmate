@@ -316,12 +316,14 @@ test_faster_paths_use_configured_authority_without_stacked_review() {
     "local-only brief retained a personal review stacked on the selected delivery path"
   assert_no_grep "pass \`--intent\` as only this brief's \`## Captain's intent\`" "$home/data/$id/brief.md" \
     "local-only brief must not include the no-mistakes --intent contract"
-  assert_grep "git checkout -b $id\`" "$brief" \
-    "local-only brief must create the plain task-id slug branch"
-  assert_grep "Work only on your \`$id\` branch" "$brief" \
-    "local-only rule one must name the plain slug branch"
-  assert_grep "append \`done: ready in branch $id\`" "$brief" \
-    "local-only definition of done must name the plain slug branch"
+  assert_grep "<type>/<slug>" "$brief" \
+    "local-only brief must request a conventional-commit branch name"
+  assert_grep "fm-task-branch.sh' create '$home/state/$id.meta' <type>/<slug>" "$brief" \
+    "local-only brief must create and record the chosen branch"
+  assert_grep "Work only on your task branch" "$brief" \
+    "local-only rule one must refer to the chosen task branch"
+  assert_grep "append \`done: ready in branch {your task branch}\`" "$brief" \
+    "local-only definition of done must report the chosen branch"
   assert_no_grep "fm/$id" "$brief" \
     "local-only brief must not name a legacy fm/ branch"
   id="brief-direct-intent-a4"
@@ -333,6 +335,72 @@ test_faster_paths_use_configured_authority_without_stacked_review() {
 
 # Pin the specific line the bug lived on: the no-mistakes DOD's no-mistakes
 # reference must render as plain prose with no dangling apostrophe artifact.
+# Execute the generated branch action's helper against isolated worktrees.
+# The metadata is the durable identity used after the worker moves off the branch.
+test_task_branch_creation_records_choice_and_refuses_collisions() {
+  local case_dir repo wt meta out before
+  case_dir="$TMP_ROOT/branch-creation"
+  repo="$case_dir/project"
+  wt="$case_dir/task-worktree"
+  meta="$case_dir/state/branch-task.meta"
+  mkdir -p "$case_dir/state"
+  fm_git_init_commit "$repo"
+  git -C "$repo" worktree add -q --detach "$wt" main
+  fm_write_meta "$meta" "worktree=$wt" "project=$repo" "kind=ship"
+
+  for out in fm/task-name fix/Bad-Name fix/double--dash feat/extra/slash; do
+    if (cd "$wt" && "$ROOT/bin/fm-task-branch.sh" create "$meta" "$out") > "$case_dir/invalid.out" 2>&1; then
+      fail "branch creation accepted invalid name $out"
+    fi
+  done
+  git -C "$repo" branch fix/mileage-readback main
+  if (cd "$wt" && "$ROOT/bin/fm-task-branch.sh" create "$meta" fix/mileage-readback) > "$case_dir/collision.out" 2>&1; then
+    fail "branch creation reused an existing local branch"
+  fi
+  assert_grep 'already exists' "$case_dir/collision.out" "branch collision must explain refusal"
+  [ "$(git -C "$wt" symbolic-ref -q --short HEAD 2>/dev/null || true)" = '' ] \
+    || fail "branch collision switched off the detached base"
+  assert_no_grep 'branch=' "$meta" "branch collision must not record a stolen branch"
+
+  git -C "$wt" checkout -q fix/mileage-readback
+  if (cd "$wt" && "$ROOT/bin/fm-task-branch.sh" create "$meta" fix/mileage-readback) > "$case_dir/checked-out.out" 2>&1; then
+    fail "branch creation adopted an unrecorded checked-out branch"
+  fi
+  git -C "$wt" checkout -q --detach main
+  git -C "$repo" update-ref refs/remotes/origin/fix/remote-collision HEAD
+  if (cd "$wt" && "$ROOT/bin/fm-task-branch.sh" create "$meta" fix/remote-collision) > "$case_dir/remote.out" 2>&1; then
+    fail "branch creation reused a remote-tracking branch name"
+  fi
+  assert_grep 'remote branch' "$case_dir/remote.out" "remote collision must explain refusal"
+  (cd "$wt" && "$ROOT/bin/fm-task-branch.sh" create "$meta" feat/outbound-test-call) \
+    || fail "branch creation failed for a free conventional name"
+  assert_grep 'branch=feat/outbound-test-call' "$meta" "branch choice was not recorded"
+  [ "$(git -C "$wt" symbolic-ref --short HEAD)" = feat/outbound-test-call ] \
+    || fail "branch creation did not check out the chosen name"
+  before=$(git -C "$wt" rev-parse feat/outbound-test-call)
+  (cd "$wt" && "$ROOT/bin/fm-task-branch.sh" create "$meta" feat/outbound-test-call) \
+    || fail "retry of the recorded choice should be idempotent"
+  [ "$(git -C "$wt" rev-parse feat/outbound-test-call)" = "$before" ] \
+    || fail "branch retry changed the branch's commit"
+  if (cd "$wt" && "$ROOT/bin/fm-task-branch.sh" create "$meta" feat/other-task-name) > "$case_dir/other.out" 2>&1; then
+    fail "branch creation changed an already recorded task branch"
+  fi
+  assert_grep 'already recorded branch' "$case_dir/other.out" "recorded name change must explain refusal"
+  if (cd "$repo" && "$ROOT/bin/fm-task-branch.sh" create "$meta" fix/other-task-name) > "$case_dir/wrong.out" 2>&1; then
+    fail "branch creation modified a different worktree"
+  fi
+  assert_grep 'not the task worktree' "$case_dir/wrong.out" "wrong-worktree refusal must explain why"
+  out=$(git -C "$wt" branch --list 'feat/*')
+  assert_contains "$out" 'feat/outbound-test-call' "chosen branch disappeared"
+  git -C "$wt" checkout -q --detach main
+  git -C "$repo" branch -D feat/outbound-test-call >/dev/null
+  if (cd "$wt" && "$ROOT/bin/fm-task-branch.sh" create "$meta" feat/outbound-test-call) > "$case_dir/missing.out" 2>&1; then
+    fail "branch creation silently recreated a missing recorded branch"
+  fi
+  assert_grep 'recorded branch feat/outbound-test-call is missing' "$case_dir/missing.out" "missing branch must request recovery"
+  pass "worker branch helper records conventional choice and rejects invalid names, collisions or wrong worktrees"
+}
+
 test_no_mistakes_dod_wording() {
   local home id brief spelling
   home="$TMP_ROOT/wording-home"
@@ -941,6 +1009,7 @@ test_ship_mode_is_required_and_closed_set
 test_ship_mode_is_explicit_not_registry
 test_delivery_flags_are_refused_where_they_do_not_apply
 test_faster_paths_use_configured_authority_without_stacked_review
+test_task_branch_creation_records_choice_and_refuses_collisions
 test_no_mistakes_dod_wording
 test_ask_user_escalation_format
 test_ship_project_memory_wording

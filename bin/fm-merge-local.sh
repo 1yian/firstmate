@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Perform the approved local merge for a local-only ship task: fast-forward the
-# project's default branch to the crewmate's task branch: the plain <id> slug,
-# or a legacy fm/<id> branch from a task created before slug names
-# (bin/fm-task-branch-lib.sh owns the naming and resolution).
+# project's default branch to the crewmate's task branch: the branch recorded in
+# the task metadata, or for a task created before recorded names its plain <id>
+# or legacy fm/<id> branch (bin/fm-task-branch-lib.sh owns naming and resolution).
 #
 # This is firstmate's merge gate-action (the captain's merge authority applied
 # locally instead of via a GitHub PR). It is the one sanctioned exception to hard
@@ -98,8 +98,13 @@ default_branch() {
 }
 
 WT=$(grep '^worktree=' "$META" | cut -d= -f2- || true)
-BRANCH=$(fm_task_branch_resolve "$PROJ" "$ID" "$WT") || {
-  echo "error: neither branch $(fm_task_branch "$ID") nor legacy $(fm_task_branch_legacy "$ID") exists in $PROJ" >&2
+RECORDED_BRANCH=$(fm_task_branch_recorded "$META")
+BRANCH=$(fm_task_branch_resolve "$PROJ" "$ID" "$WT" "$RECORDED_BRANCH") || {
+  if [ -n "$RECORDED_BRANCH" ]; then
+    echo "error: recorded branch $RECORDED_BRANCH does not exist in $PROJ" >&2
+  else
+    echo "error: neither $(fm_task_branch_candidates_text "$ID") exists in $PROJ" >&2
+  fi
   exit 1
 }
 

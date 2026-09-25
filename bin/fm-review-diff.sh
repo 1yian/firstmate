@@ -9,7 +9,8 @@
 # current after no-mistakes fix rounds push to the PR. A recorded pr_head= is
 # only a fallback when fetch fails (stale recorded SHAs must never win over a
 # reachable remote PR head). If neither PR head can be resolved, fall back to
-# the local branch with a warning. Without pr=, compare the local branch.
+# the local task branch with a warning. Without pr=, compare the local task
+# branch, resolved by bin/fm-task-branch-lib.sh.
 # Usage: fm-review-diff.sh <task-id> [--stat]
 #   --stat prints only the stat summary; default prints stat summary plus full diff.
 set -eu
@@ -69,9 +70,13 @@ default_branch() {
 
 DEFAULT=$(default_branch) || { echo "error: cannot determine default branch for $PROJ; expected origin/HEAD, main, or master" >&2; exit 1; }
 
-if ! BRANCH=$(fm_task_branch_resolve "$WT" "$ID" "$WT"); then
+# A recorded task branch is authoritative; only a task without one falls back to
+# whatever branch its worktree has checked out.
+RECORDED_BRANCH=$(fm_task_branch_recorded "$META")
+if ! BRANCH=$(fm_task_branch_resolve "$WT" "$ID" "$WT" "$RECORDED_BRANCH"); then
+  [ -z "$RECORDED_BRANCH" ] || { echo "error: recorded branch $RECORDED_BRANCH does not exist in $WT" >&2; exit 1; }
   BRANCH=$(git -C "$WT" symbolic-ref --quiet --short HEAD 2>/dev/null || true)
-  [ -n "$BRANCH" ] || { echo "error: neither branch $(fm_task_branch "$ID") nor legacy $(fm_task_branch_legacy "$ID") exists and worktree $WT is detached" >&2; exit 1; }
+  [ -n "$BRANCH" ] || { echo "error: neither $(fm_task_branch_candidates_text "$ID") exists and worktree $WT is detached" >&2; exit 1; }
   git -C "$WT" rev-parse --verify --quiet "refs/heads/$BRANCH" >/dev/null || { echo "error: branch $BRANCH does not exist in $WT" >&2; exit 1; }
 fi
 

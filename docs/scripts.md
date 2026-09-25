@@ -34,7 +34,8 @@ The shared no-mistakes gate refusal for fleet lifecycle entrypoints is summarize
 | `fm-decision-hold.sh`    | One-release compatibility shim mapping the retired decision commands onto fm-captain-hold.sh |
 | `fm-brief.sh`            | Scaffold ship (explicit `--mode`), scout, secondmate-charter, and Herdr-lab briefs, with Captain's intent and Firstmate spec subsections on ship/scout |
 | [`fm-dod-lib.sh`](../bin/fm-dod-lib.sh) | Own ship/scout worker role scope, ship definitions of done, and the no-mistakes `--intent` contract |
-| [`fm-task-branch-lib.sh`](../bin/fm-task-branch-lib.sh) | Own the worker task-branch name (plain task-id slug) and resolution of an existing slug or legacy `fm/<id>` branch |
+| [`fm-task-branch-lib.sh`](../bin/fm-task-branch-lib.sh) | Own the worker task-branch naming rule (`<type>/<slug>`) and resolution of the recorded branch, or a plain `<id>` or legacy `fm/<id>` branch |
+| [`fm-task-branch.sh`](../bin/fm-task-branch.sh) | Worker-run: create the chosen `<type>/<slug>` task branch, refusing a taken name, and record it in the task metadata |
 | `fm-herdr-lab.sh`        | Provision and guardedly operate an isolated, never-default Herdr lab session         |
 | `fm-herdr-lab-viewer.py` | The pty engine behind `fm-herdr-lab.sh viewer`: one real foreground Herdr client on a non-zero window grid |
 | `fm-install-herdr.sh`    | Install CI's exact-version Herdr pin with official asset URL, SHA-256, and protocol checks |

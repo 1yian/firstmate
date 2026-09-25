@@ -348,8 +348,8 @@ STUB
       "$mode: promoted worker was not told to verify its repository root"
     assert_grep "If either does not resolve to the worktree you were launched in, stop and escalate to firstmate" "$payload" \
       "$mode: promoted worker was not told to stop for any wrong worktree"
-    assert_grep "git checkout -b $id\`" "$payload" \
-      "$mode: promoted worker was not told to leave the scratch base for its plain-slug ship branch"
+    assert_grep "fm-task-branch.sh' create '$meta' <type>/<slug>" "$payload" \
+      "$mode: promoted worker was not told to create and record its conventional ship branch"
     assert_no_grep "git checkout -b fm/" "$payload" \
       "$mode: promoted worker was told to create a legacy fm/ branch"
     assert_grep "## Captain's intent" "$payload" \

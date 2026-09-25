@@ -762,10 +762,25 @@ test_local_only_truly_unpushed_refuses() {
 }
 
 test_local_only_merged_to_local_main_allows() {
-  local case_dir rc
-  case_dir=$(make_case merged-main)
+  local case_dir rc branch label
+  for label in conventional plain legacy; do
+  case_dir=$(make_case "merged-main-$label")
   write_meta "$case_dir" local-only ship
+  case "$label" in
+    conventional) branch=fix/cleanup-branch; printf 'branch=%s\n' "$branch" >> "$case_dir/state/task-x1.meta" ;;
+    plain) branch=task-x1 ;;
+    legacy) branch=fm/task-x1 ;;
+  esac
+  git -C "$case_dir/wt" branch -m "$branch"
   wt_commit "$case_dir" "merged work"
+  if [ "$label" = conventional ]; then
+    git -C "$case_dir/wt" checkout -q --detach main
+    if run_teardown "$case_dir" > "$case_dir/mismatch.out" 2> "$case_dir/mismatch.err"; then
+      fail "cleanup discarded a recorded branch different from HEAD"
+    fi
+    assert_grep 'differs from the worktree HEAD' "$case_dir/mismatch.err" "cleanup must explain mismatched task branch"
+    git -C "$case_dir/wt" checkout -q --detach "$branch"
+  fi
   # Fast-forward the project's main to the worktree's HEAD commit so HEAD is
   # reachable from main. update-ref works whether or not main is checked out,
   # and the worktree shares the project's object db so the commit is visible.
@@ -780,7 +795,11 @@ test_local_only_merged_to_local_main_allows() {
 
   expect_code 0 "$rc" "merged-main: teardown should succeed when work is merged into local main"
   ! grep -q REFUSED "$case_dir/stderr" || fail "merged-main: teardown printed a REFUSED line"
-  pass "local-only worktree with work merged into local main is torn down (no regression)"
+  if git -C "$case_dir/project" show-ref --verify --quiet "refs/heads/$branch"; then
+    fail "$label: cleanup left the landed task branch"
+  fi
+  done
+  pass "local-only cleanup removes recorded conventional, plain-id and legacy branches after landing"
 }
 
 test_no_mistakes_origin_remote_allows() {

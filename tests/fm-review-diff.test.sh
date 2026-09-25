@@ -11,8 +11,8 @@
 #   (d) pr= present but PR head unreachable -> fallback to local branch + warning
 #   (e) pr= + STALE recorded pr_head= + newer remote pull head -> must use fetched head
 #       (this is the class that bit reviewers holding merges over "missing" fixes)
-#   (f) plain task-id slug branch and legacy fm/<id> branch, both found by name
-#       even when the task worktree is detached
+#   (f) recorded conventional branch, plain task id, and legacy fm/<id> branch,
+#       all found by name even when the task worktree is detached
 set -u
 
 # shellcheck source=tests/lib.sh
@@ -175,14 +175,20 @@ test_unreachable_pr_head_falls_back_with_warning() {
 
 test_task_branch_found_by_name_when_detached() {
   local label branch case_dir out
-  for label in slug:task-x1 legacy:fm/task-x1; do
+  for label in conventional:fix/review-diff-task slug:task-x1 legacy:fm/task-x1; do
     branch=${label#*:}
     label=${label%%:*}
     case_dir=$(make_case "detached-$label" "$branch")
     stale_and_pr_commits "$case_dir"
-    write_task_meta "$case_dir"
+    if [ "$label" = conventional ]; then
+      git -C "$case_dir/project" branch task-x1 main
+      git -C "$case_dir/project" branch fm/task-x1 main
+      write_task_meta "$case_dir" "branch=$branch"
+    else
+      write_task_meta "$case_dir"
+    fi
     # Detach the worktree so the current-HEAD fallback cannot supply the branch:
-    # only name resolution of the slug or legacy branch can find the work.
+    # only task branch resolution can find the work.
     git -C "$case_dir/wt" checkout -q --detach main
 
     out=$(run_review_diff "$case_dir" task-x1 2> "$case_dir/stderr") \
@@ -191,7 +197,7 @@ test_task_branch_found_by_name_when_detached() {
     assert_contains "$out" '+stale-local' "detached-$label: diff must use the $branch task branch"
     assert_not_contains "$out" '+pr-fixed' "detached-$label: diff must not use an unrelated branch"
   done
-  pass "fm-review-diff finds the plain-slug task branch and a legacy fm/<id> branch by name"
+  pass "fm-review-diff resolves recorded conventional, plain-id and legacy fm/<id> branches"
 }
 
 test_pr_meta_uses_pr_head_not_stale_local

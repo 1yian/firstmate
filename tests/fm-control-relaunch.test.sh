@@ -1062,9 +1062,13 @@ test_promoted_scout_relaunch_receives_the_current_delivery_contract() {
     assert_grep 'Never push to any remote and never open a PR' "$brief" \
       "$mode: the reproduction fixture lost the stale scout prohibition"
 
+    (cd "$dir/wt" && "$ROOT/bin/fm-task-branch.sh" create "$home/state/$id.meta" fix/promotion-relaunch) \
+      || fail "$mode: promoted worker could not create and record its branch"
     printf 'zsh' > "$dir/fake/command"
     out=$(run_spawn "$dir" "$id" --relaunch) \
       || fail "$mode: promoted scout relaunch should succeed: $out"
+    [ "$(meta_field "$dir" "$id" branch)" = fix/promotion-relaunch ] \
+      || fail "$mode: relaunch lost the recorded task branch"
     launch="$home/data/$id/launch-brief.md"
     assert_grep "This task is now kind=ship with mode=$mode" "$launch" \
       "$mode: the replacement launch did not receive the promoted task identity"
@@ -1072,16 +1076,16 @@ test_promoted_scout_relaunch_receives_the_current_delivery_contract() {
       "$mode: the replacement launch left the stale scout prohibition readable at face value"
     case "$mode" in
       direct-PR)
-        rule="1. Never push to the default branch (push only your \`$id\` branch). Never merge a PR." ;;
+        rule="1. Never push to the default branch (push only your task branch). Never merge a PR." ;;
       local-only)
-        rule="1. Never push to any remote and never open a PR. Work only on your \`$id\` branch; firstmate handles the merge into local \`main\`." ;;
+        rule="1. Never push to any remote and never open a PR. Work only on your task branch; firstmate handles the merge into local \`main\`." ;;
       *)
         rule='1. Never push to the default branch. Never merge a PR.' ;;
     esac
     assert_grep "$rule" "$launch" \
       "$mode: the replacement launch did not receive the current ship push and merge safety rule"
-    assert_grep "git checkout -b $id\`" "$launch" \
-      "$mode: the replacement launch did not receive its promoted branch name"
+    assert_grep "fm-task-branch.sh' create '$home/state/$id.meta' <type>/<slug>" "$launch" \
+      "$mode: the replacement launch did not receive its branch creation contract"
     assert_grep 'Inventory this worktree' "$launch" \
       "$mode: the replacement launch did not receive the scratch-state inventory step"
     assert_grep 'Carry over only the intended fix changes' "$launch" \
