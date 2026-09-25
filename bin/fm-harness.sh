@@ -13,6 +13,12 @@
 #                                        config/secondmate-harness, or empty when absent.
 #        fm-harness.sh secondmate-effort   print the optional EFFORT token from
 #                                        config/secondmate-harness, or empty when absent.
+#        fm-harness.sh secondmate|secondmate-model|secondmate-effort <id>
+#                                        the same three reads for ONE named second
+#                                        mate: its own config/secondmate-harness.d/<id>
+#                                        profile when present and not "default",
+#                                        otherwise exactly the shared file's answer.
+#                                        An id unsafe as a file name is refused (exit 2).
 #        fm-harness.sh validate-native-effort <harness> <model> <effort>
 #                                        Refuse ultra unless the harness is pi or
 #                                        pi-signed and the model explicitly names
@@ -44,6 +50,12 @@
 # harness only, no model/effort. Only the first non-empty, non-comment line is parsed.
 # Model/effort come ONLY from this file - config/crew-harness stays a bare adapter
 # name and is never parsed for a model.
+# config/secondmate-harness.d/<id> is an optional per-secondmate profile in the
+# same format. When its first line names a harness other than "default" it
+# replaces the shared line wholesale for that one id (harness, model, and effort
+# together, so a shared model never leaks onto another harness); absent, empty,
+# or "default" defers to config/secondmate-harness. Like the shared file it is
+# the primary's own launch setting and is never inherited into secondmate homes.
 # Detection evidence and precedence:
 #   Markers  - verified environment variables a harness publishes about itself.
 #              Cheap and unambiguous about WHICH harness set them, but they are
@@ -420,12 +432,12 @@ resolve_crew() {
   if [ -z "$crew" ] || [ "$crew" = "default" ]; then detect_own; else echo "$crew"; fi
 }
 
-# Print the first non-empty, non-comment line of config/secondmate-harness
-# (leading/trailing whitespace trimmed), or nothing when the file is absent or
-# holds only blank/comment lines.
-secondmate_line() {
-  local line
-  [ -f "$CONFIG/secondmate-harness" ] || return 0
+# Print the first non-empty, non-comment line of <file> (leading/trailing
+# whitespace trimmed), or nothing when the file is absent or holds only
+# blank/comment lines.
+profile_line() {
+  local file=$1 line
+  [ -f "$file" ] || return 0
   while IFS= read -r line || [ -n "$line" ]; do
     line="${line#"${line%%[![:space:]]*}"}"
     line="${line%"${line##*[![:space:]]}"}"
@@ -435,7 +447,40 @@ secondmate_line() {
     esac
     printf '%s\n' "$line"
     return 0
-  done < "$CONFIG/secondmate-harness"
+  done < "$file"
+}
+
+# The secondmate id whose per-secondmate profile applies, or empty for the
+# shared-only reads. Set once from the command line before any resolution.
+SECONDMATE_ID=
+
+# Print the effective secondmate profile line: the named id's own
+# config/secondmate-harness.d/<id> line when it names a real harness, otherwise
+# the shared config/secondmate-harness line.
+secondmate_line() {
+  local line
+  if [ -n "$SECONDMATE_ID" ]; then
+    line=$(profile_line "$CONFIG/secondmate-harness.d/$SECONDMATE_ID")
+    case "$line" in
+      '' | default | default[[:space:]]*) ;;
+      *) printf '%s\n' "$line"; return 0 ;;
+    esac
+  fi
+  profile_line "$CONFIG/secondmate-harness"
+}
+
+# Accept an optional secondmate id argument for the secondmate reads, refusing
+# one that could escape config/secondmate-harness.d/ as a path.
+set_secondmate_id() {
+  local id=${1:-} LC_ALL=C
+  case "$id" in
+    '') return 0 ;;
+    .* | */* | *[!A-Za-z0-9._-]*)
+      echo "error: invalid secondmate id '$id'" >&2
+      exit 2
+      ;;
+  esac
+  SECONDMATE_ID=$id
 }
 
 # Print the 1-based whitespace-separated token (1=harness, 2=model, 3=effort) of
@@ -516,8 +561,8 @@ case "${1:-}" in
     harness_ancestry_descent "$descent_pid" ${1+"$@"}
     ;;
   crew) resolve_crew ;;
-  secondmate) resolve_secondmate ;;
-  secondmate-model) resolve_secondmate_model ;;
-  secondmate-effort) resolve_secondmate_effort ;;
+  secondmate) set_secondmate_id "${2:-}"; resolve_secondmate ;;
+  secondmate-model) set_secondmate_id "${2:-}"; resolve_secondmate_model ;;
+  secondmate-effort) set_secondmate_id "${2:-}"; resolve_secondmate_effort ;;
   *) detect_own ;;
 esac

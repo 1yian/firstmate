@@ -40,7 +40,8 @@
 #      fm-spawn.sh populates MODEL/EFFORT from those tokens for a --secondmate
 #      spawn only when the harness also resolves from that file, so the pin is
 #      durable across every respawn while explicit per-spawn harness/model/effort
-#      flags still win.
+#      flags still win. A per-secondmate config/secondmate-harness.d/<id> profile
+#      overrides the shared file for that id only (C1b, C4b).
 set -u
 
 # shellcheck source=tests/lib.sh
@@ -170,6 +171,42 @@ extra whitespace between tokens is tolerated^grok   grok-4    xhigh^grok^grok-4^
 leading/trailing blank lines and a comment are skipped^# a comment\n\nclaude opus low\n^claude^opus^low
 ROWS
   pass "C1 fm-harness.sh secondmate-model/secondmate-effort resolve the optional tokens; bare harness stays empty (backward-compat)"
+}
+
+# A per-secondmate profile, config/secondmate-harness.d/<id>, replaces the shared
+# line wholesale for that id only; an id without one, or with an empty or
+# "default" profile, reads exactly the shared file; an unsafe id is refused.
+test_per_secondmate_profile_resolution() {
+  local cfg got out status
+  cfg="$TMP_ROOT/per-id-tokens/config"
+  mkdir -p "$cfg/secondmate-harness.d"
+  printf 'pi vertex-claude/claude-opus-5-5 high\n' > "$cfg/secondmate-harness"
+  printf '# the subscription mate\npi anthropic/claude-opus-5-5 high\n' > "$cfg/secondmate-harness.d/cleo"
+  printf 'claude\n' > "$cfg/secondmate-harness.d/bare"
+  printf 'default opus low\n' > "$cfg/secondmate-harness.d/deferred"
+  : > "$cfg/secondmate-harness.d/empty"
+  fm_harness_reads() {
+    local id=$1 mode
+    for mode in secondmate secondmate-model secondmate-effort; do
+      PATH="$BLIND_BIN:$BASE_PATH" CLAUDECODE=1 FM_CONFIG_OVERRIDE="$cfg" "$ROOT/bin/fm-harness.sh" "$mode" ${id:+"$id"}
+    done | tr '\n' '|'
+  }
+  got=$(fm_harness_reads cleo)
+  [ "$got" = 'pi|anthropic/claude-opus-5-5|high|' ] || fail "per-id: cleo resolved '$got'"
+  got=$(fm_harness_reads cnp)
+  [ "$got" = 'pi|vertex-claude/claude-opus-5-5|high|' ] || fail "per-id: id without a profile resolved '$got'"
+  got=$(fm_harness_reads '')
+  [ "$got" = 'pi|vertex-claude/claude-opus-5-5|high|' ] || fail "per-id: id-less read resolved '$got'"
+  got=$(fm_harness_reads bare)
+  [ "$got" = 'claude|||' ] || fail "per-id: a bare per-id harness must not borrow the shared model/effort, got '$got'"
+  got=$(fm_harness_reads deferred)
+  [ "$got" = 'pi|vertex-claude/claude-opus-5-5|high|' ] || fail "per-id: a default per-id profile must defer to the shared file, got '$got'"
+  got=$(fm_harness_reads empty)
+  [ "$got" = 'pi|vertex-claude/claude-opus-5-5|high|' ] || fail "per-id: an empty per-id profile must defer to the shared file, got '$got'"
+  out=$(PATH="$BLIND_BIN:$BASE_PATH" FM_CONFIG_OVERRIDE="$cfg" "$ROOT/bin/fm-harness.sh" secondmate-model ../secondmate-harness 2>&1); status=$?
+  expect_code 2 "$status" "per-id: a path-escaping id must be refused"$'\n'"$out"
+  unset -f fm_harness_reads
+  pass "C1b fm-harness.sh resolves a per-secondmate profile for its id only and defers to the shared file otherwise"
 }
 
 # ===========================================================================
@@ -815,6 +852,36 @@ test_spawn_secondmate_harness_model_and_effort_tokens() {
   assert_contains "$launch" "claude --dangerously-skip-permissions --settings '{\"feedbackDrafts\":\"off\",\"attribution\":{\"commit\":\"\",\"pr\":\"\",\"sessionUrl\":false}}' --model 'opus' --effort 'high'" \
     "model-effort-tokens: launch did not carry both --model opus and --effort high"
   pass "C4 spawn: config/secondmate-harness's model+effort tokens thread into the launch and meta"
+}
+
+# A per-secondmate profile launches its own id on it, while another id with no
+# profile keeps the shared config/secondmate-harness, and explicit axes still win.
+test_spawn_per_secondmate_profile() {
+  local w sm other meta launchlog launch
+  w="$TMP_ROOT/spawn-per-secondmate-profile"
+  sm="$w/sm"
+  other="$w/other"
+  launchlog="$w/launch.log"
+  mkdir -p "$w/home/config/secondmate-harness.d"
+  printf 'claude opus high\n' > "$w/home/config/secondmate-harness"
+  printf 'claude sonnet low\n' > "$w/home/config/secondmate-harness.d/sm"
+  make_seeded_home "$sm" sm
+  make_seeded_home "$other" other
+
+  spawn_secondmate_capture "$w" sm "$sm" "$launchlog" >/dev/null 2>&1
+  meta="$w/home/state/sm.meta"
+  [ "$(meta_field "$meta" model)" = sonnet ] || fail "per-id spawn: sm meta model not sonnet (got '$(meta_field "$meta" model)')"
+  [ "$(meta_field "$meta" effort)" = low ] || fail "per-id spawn: sm meta effort not low (got '$(meta_field "$meta" effort)')"
+  launch=$(cat "$launchlog")
+  assert_contains "$launch" "--model 'sonnet' --effort 'low'" "per-id spawn: sm did not launch on its own profile"
+  assert_not_contains "$launch" "--model 'opus'" "per-id spawn: sm leaked the shared model"
+
+  spawn_secondmate_capture "$w" other "$other" "$launchlog" >/dev/null 2>&1
+  meta="$w/home/state/other.meta"
+  [ "$(meta_field "$meta" model)" = opus ] || fail "per-id spawn: other meta model not the shared opus (got '$(meta_field "$meta" model)')"
+  [ "$(meta_field "$meta" effort)" = high ] || fail "per-id spawn: other meta effort not the shared high"
+  assert_contains "$(cat "$launchlog")" "--model 'opus' --effort 'high'" "per-id spawn: other did not launch on the shared profile"
+  pass "C4b spawn: a per-secondmate profile governs its own id; an id without one keeps config/secondmate-harness"
 }
 
 # Precedence: an explicit per-spawn --model overrides the file's model token.
@@ -2631,6 +2698,7 @@ SH
 test_harness_resolution
 test_cursor_marker_detection
 test_secondmate_model_effort_tokens
+test_per_secondmate_profile_resolution
 test_pi_signed_detection_and_session_lock_identity
 test_dash_leading_process_names_are_basename_operands
 test_propagate_lib
@@ -2645,6 +2713,7 @@ test_spawn_explicit_backend_precedence_over_env_and_inherited_config
 test_spawn_bare_harness_no_model_effort_flag
 test_spawn_secondmate_harness_model_token
 test_spawn_secondmate_harness_model_and_effort_tokens
+test_spawn_per_secondmate_profile
 test_spawn_explicit_model_overrides_secondmate_harness_token
 test_spawn_explicit_effort_overrides_secondmate_harness_token
 test_spawn_explicit_harness_does_not_inherit_secondmate_harness_tokens

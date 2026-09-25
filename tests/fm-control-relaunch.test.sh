@@ -827,6 +827,63 @@ test_secondmate_relaunch_picks_up_the_configured_harness_pin() {
   pass "fm-control relaunch: a secondmate relaunch re-resolves its durable configured harness pin"
 }
 
+# A per-secondmate profile (config/secondmate-harness.d/<id>) outranks the shared
+# config/secondmate-harness on a relaunch with no explicit axes, and explicit
+# relaunch axes still outrank the per-secondmate profile.
+setup_per_secondmate_profile_case() {  # <dir> <id>
+  local dir=$1 id=$2 home=$1/home
+  mkdir -p "$home/config/secondmate-harness.d" "$home/data/$id"
+  printf 'claude opus high\n' > "$home/config/secondmate-harness"
+  printf 'codex some-model low\n' > "$home/config/secondmate-harness.d/$id"
+  printf '# secondmate brief\n' > "$home/data/$id/brief.md"
+  fm_git_worktree "$dir/proj" "$dir/smhome" sm-branch
+  mkdir -p "$dir/smhome/state" "$dir/smhome/data" "$dir/smhome/bin"
+  printf '%s\n' "$id" > "$dir/smhome/.fm-secondmate-home"
+  printf '# agents\n' > "$dir/smhome/AGENTS.md"
+  {
+    echo "window=fmses:fm-$id"
+    echo "endpoint_task_id=$id"
+    echo "worktree=$dir/smhome"
+    echo "project=$dir/smhome"
+    echo "harness=claude"
+    echo "kind=secondmate"
+    echo "mode=secondmate"
+    echo "yolo=off"
+    echo "model=opus"
+    echo "effort=high"
+    echo "home=$dir/smhome"
+  } > "$home/state/$id.meta"
+  printf '%s\n' "fm-$id" > "$dir/fake/windows"
+  printf '%s' "$dir/smhome" > "$dir/fake/cwd"
+  printf 'codex' > "$dir/fake/becomes"
+}
+
+test_secondmate_relaunch_prefers_its_own_profile_and_explicit_axes_win() {
+  local dir out rc
+  dir=$(new_case smperid sm8)
+  setup_per_secondmate_profile_case "$dir" sm8
+  out=$(run_control "$dir" sm8 relaunch); rc=$?
+  expect_code 0 "$rc" "a per-secondmate profile should relaunch"$'\n'"$out"
+  [ "$(journal_field "$dir" sm8 to_harness)" = codex ] \
+    || fail "the per-secondmate harness should win over the shared file, got '$(journal_field "$dir" sm8 to_harness)'"
+  [ "$(journal_field "$dir" sm8 to_model)" = some-model ] \
+    || fail "the per-secondmate model should win over the shared file, got '$(journal_field "$dir" sm8 to_model)'"
+  [ "$(journal_field "$dir" sm8 to_effort)" = low ] \
+    || fail "the per-secondmate effort should win over the shared file, got '$(journal_field "$dir" sm8 to_effort)'"
+
+  dir=$(new_case smperidexplicit sm9)
+  setup_per_secondmate_profile_case "$dir" sm9
+  out=$(run_control "$dir" sm9 relaunch --model explicit-model --effort xhigh); rc=$?
+  expect_code 0 "$rc" "explicit axes over a per-secondmate profile should relaunch"$'\n'"$out"
+  [ "$(journal_field "$dir" sm9 to_harness)" = codex ] \
+    || fail "an unnamed harness axis should still come from the per-secondmate profile"
+  [ "$(journal_field "$dir" sm9 to_model)" = explicit-model ] \
+    || fail "an explicit relaunch model must win over the per-secondmate profile, got '$(journal_field "$dir" sm9 to_model)'"
+  [ "$(journal_field "$dir" sm9 to_effort)" = xhigh ] \
+    || fail "an explicit relaunch effort must win over the per-secondmate profile, got '$(journal_field "$dir" sm9 to_effort)'"
+  pass "fm-control relaunch: a per-secondmate profile outranks the shared pin, and explicit relaunch axes outrank both"
+}
+
 test_secondmate_relaunch_ignores_invalid_configured_effort_before_stop() {
   local dir home out rc
   dir=$(new_case invalid-effort sm6)
@@ -1702,6 +1759,7 @@ test_prior_harness_turnend_registry_entry_is_cleared
 test_wiring_removal_failure_refuses_before_replacement_arm
 test_turnend_auth_paths_are_owned_by_the_control_adapter
 test_secondmate_relaunch_picks_up_the_configured_harness_pin
+test_secondmate_relaunch_prefers_its_own_profile_and_explicit_axes_win
 test_secondmate_relaunch_ignores_invalid_configured_effort_before_stop
 test_secondmate_relaunch_onto_a_crewmate_only_adapter_refuses_before_stop
 test_explicit_secondmate_harness_ignores_configured_profile_axes
