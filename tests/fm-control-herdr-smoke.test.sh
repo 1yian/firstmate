@@ -319,8 +319,8 @@ if OUT=$(run_control hsmoke exit 2>&1); then
   fail "exit should fail closed when the agent's composer is not proven empty: $OUT"
 fi
 case "$OUT" in
-  *"not proven empty"*|*"visibly holds pending text"*) : ;;
-  *) fail "the exit failure should name the pending or unproven composer, got: $OUT" ;;
+  *"not proven empty"*) : ;;
+  *) fail "the exit failure should say the composer is not proven empty, got: $OUT" ;;
 esac
 pass "real herdr: an agent behind an unproven composer fails closed instead of typing an exit command into it"
 
