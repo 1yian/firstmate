@@ -11,8 +11,10 @@
 #   (d) pr= present but PR head unreachable -> fallback to local branch + warning
 #   (e) pr= + STALE recorded pr_head= + newer remote pull head -> must use fetched head
 #       (this is the class that bit reviewers holding merges over "missing" fixes)
-#   (f) recorded conventional branch, plain task id, and legacy fm/<id> branch,
-#       all found by name even when the task worktree is detached
+#   (f) meta records branch=<custom-prefix> -> the recorded ship branch is
+#       reviewed even when the worktree HEAD has moved off it
+#   (g) meta records a corrupt branch= -> refused, never silently reviewed as
+#       the moved worktree HEAD
 set -u
 
 # shellcheck source=tests/lib.sh
@@ -22,9 +24,8 @@ fm_git_identity fmtest fmtest@example.invalid
 REVIEW_DIFF="$ROOT/bin/fm-review-diff.sh"
 TMP_ROOT=$(fm_test_tmproot fm-review-diff-tests)
 
-# make_case <name> [<task-branch>] - the task branch defaults to the plain slug.
 make_case() {
-  local name=$1 branch=${2:-task-x1} case_dir
+  local name=$1 branch=${2:-fm/task-x1} case_dir
   case_dir="$TMP_ROOT/$name"
   mkdir -p "$case_dir/state"
 
@@ -101,7 +102,7 @@ test_stale_recorded_pr_head_loses_to_fetched_pull_head() {
   local case_dir out stale_sha
   case_dir=$(make_case stale-recorded)
   stale_and_pr_commits "$case_dir"
-  stale_sha=$(git -C "$case_dir/wt" rev-parse task-x1)
+  stale_sha=$(git -C "$case_dir/wt" rev-parse fm/task-x1)
   # Remote PR head is newer (pipeline fix); meta still points at the older local tip.
   git -C "$case_dir/wt" push -q origin "pr-head-tmp:refs/pull/9/head"
   write_task_meta "$case_dir" \
@@ -187,17 +188,56 @@ test_task_branch_found_by_name_when_detached() {
     else
       write_task_meta "$case_dir"
     fi
-    # Detach the worktree so the current-HEAD fallback cannot supply the branch:
-    # only task branch resolution can find the work.
     git -C "$case_dir/wt" checkout -q --detach main
-
     out=$(run_review_diff "$case_dir" task-x1 2> "$case_dir/stderr") \
       || fail "detached-$label: review diff failed: $(cat "$case_dir/stderr")"
-
     assert_contains "$out" '+stale-local' "detached-$label: diff must use the $branch task branch"
     assert_not_contains "$out" '+pr-fixed' "detached-$label: diff must not use an unrelated branch"
   done
   pass "fm-review-diff resolves recorded conventional, plain-id and legacy fm/<id> branches"
+}
+
+test_recorded_branch_beats_moved_worktree_head() {
+  local case_dir out
+  case_dir=$(make_case recorded-branch)
+  # The task ships on its recorded custom-prefix branch; the worktree's HEAD
+  # has since moved to an unrelated branch and the legacy fm/<id> branch is
+  # gone, so only meta can anchor the diff to the shipped work.
+  git -C "$case_dir/wt" checkout -q -b fix/task-x1
+  printf 'recorded-ship\n' > "$case_dir/wt/feature.txt"
+  git -C "$case_dir/wt" add feature.txt
+  git -C "$case_dir/wt" commit -qm "recorded ship work"
+  git -C "$case_dir/wt" checkout -q -b roam main
+  git -C "$case_dir/wt" branch -q -D fm/task-x1
+  write_task_meta "$case_dir" "branch=fix/task-x1"
+
+  out=$(run_review_diff "$case_dir" task-x1 2> "$case_dir/stderr")
+
+  assert_contains "$out" '+recorded-ship' \
+    "recorded-branch: diff must use the meta-recorded ship branch, not the moved worktree HEAD"
+  pass "fm-review-diff reviews the meta-recorded ship branch even when the worktree HEAD moved off it"
+}
+
+test_corrupt_recorded_branch_is_refused() {
+  local case_dir out status
+  case_dir=$(make_case corrupt-branch)
+  stale_and_pr_commits "$case_dir"
+  # A space can never be part of a branch name, so this record can only be a
+  # hand-edited or corrupt one: refusing is the only outcome that cannot diff
+  # the wrong content by falling back to the moved worktree HEAD.
+  write_task_meta "$case_dir" "branch=fix task-x1"
+
+  set +e
+  out=$(run_review_diff "$case_dir" task-x1 2> "$case_dir/stderr")
+  status=$?
+  set -e
+
+  [ "$status" -ne 0 ] || fail "corrupt-branch: a corrupt recorded ship branch was accepted and reviewed the worktree HEAD"
+  assert_contains "$(cat "$case_dir/stderr")" "invalid recorded ship branch 'fix task-x1'" \
+    "corrupt-branch: the refusal did not name the branch it refused"
+  assert_not_contains "$out" '+stale-local' \
+    "corrupt-branch: the corrupt branch silently fell back to the worktree HEAD diff"
+  pass "fm-review-diff refuses a corrupt recorded ship branch instead of reviewing the wrong content"
 }
 
 test_pr_meta_uses_pr_head_not_stale_local
@@ -206,3 +246,5 @@ test_stale_recorded_pr_head_loses_to_fetched_pull_head
 test_no_pr_meta_uses_local_branch
 test_unreachable_pr_head_falls_back_with_warning
 test_task_branch_found_by_name_when_detached
+test_recorded_branch_beats_moved_worktree_head
+test_corrupt_recorded_branch_is_refused

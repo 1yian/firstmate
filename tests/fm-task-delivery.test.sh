@@ -376,7 +376,7 @@ STUB
     "promoted no-mistakes worker did not receive the ask-user escalation rule"
   assert_grep "write only the ask-user findings, verbatim and unparaphrased (id, severity, file, line, description, authority)" "$payload" \
     "promoted no-mistakes worker did not receive the ask-user-only snapshot contract"
-  assert_grep 'needs-decision [key=nm-<run>-<step>]: ask-user findings=<id1>,<id2>,... file='"$home/data/promote-dod-no-mistakes/nm-<run>-findings.txt" "$payload" \
+  assert_grep 'needs-decision [at=<epoch>] [key=nm-<run>-<step>]: ask-user findings=<id1>,<id2>,... file='"$home/data/promote-dod-no-mistakes/nm-<run>-findings.txt" "$payload" \
     "promoted no-mistakes worker did not receive the structured escalation event"
   assert_grep "NEVER pass \`--yes\` (or \`-y\`)" "$payload" \
     "promoted no-mistakes worker did not receive the --yes prohibition"
@@ -410,6 +410,8 @@ test_project_mode_maps_the_conditional_policy() {
 - prodproj [no-mistakes-prod-only] - fixture (added 2026-01-01)
 - yoloproj [no-mistakes-prod-only +yolo] - fixture (added 2026-01-01)
 - flatproj [direct-PR] - fixture (added 2026-01-01)
+- fixedproj [direct-PR branch=contrib/] - fixture (added 2026-01-01)
+- bareproj [local-only branch=] - fixture (added 2026-01-01)
 - typoproj [no-mistakez] - fixture (added 2026-01-01)
 EOF
   out=$(FM_HOME="$home" "$PROJECT_MODE" prodproj 2>/dev/null)
@@ -426,6 +428,12 @@ EOF
   out=$(FM_HOME="$home" "$PROJECT_MODE" --raw flatproj 2>/dev/null)
   [ "$out" = "direct-PR off" ] || fail "--raw altered a flat registered mode (got '$out')"
 
+  out=$(FM_HOME="$home" "$PROJECT_MODE" --branch-prefix flatproj 2>/dev/null)
+  [ "$out" = '-' ] || fail "a project without branch= must leave branch naming to its worker (got '$out')"
+  out=$(FM_HOME="$home" "$PROJECT_MODE" --branch-prefix fixedproj 2>/dev/null)
+  [ "$out" = 'contrib/' ] || fail "a registered fixed branch prefix did not survive resolution (got '$out')"
+  out=$(FM_HOME="$home" "$PROJECT_MODE" --branch-prefix bareproj 2>/dev/null)
+  [ -z "$out" ] || fail "an explicit empty branch prefix did not preserve the bare task-id contract (got '$out')"
   out=$(FM_HOME="$home" "$PROJECT_MODE" typoproj 2>/dev/null)
   [ "$out" = "no-mistakes off" ] || fail "a typo'd mode no longer falls back to the most rigorous default"
   err=$(FM_HOME="$home" "$PROJECT_MODE" typoproj 2>&1 >/dev/null)

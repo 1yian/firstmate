@@ -287,9 +287,13 @@ $(printf '%s' "$SNAP" | jq -r '.tasks[] | select(.kind != "secondmate") | .paths
 EOF
 
     for repo in $repos; do PR_REPOS_TOTAL=$((PR_REPOS_TOTAL + 1)); done
-    TASK_BRANCHES=$(printf '%s' "$SNAP" | jq -c '[.tasks[] | select(.kind != "secondmate") | {id, branch}]')
     nrepos=0; npr=0; nwarn=0; ncapped=0; rows='[]'
     pr_fetch_limit=$((FM_BEARINGS_PR_LIMIT + 1))
+    # Pass task data through a file, not an argv element: large snapshots can
+    # exceed the per-argument exec limit and silently lose PR rows.
+    tasks_file=$(mktemp "${TMPDIR:-/tmp}/fm-bearings-tasks.XXXXXX") \
+      || { echo "fm-bearings-snapshot: cannot create a temporary tasks file" >&2; exit 1; }
+    printf '%s' "$SNAP" | jq '[.tasks[] | select(.kind != "secondmate") | {id, branch}]' > "$tasks_file"
     for repo in $repos; do
       if [ "$ALL_PR_REPOS" != 1 ] && [ "$nrepos" -ge "$FM_BEARINGS_PR_REPOS" ]; then break; fi
       nrepos=$((nrepos + 1))
@@ -301,15 +305,15 @@ EOF
       # the task recorded, or for a task that recorded none its plain id or
       # legacy fm/<id> name (bin/fm-task-branch-lib.sh).
       repo_result=$(printf '%s' "$out" | jq --arg repo "$repo" --argjson limit "$FM_BEARINGS_PR_LIMIT" \
-        --argjson tasks "$TASK_BRANCHES" '
-        [ .[] | {
+        --slurpfile tasks "$tasks_file" '
+        ($tasks[0] // []) as $all_tasks | [ .[] | {
           num:(.number|tostring),
           repo:$repo,
           task:((.headRefName // "") as $h
-            | ([$tasks[] | select(.branch == $h) | .id][0]) as $recorded
+            | ([$all_tasks[] | select(.branch == $h) | .id][0]) as $recorded
             | if $recorded != null then $recorded
-              elif any($tasks[]; .branch == null and .id == $h) then $h
-              elif any($tasks[]; .branch == null and ("fm/" + .id) == $h) then ($h | ltrimstr("fm/"))
+              elif any($all_tasks[]; .branch == null and .id == $h) then $h
+              elif any($all_tasks[]; .branch == null and ("fm/" + .id) == $h) then ($h | ltrimstr("fm/"))
               else "-" end),
           url:(.url // "-"),
           review:(.reviewDecision // "none"),
@@ -328,6 +332,7 @@ EOF
       npr=$((npr + cnt))
       rows=$(jq -n --argjson a "$rows" --argjson b "$repo_rows" '$a + $b')
     done
+    rm -f "$tasks_file"
     PR_REPOS_SHOWN=$nrepos
     PR_ROWS_CAPPED=$ncapped
     PR_ROWS_MIN_TOTAL=$((npr + ncapped))

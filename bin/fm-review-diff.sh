@@ -4,13 +4,22 @@
 # Pooled project clones do not keep their local default branch current, so this
 # helper compares remote-backed projects against origin/<default> after fetching
 # the default branch, and local-only projects against the local default branch.
-# When state/<id>.meta records pr= (URL or number) for an open PR, the compare
-# side is ALWAYS a freshly fetched refs/pull/<n>/head by default so review stays
-# current after no-mistakes fix rounds push to the PR. A recorded pr_head= is
-# only a fallback when fetch fails (stale recorded SHAs must never win over a
-# reachable remote PR head). If neither PR head can be resolved, fall back to
-# the local task branch with a warning. Without pr=, compare the local task
-# branch, resolved by bin/fm-task-branch-lib.sh.
+# When state/<id>.meta records pr= as a GitHub pull-request URL or a bare
+# number for an open PR, the compare side is ALWAYS a freshly fetched
+# refs/pull/<n>/head by default so review stays current after no-mistakes fix
+# rounds push to the PR. A recorded pr_head= is only a fallback when fetch fails
+# (stale recorded SHAs must never win over a reachable remote PR head). If
+# neither PR head can be resolved, fall back to the local branch with a warning.
+# Branch resolution is owned by bin/fm-task-branch-lib.sh: recorded names win;
+# tasks without them retain plain-id and legacy fm/<id> fallbacks.
+# A GitLab merge request and a Gerrit change expose no comparable ref and record
+# no pr_head, so a task recording one always takes that warning path;
+# docs/architecture.md owns that fallback. Without pr=, compare the task's
+# ship branch recorded in state/<id>.meta, or the plain-id or legacy fm/<id>
+# branch for older tasks; only without either does it use the checked-out branch. A recorded branch that is not a
+# valid git branch name is refused instead of taking that fallback, the same
+# refusal fm-merge-local.sh applies, so a corrupt meta record can never turn a
+# review into a diff of the wrong content.
 # Usage: fm-review-diff.sh <task-id> [--stat]
 #   --stat prints only the stat summary; default prints stat summary plus full diff.
 set -eu
@@ -70,9 +79,11 @@ default_branch() {
 
 DEFAULT=$(default_branch) || { echo "error: cannot determine default branch for $PROJ; expected origin/HEAD, main, or master" >&2; exit 1; }
 
-# A recorded task branch is authoritative; only a task without one falls back to
-# whatever branch its worktree has checked out.
 RECORDED_BRANCH=$(fm_task_branch_recorded "$META")
+if [ -n "$RECORDED_BRANCH" ] && ! git check-ref-format --branch "$RECORDED_BRANCH" >/dev/null 2>&1; then
+  echo "error: task $ID has an invalid recorded ship branch '$RECORDED_BRANCH'" >&2
+  exit 1
+fi
 if ! BRANCH=$(fm_task_branch_resolve "$WT" "$ID" "$WT" "$RECORDED_BRANCH"); then
   [ -z "$RECORDED_BRANCH" ] || { echo "error: recorded branch $RECORDED_BRANCH does not exist in $WT" >&2; exit 1; }
   BRANCH=$(git -C "$WT" symbolic-ref --quiet --short HEAD 2>/dev/null || true)
