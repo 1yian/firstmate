@@ -309,8 +309,8 @@ pass "real herdr: a stale registration no longer blocks relaunch, and the endpoi
 
 # Last: the foreground process is a plain `sleep`, so the pane never draws any
 # recognized composer chrome. exit's composer-empty guard (bin/fm-control.sh)
-# therefore refuses before ever typing the exit command, rather than typing it
-# into a live agent that ignores it and reporting a stop that did not happen.
+# refuses before typing the exit command, whether the rendered pane is unknown
+# or its contents are positively classified as pending text.
 start_agent_process
 herdr pane report-agent "$PANE_ID" --source fm-control-smoke --agent fm-control-smoke-agent \
   --state idle --session "$SESSION" >/dev/null 2>&1 \
@@ -319,8 +319,8 @@ if OUT=$(run_control hsmoke exit 2>&1); then
   fail "exit should fail closed when the agent's composer is not proven empty: $OUT"
 fi
 case "$OUT" in
-  *"not proven empty"*) : ;;
-  *) fail "the exit failure should say the composer is not proven empty, got: $OUT" ;;
+  *"not proven empty"*|*"composer visibly holds pending text; refusing to type the /exit exit command"*) : ;;
+  *) fail "the exit failure should refuse typing into a pending or unproven composer, got: $OUT" ;;
 esac
 pass "real herdr: an agent behind an unproven composer fails closed instead of typing an exit command into it"
 
