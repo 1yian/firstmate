@@ -1091,9 +1091,15 @@ fm_lock_try_acquire() {
   return "$rc"
 }
 
+# Wait until <lockdir> is held by this process.
+# A missing parent directory can never become an acquisition: the owner path is
+# resolved by entering that parent. Return 1 instead of spinning, so a caller
+# whose state directory was removed during the wait can exit.
 fm_lock_acquire_wait() {
-  local lockdir=$1
+  local lockdir=$1 parent
   while ! fm_lock_try_acquire "$lockdir"; do
+    parent=$(dirname -- "$lockdir")
+    [ -d "$parent" ] || return 1
     sleep 0.1
   done
 }

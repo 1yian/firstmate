@@ -1045,6 +1045,81 @@ test_watcher_exits_when_its_state_directory_is_removed() {
   pass "watch-arm: a watcher exits when its state directory is removed"
 }
 
+# Same exit when the removal lands while the watcher is blocked inside
+# fm_lock_acquire_wait on the downtime-marker lock. A live foreign holder used
+# to keep that wait spinning after the parent directory was gone, so the
+# watcher outlived the directory it was supposed to notice.
+test_watcher_exits_when_state_disappears_during_a_lock_wait() {
+  local dir home state fakebin armout holder_out holder_pid beat last stable i
+  dir=$(make_case state-dir-removed-during-lock)
+  home="$dir/home"
+  state="$dir/state"
+  fakebin="$dir/fakebin"
+  armout="$dir/arm.out"
+  holder_out="$dir/holder.out"
+  mkdir -p "$home/data"
+  start_owned_watcher "$home" "$state" "$fakebin" "$armout"
+
+  FM_HOME="$home" FM_STATE_OVERRIDE="$state" bash -c '
+    . "$1"
+    fm_lock_acquire_wait "$2/.watcher-down.lock" || exit 1
+    printf "held\n"
+    while true; do sleep 1; done
+  ' _ "$ROOT/bin/fm-wake-lib.sh" "$state" >"$holder_out" 2>&1 &
+  holder_pid=$!
+
+  i=0
+  while [ "$i" -lt 50 ]; do
+    grep -qx held "$holder_out" 2>/dev/null && break
+    is_live_non_zombie "$holder_pid" || fail "lock holder exited before it held the downtime lock: $(cat "$holder_out")"
+    sleep 0.1
+    i=$((i + 1))
+  done
+  grep -qx held "$holder_out" \
+    || { kill -TERM "$holder_pid" "$WATCH_PID" 2>/dev/null || true
+         fail "lock holder never acquired the downtime lock: $(cat "$holder_out")"; }
+
+  last=$(stat -c %Y "$state/.last-watcher-beat" 2>/dev/null || stat -f %m "$state/.last-watcher-beat")
+  stable=0
+  i=0
+  while [ "$i" -lt 80 ]; do
+    beat=$(stat -c %Y "$state/.last-watcher-beat" 2>/dev/null || stat -f %m "$state/.last-watcher-beat")
+    if [ "$beat" = "$last" ]; then
+      stable=$((stable + 1))
+      [ "$stable" -ge 20 ] && break
+    else
+      stable=0
+      last=$beat
+    fi
+    is_live_non_zombie "$WATCH_PID" || {
+      kill -TERM "$holder_pid" 2>/dev/null || true
+      fail "watcher exited before its state directory was removed: $(cat "$armout")"
+    }
+    sleep 0.1
+    i=$((i + 1))
+  done
+  if [ "$stable" -lt 20 ]; then
+    kill -TERM "$holder_pid" "$WATCH_PID" 2>/dev/null || true
+    fail "watcher never blocked on the held downtime lock (beacon kept moving)"
+  fi
+
+  rm -rf "$state"
+  wait_for_pid_gone "$WATCH_PID" 30 \
+    || { kill -TERM "$WATCH_PID" "$holder_pid" 2>/dev/null
+         fail "watcher pid $WATCH_PID outlived its deleted state directory while blocked on the downtime lock"; }
+  wait_for_exit "$ARM_PID" 30 >/dev/null 2>&1 || true
+  grep -qF 'watcher: exiting - state directory' "$armout" \
+    || { kill -TERM "$holder_pid" 2>/dev/null || true
+         fail "watcher did not log the state-gone exit reason: $(cat "$armout")"; }
+  is_live_non_zombie "$holder_pid" \
+    || fail "the downtime-lock holder died; the watcher may have waited it out instead of noticing the missing directory"
+  kill -TERM "$holder_pid" 2>/dev/null || true
+  wait "$holder_pid" 2>/dev/null || true
+  ! grep -q '^signal:\|^check:\|^stale:\|^heartbeat' "$armout" \
+    || fail "a state-gone exit was reported as an actionable wake: $(cat "$armout")"
+  pass "watch-arm: a watcher blocked on the downtime lock exits when its state directory is removed"
+}
+
 # The same for a deleted home whose state directory still exists elsewhere: the
 # lock is released through the ordinary cleanup so nothing stale is left behind.
 test_watcher_exits_when_its_home_is_removed() {
@@ -1093,6 +1168,7 @@ test_attached_arm_reports_the_delivered_wake_after_drain
 test_arm_refuses_an_unusable_launch_confirm_window
 test_arm_refuses_a_disposable_validation_checkout
 test_watcher_exits_when_its_state_directory_is_removed
+test_watcher_exits_when_state_disappears_during_a_lock_wait
 test_watcher_exits_when_its_home_is_removed
 test_reaper_stops_a_tracked_watcher
 test_attached_arm_still_fails_on_a_wake_it_did_not_deliver
