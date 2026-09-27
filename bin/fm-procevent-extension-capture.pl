@@ -60,7 +60,14 @@ if (@ARGV && $ARGV[0] eq 'handoff') {
   chdir($reservation) or die "cannot enter reservation root\n";
   my @reservation_stat = lstat('.');
   die "unsafe reservation root\n" unless @reservation_stat && -d _ && !-l _ && $reservation_stat[4] == $< && ($reservation_stat[2] & 07777) == 0700;
-  dup2(fileno($reservation), 7) >= 0 or die "cannot reserve capability descriptor\n";
+  # Park the reservation on a high fd before touching 6 or 7. The claim may
+  # already be open on fd 7, and the shell's reservation may already be fd 6;
+  # dup2 onto either of those first would replace the claim and then publish
+  # that directory as the claim descriptor.
+  dup2(fileno($reservation), 100) >= 0 or die "cannot park reservation root\n";
+  dup2(fileno($claim), 6) >= 0 or die "cannot install claim descriptor\n";
+  dup2(100, 7) >= 0 or die "cannot reserve capability descriptor\n";
+  POSIX::close(100);
   my $capability_name = ".extension-capture-capability-$claim_token.$reservation_token";
   sysopen(my $capability, $capability_name, O_CREAT | O_EXCL | O_NOFOLLOW | O_RDWR, 0600) or die "cannot create capability\n";
   my $record = encode_json({
@@ -79,7 +86,6 @@ if (@ARGV && $ARGV[0] eq 'handoff') {
   }
   seek($capability, 0, 0) or die "cannot rewind capability\n";
   unlink($capability_name) or die "cannot unlink capability\n";
-  dup2(fileno($claim), 6) >= 0 or die "cannot install claim descriptor\n";
   dup2(fileno($capability), 7) >= 0 or die "cannot install capability descriptor\n";
   dup2(fileno($inbox), 8) >= 0 or die "cannot install inbox descriptor\n";
   dup2(fileno($result), 9) >= 0 or die "cannot install result descriptor\n";

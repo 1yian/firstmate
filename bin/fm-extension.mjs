@@ -2059,6 +2059,11 @@ async function releaseLifecycleLock() {
   const { lockPath, ownerPath } = activeLifecycleLock;
   await unlink(lockPath);
   await unlink(path.join(ownerPath, "pid"));
+  // Shell lock claims also record pid-start. Leaving it makes rmdir fail
+  // and the binding reports no retirement identity.
+  await unlink(path.join(ownerPath, "pid-start")).catch((error) => {
+    if (error?.code !== "ENOENT") throw error;
+  });
   await rmdir(ownerPath);
   activeLifecycleLock = null;
 }

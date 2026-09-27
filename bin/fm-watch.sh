@@ -2489,24 +2489,22 @@ pr_poll_publish_release() {
 # lock wait that fails because its parent directory vanished still records the
 # same reason the next poll would have logged.
 WATCHER_WORLD_GONE_LOGGED=0
-watcher_world_gone_reason() {
-  if [ "${WATCH_HOME_EXISTED:-0}" -eq 1 ] && [ ! -d "$FM_HOME" ]; then
-    printf '%s\n' "watcher: exiting - home no longer exists: $FM_HOME"
-  elif [ ! -d "$STATE" ]; then
-    printf '%s\n' "watcher: exiting - state directory no longer exists: $STATE"
-  elif [ ! -e "$WATCH_LOCK/pid" ]; then
-    printf '%s\n' "watcher: exiting - state directory was torn down (singleton lock removed): $STATE"
-  elif [ ! -d "$SCRIPT_DIR" ]; then
-    printf '%s\n' "watcher: exiting - code root no longer exists: $SCRIPT_DIR"
-  fi
-}
-
+# No command substitution: this runs from the EXIT trap, and bash 5.2 can drop
+# a pending stop signal while it parses one, leaving --stop waiting on a watcher
+# that never exits.
 watcher_log_world_gone() {
-  local reason
   [ "$WATCHER_WORLD_GONE_LOGGED" -eq 1 ] && return 0
-  reason=$(watcher_world_gone_reason) || true
-  [ -n "$reason" ] || return 0
-  printf '%s\n' "$reason" >&2
+  if [ "${WATCH_HOME_EXISTED:-0}" -eq 1 ] && [ ! -d "$FM_HOME" ]; then
+    printf '%s\n' "watcher: exiting - home no longer exists: $FM_HOME" >&2
+  elif [ ! -d "$STATE" ]; then
+    printf '%s\n' "watcher: exiting - state directory no longer exists: $STATE" >&2
+  elif [ ! -e "$WATCH_LOCK/pid" ]; then
+    printf '%s\n' "watcher: exiting - state directory was torn down (singleton lock removed): $STATE" >&2
+  elif [ ! -d "$SCRIPT_DIR" ]; then
+    printf '%s\n' "watcher: exiting - code root no longer exists: $SCRIPT_DIR" >&2
+  else
+    return 0
+  fi
   WATCHER_WORLD_GONE_LOGGED=1
 }
 
