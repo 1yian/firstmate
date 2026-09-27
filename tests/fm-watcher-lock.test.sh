@@ -413,6 +413,31 @@ SH
   pass "dead steal owner is reclaimed once without a nested steal marker"
 }
 
+# The killed owner's pid number can be live again before the acquirer runs.
+# The recorded start token still names the killed process, so the new process
+# must not keep the steal mutex.
+test_lock_reclaims_dead_steal_owner_after_pid_reuse() {
+  local dir state lockdir rc
+  dir=$(make_case lock-dead-steal-pid-reuse)
+  state="$dir/state"
+  lockdir="$state/.contend.lock"
+  mkdir "$lockdir"
+  printf '%s\n' "$(dead_pid)" > "$lockdir/pid"
+  leave_dead_link_locks "$state" "$lockdir.steal"
+  [ -s "$lockdir.steal/pid-start" ] || fail "dead steal owner recorded no start token"
+  printf '%s\n' "$$" > "$lockdir.steal/pid"
+  rc=0
+  FM_STATE_OVERRIDE="$state" bash -c '
+    . "$1"
+    fm_lock_try_acquire "$2" || exit 8
+    fm_lock_release "$2"
+  ' _ "$LIB" "$lockdir" || rc=$?
+  [ "$rc" -eq 0 ] || fail "reused pid kept a dead steal owner unreclaimable (rc=$rc)"
+  [ ! -e "$lockdir.steal" ] && [ ! -L "$lockdir.steal" ] \
+    || fail "dead steal mutex remained after pid-reuse reclaim"
+  pass "dead steal owner is reclaimed when its pid number is live again"
+}
+
 test_lock_recovers_dead_nested_steal_chain() {
   local dir state lockdir rc marker
   dir=$(make_case lock-dead-nested-steal-chain)
@@ -1544,6 +1569,7 @@ test_lock_single_winner_under_concurrency
 test_lock_steals_dead_pid_lock
 test_lock_stale_steal_single_winner_under_concurrency
 test_lock_reclaims_dead_steal_owner_without_nested_markers
+test_lock_reclaims_dead_steal_owner_after_pid_reuse
 test_lock_recovers_dead_nested_steal_chain
 test_lock_steal_reap_cannot_remove_successor
 test_lock_reclaims_self_held_steal_mutex

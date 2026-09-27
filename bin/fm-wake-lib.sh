@@ -95,6 +95,32 @@ fm_pid_identity() {
   printf '%s\n' "$out" | sed 's/^[[:space:]]*//'
 }
 
+# Process start token. exec keeps it, because the process is the same one;
+# a reused pid does not. Empty output is "unprovable", not a mismatch.
+fm_pid_start_token() {
+  local pid=$1 proc_root stat_line starttime out
+  local -a stat_fields
+  case "$pid" in
+    ''|*[!0-9]*) return 1 ;;
+  esac
+  proc_root=${FM_PROC_ROOT_OVERRIDE:-/proc}
+  if [ -r "$proc_root/$pid/stat" ]; then
+    stat_line=$(cat "$proc_root/$pid/stat" 2>/dev/null) || return 1
+    read -r -a stat_fields <<< "${stat_line##*)}"
+    [ "${#stat_fields[@]}" -ge 20 ] || return 1
+    starttime=${stat_fields[19]}
+    case "$starttime" in
+      ''|*[!0-9]*) return 1 ;;
+    esac
+    printf 'starttime=%s\n' "$starttime"
+    return 0
+  fi
+  out=$(COLUMNS=10000 LC_ALL=C ps -p "$pid" -o lstart= 2>/dev/null) || return 1
+  out=$(printf '%s\n' "$out" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+  [ -n "$out" ] || return 1
+  printf '%s\n' "$out"
+}
+
 fm_path_mtime() {
   if [ "$_FM_UNAME" = Darwin ]; then
     /usr/bin/stat -f %m "$1" 2>/dev/null
@@ -444,6 +470,7 @@ fm_lock_clean_known_files() {
     "$lockdir/pid" \
     "$lockdir/fm-home" \
     "$lockdir/pid-identity" \
+    "$lockdir/pid-start" \
     "$lockdir/role" \
     "$lockdir/watcher-path" \
     2>/dev/null || true
@@ -481,12 +508,39 @@ fm_lock_owner_dir() {
   mktemp -d "${lock_abs}.owner.XXXXXX" 2>/dev/null
 }
 
-fm_lock_prepare_owner() {
-  local ownerdir=$1 mypid back
+# Record this process as <ownerdir>'s holder, plus the start token that
+# survives exec and changes when the pid number is reused.
+fm_lock_record_owner_pid() { # <ownerdir>
+  local ownerdir=$1 mypid back token
   fm_current_pid mypid || return 1
   printf '%s\n' "$mypid" > "$ownerdir/pid" 2>/dev/null || return 1
   back=$(cat "$ownerdir/pid" 2>/dev/null || true)
-  [ "$back" = "$mypid" ]
+  [ "$back" = "$mypid" ] || return 1
+  # The start token is evidence for pid reuse. Losing it falls back to
+  # kill -0; it must not fail a claim whose pid was already recorded, and
+  # the owner directory may already be gone under contention.
+  if token=$(fm_pid_start_token "$mypid" 2>/dev/null) && [ -n "$token" ] && [ -d "$ownerdir" ]; then
+    printf '%s\n' "$token" > "$ownerdir/pid-start" 2>/dev/null || true
+  fi
+  return 0
+}
+
+# True when <pid> is still the process that published <lockdir>.
+# A dead pid is not. A live pid whose start token differs from the recorded
+# pid-start is a reuse and is not. No recorded token keeps the kill -0 answer.
+fm_lock_pid_is_owner() { # <lockdir> <pid>
+  local lockdir=$1 pid=$2 recorded current
+  fm_pid_alive "$pid" || return 1
+  recorded=$(cat "$lockdir/pid-start" 2>/dev/null || true)
+  [ -n "$recorded" ] || return 0
+  current=$(fm_pid_start_token "$pid" 2>/dev/null || true)
+  [ -n "$current" ] || return 0
+  [ "$current" = "$recorded" ]
+}
+
+fm_lock_prepare_owner() {
+  local ownerdir=$1
+  fm_lock_record_owner_pid "$ownerdir"
 }
 
 fm_lock_link_owner() {
@@ -531,14 +585,8 @@ fm_lock_claim_blocked_by_steal() {
 }
 
 fm_lock_claim() {
-  local lockdir=$1 ownerdir=$2 allowed_steal_owner=${3:-} mypid back
-  fm_current_pid mypid || return 1
-  if ! { printf '%s\n' "$mypid" > "$ownerdir/pid"; } 2>/dev/null; then
-    fm_lock_discard_owner "$ownerdir"
-    return 1
-  fi
-  back=$(cat "$ownerdir/pid" 2>/dev/null || true)
-  if [ "$back" != "$mypid" ]; then
+  local lockdir=$1 ownerdir=$2 allowed_steal_owner=${3:-}
+  if ! fm_lock_record_owner_pid "$ownerdir"; then
     fm_lock_discard_owner "$ownerdir"
     return 1
   fi
@@ -617,7 +665,7 @@ fm_lock_recheck_stale_owner() {
   fi
   actual_pid=$(cat "$lockdir/pid" 2>/dev/null || true)
   [ "$actual_pid" = "$expected_pid" ] || return 1
-  if fm_pid_alive "$actual_pid"; then
+  if fm_lock_pid_is_owner "$lockdir" "$actual_pid"; then
     return 1
   fi
   if fm_lock_mid_acquire_is_fresh "$lockdir" "$actual_pid"; then
@@ -1019,7 +1067,7 @@ fm_lock_try_acquire() {
     FM_LOCK_HELD_PID=$(cat "$lockdir/pid" 2>/dev/null || true)
     return 1
   fi
-  if fm_pid_alive "$pid"; then
+  if fm_lock_pid_is_owner "$lockdir" "$pid"; then
     FM_LOCK_HELD_PID=$pid
     return 1
   fi
@@ -1037,7 +1085,7 @@ fm_lock_try_acquire() {
   steal_owner=${FM_LOCK_OWNER_DIR:-}
 
   cur=$(cat "$lockdir/pid" 2>/dev/null || true)
-  if fm_pid_alive "$cur"; then
+  if fm_lock_pid_is_owner "$lockdir" "$cur"; then
     fm_lock_release "$steal"
     FM_LOCK_HELD_PID=$cur
     FM_LOCK_OWNER_DIR=
