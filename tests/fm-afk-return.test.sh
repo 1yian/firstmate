@@ -24,6 +24,7 @@ install_runner() {  # <case-dir>
   mkdir -p "$dir/bin" "$dir/home/state" "$dir/home/data" "$dir/home/config"
   cp "$ROOT/bin/fm-afk-return.sh" "$dir/bin/"
   cp "$ROOT/bin/fm-wake-lib.sh" "$dir/bin/"
+  cp "$ROOT/bin/fm-path-lib.sh" "$dir/bin/"
   cp "$ROOT/bin/fm-classify-lib.sh" "$dir/bin/"
   # fm-timeout-lib.sh: the shared hard bound fm-classify-lib.sh sources for the
   # wedge detector's bounded worktree write probe.
@@ -410,6 +411,9 @@ test_return_brief_composes_from_record_store_and_held_set() {
   outcome_in "$dir" append --task prerelease --verdict captain \
     --summary 'per your away instructions: filed and dispatched the prerelease cut; it needs your review' --wake 'signal: prerelease.status' >/dev/null \
     || fail "could not seed the escalated words-action outcome row"
+  outcome_in "$dir" append --task still-building --verdict routine --silent true \
+    --summary 'per your away instructions: the check 1 worker is still building. Nothing new has happened; no action was taken.' >/dev/null \
+    || fail "could not seed the silent no-change outcome row"
   touch "$dir/home/state/.last-watcher-beat"
   : > "$dir/home/state/.fake-drain"
 
@@ -435,6 +439,7 @@ test_return_brief_composes_from_record_store_and_held_set() {
   assert_contains "$out" $'  the away session acted on them:\n    - fix-windows: per your away instructions: merged the windows fix PR once checks went green\n    - prerelease: per your away instructions: filed and dispatched the prerelease cut; it needs your review\nWaiting on you:\n' "the session's account listed something other than exactly the two actions taken under the words"
   assert_not_contains "$out" $'acted on them:\n    - other:' "an outcome that did not cite the words was listed as an action under them"
   assert_not_contains "$out" $'acted on them:\n    - held-note:' "a summary opening with the marker's words but no colon was listed as an action under them"
+  assert_not_contains "$out" 'still building' "the return brief rendered a silent routine outcome"
   assert_not_contains "$out" 'not executed' "the brief still calls the words inert"
   assert_not_contains "$out" 'clause' "the brief still speaks of clauses"
   assert_contains "$out" 'fix-windows,queued,task' "the held backlog item was not listed under waiting on you"
@@ -444,9 +449,9 @@ test_return_brief_composes_from_record_store_and_held_set() {
   assert_contains "$out" 'fix-windows [key=token] still blocked, firstmate remediates before ordinary work' "the blocker sharing a task with a captain outcome was exempted"
   assert_contains "$out" 'other [key=dep] still blocked, firstmate remediates before ordinary work' "the unreached blocker was not listed as could-not-fix"
   assert_contains "$out" 'dead: failed: the reproduction never compiled' "the failed task was not listed"
-  assert_contains "$out" '3 routine outcome(s) recorded' "the routine outcome count was not reported"
+  assert_contains "$out" '4 routine outcome(s) recorded' "the routine outcome count was not reported"
   assert_contains "$out" 'other: resent the steer; worker resumed' "the routine outcome was not listed"
-  assert_contains "$out" 'Cost: 5 supervision outcome(s) recorded (3 routine, 2 captain); 3 task(s) live at return.' "the cost line is wrong"
+  assert_contains "$out" 'Cost: 6 supervision outcome(s) recorded (4 routine, 2 captain); 3 task(s) live at return.' "the cost line is wrong"
   assert_contains "$out" 'firstmate-actionable blocker: other [key=dep]' "the unreached blocker did not gate"
   assert_contains "$out" 'firstmate-actionable blocker: fix-windows [key=token]' "a captain outcome incorrectly exempted an open blocker"
   grep -F "$(printf 'contract\t')" "$gate" >/dev/null || fail "the gate did not retain the posture-record window"
@@ -465,6 +470,136 @@ test_return_brief_composes_from_record_store_and_held_set() {
   FM_HOME="$dir/home" FM_STATE_OVERRIDE="$dir/home/state" "$dir/bin/fm-afk-return.sh" guard \
     || fail "guard still refused after the record was archived and the gate cleared"
   pass "the return brief renders health, the words with the session account, waiting, could-not-fix, handled, and cost from durable records, and the gate shrinks to what the away session could not fix"
+}
+
+# On a supervision-host home off Pi the drain's BRANCH OUTCOMES section is the
+# one presenter of branch outcomes and the one owner of their read cursor, so
+# the return brief counts the window's outcomes and points there instead of
+# listing them, and leaves the cursor alone. On Pi the brief lists them as
+# before.
+test_return_brief_points_at_the_drain_on_a_host_home_only() {
+  local dir harness fakebin out n
+  for harness in claude pi; do
+    dir="$TMP_ROOT/window-pointer-$harness"
+    install_runner "$dir"
+    for f in fm-supervision-engine-lib.sh fm-harness.sh fm-cursor-lib.sh fm-gemini-lib.sh; do
+      cp "$ROOT/bin/$f" "$dir/bin/"
+    done
+    : > "$dir/home/config/supervision-host"
+    fakebin="$dir/fakebin"
+    mkdir -p "$fakebin"
+    ln -s /bin/bash "$fakebin/$harness"
+    contract_in "$dir" enter --words 'watch the fleet' >/dev/null 2>&1 || fail "could not record the away posture"
+    for n in 1 2 3 4 5 6; do
+      outcome_in "$dir" append --task demo --verdict routine --summary "routine $n" >/dev/null || fail "could not seed routine $n"
+    done
+    outcome_in "$dir" append --task demo --verdict captain --summary 'PR ready for review' >/dev/null || fail "could not seed the captain row"
+    touch "$dir/home/state/.last-watcher-beat"
+    : > "$dir/home/state/.fake-drain"
+    # shellcheck disable=SC2016 # the single-quoted script expands in the harness shell
+    out=$(FM_HOME="$dir/home" FM_STATE_OVERRIDE="$dir/home/state" FM_CONFIG_OVERRIDE="$dir/home/config" \
+      "$fakebin/$harness" -c '"$0" begin 2>&1' "$dir/bin/fm-afk-return.sh") || fail "$harness: the return did not clear: $out"
+    assert_contains "$out" '7 outcome(s) handled by the away session (6 routine, 1 escalated above)' "$harness: the brief must count the window's outcomes"
+    if [ "$harness" = claude ]; then
+      assert_contains "$out" "  1 captain outcome(s) escalated by the away session, presented in the drain's BRANCH OUTCOMES section" \
+        "a host home's brief must point at the drain for its captain outcomes"
+      assert_contains "$out" "the drain's BRANCH OUTCOMES section presents the visible outcomes" "a host home's brief must point at the visible outcomes in the drain"
+      assert_not_contains "$out" 'PR ready for review' "a host home's brief must leave the captain outcome to the drain"
+      assert_not_contains "$out" 'routine 6' "a host home's brief must leave the routine outcomes to the drain"
+    else
+      assert_contains "$out" '    - demo: PR ready for review' "a Pi home's brief must still list the captain outcome"
+      assert_contains "$out" '    - demo: routine 6' "a Pi home's brief must still list the latest routine outcomes"
+    fi
+    [ ! -e "$dir/home/state/.branch-outcomes-cursor" ] || fail "$harness: the return moved the outcome store's read cursor"
+  done
+  pass "the return brief points at the drain for branch outcomes on a host home and leaves the read cursor to it, and a Pi home's brief is unchanged"
+}
+
+test_return_brief_all_silent_window_does_not_point_at_drain() {
+  local dir fakebin out f
+  dir="$TMP_ROOT/window-pointer-silent"
+  install_runner "$dir"
+  for f in fm-supervision-engine-lib.sh fm-harness.sh fm-cursor-lib.sh fm-gemini-lib.sh; do
+    cp "$ROOT/bin/$f" "$dir/bin/"
+  done
+  : > "$dir/home/config/supervision-host"
+  fakebin="$dir/fakebin"
+  mkdir -p "$fakebin"
+  ln -s /bin/bash "$fakebin/claude"
+  contract_in "$dir" enter --words 'watch the fleet' >/dev/null 2>&1 || fail "could not record the away posture"
+  outcome_in "$dir" append --task demo --verdict routine --summary 'still building; nothing new has happened; no action was taken' --silent true >/dev/null \
+    || fail "could not seed the silent routine outcome"
+  touch "$dir/home/state/.last-watcher-beat"
+  : > "$dir/home/state/.fake-drain"
+  # shellcheck disable=SC2016 # the single-quoted script expands in the harness shell
+  out=$(FM_HOME="$dir/home" FM_STATE_OVERRIDE="$dir/home/state" FM_CONFIG_OVERRIDE="$dir/home/config" \
+    "$fakebin/claude" -c '"$0" begin 2>&1' "$dir/bin/fm-afk-return.sh") || fail "the all-silent return did not clear: $out"
+  assert_contains "$out" '1 outcome(s) handled by the away session (1 routine, 0 escalated above)' \
+    "the all-silent window's stored outcome count was lost"
+  assert_contains "$out" '1 routine outcome(s) recorded; none were visible.' \
+    "the all-silent window should report no visible routine notes"
+  assert_not_contains "$out" 'still building' "the return brief rendered the silent routine note"
+  assert_not_contains "$out" 'BRANCH OUTCOMES section' "the all-silent brief pointed at a drain section that does not exist"
+  [ ! -e "$dir/home/state/.branch-outcomes-cursor" ] || fail "the return moved the outcome store's read cursor"
+  pass "the all-silent return keeps the outcome stored without promising a drain presentation"
+}
+
+# The drain is the only presenter of branch outcomes and owner of their read
+# cursor, so a drain that presented them but could not record the presentation
+# fails, and the return keeps catch-up gated until a check drains again and
+# records it; otherwise a clear return would be followed by a replay.
+test_return_keeps_catchup_gated_when_the_drain_cannot_record_outcomes() {
+  local dir fakebin out rc gate f
+  dir="$TMP_ROOT/drain-cursor-stuck"
+  install_runner "$dir"
+  rm -f "$dir/bin/fm-wake-drain.sh"
+  for f in "$ROOT"/bin/*; do
+    [ -e "$dir/bin/${f##*/}" ] || cp -R "$f" "$dir/bin/"
+  done
+  gate="$dir/home/state/.afk-return-catchup"
+  : > "$dir/home/config/supervision-host"
+  fakebin="$dir/fakebin"
+  mkdir -p "$fakebin"
+  ln -s /bin/bash "$fakebin/claude"
+  contract_in "$dir" enter --words 'watch the fleet' >/dev/null 2>&1 || fail "could not record the away posture"
+  outcome_in "$dir" append --task demo --verdict routine --summary 'rebased while away' >/dev/null || fail "could not seed the routine row"
+  outcome_in "$dir" append --task demo --verdict captain --summary 'PR ready for review' >/dev/null || fail "could not seed the captain row"
+  mv "$dir/bin/fm-branch-outcome.sh" "$dir/bin/fm-branch-outcome.real.sh"
+  cat > "$dir/bin/fm-branch-outcome.sh" <<'EOF'
+#!/usr/bin/env bash
+[ "${1:-}" != mark-read ] || [ ! -e "$FM_HOME/cursor-stuck" ] || exit 1
+exec "$(dirname "$0")/fm-branch-outcome.real.sh" "$@"
+EOF
+  chmod +x "$dir/bin/fm-branch-outcome.sh"
+  : > "$dir/home/cursor-stuck"
+  touch "$dir/home/state/.last-watcher-beat"
+  set +e
+  # shellcheck disable=SC2016 # the single-quoted script expands in the harness shell
+  out=$(FM_HOME="$dir/home" FM_STATE_OVERRIDE="$dir/home/state" FM_CONFIG_OVERRIDE="$dir/home/config" \
+    "$fakebin/claude" -c '"$0" begin 2>&1' "$dir/bin/fm-afk-return.sh")
+  rc=$?
+  set -e
+  [ "$rc" -eq 3 ] || fail "a drain that could not record its outcomes should keep catch-up gated (rc=$rc): $out"
+  [ -f "$gate" ] || fail "a drain that could not record its outcomes did not retain the return gate"
+  assert_contains "$out" 'BRANCH OUTCOMES: the store could not record this presentation' "the return did not surface the drain's failure"
+  assert_contains "$out" 'durable wake drain failed; retry catch-up before ordinary work' "the gate did not name the drain failure"
+  assert_contains "$out" '1 captain outcome(s) escalated by the away session, awaiting a successful drain' \
+    "a failed drain's brief must say its captain outcomes await a successful drain"
+  assert_contains "$out" 'visible outcomes awaiting a successful drain' "a failed drain's brief must say its visible outcomes await a successful drain"
+  assert_not_contains "$out" 'presented in the drain' "a failed drain's brief must not claim the drain presented its outcomes"
+  assert_not_contains "$out" 'section presents the visible outcomes' "a failed drain's brief must not claim the drain presents its outcomes"
+  [ ! -e "$dir/home/state/.branch-outcomes-cursor" ] || fail "the stuck cursor moved"
+  rm -f "$dir/home/cursor-stuck"
+  # shellcheck disable=SC2016 # the single-quoted script expands in the harness shell
+  out=$(FM_HOME="$dir/home" FM_STATE_OVERRIDE="$dir/home/state" FM_CONFIG_OVERRIDE="$dir/home/config" \
+    "$fakebin/claude" -c '"$0" check 2>&1' "$dir/bin/fm-afk-return.sh") || fail "catch-up did not clear once the drain recorded its outcomes: $out"
+  assert_contains "$out" 'catch-up clear' "the recorded presentation did not clear catch-up"
+  assert_contains "$out" "presented in the drain's BRANCH OUTCOMES section" "a successful drain's brief must point at its presentation"
+  assert_contains "$out" 'demo: PR ready for review' "the clearing check did not present the captain outcome through the drain"
+  assert_not_contains "$out" 'durable wake drain failed' "the cleared gate retained stale drain evidence"
+  [ "$(cat "$dir/home/state/.branch-outcomes-cursor")" = 2 ] || fail "the drain did not record its presentation once it could"
+  [ ! -e "$gate" ] || fail "the recorded presentation left the return gate behind"
+  pass "a drain that cannot record its branch-outcome presentation keeps the return's catch-up gated until a check records it"
 }
 
 test_return_brief_lists_landed_work_awaiting_cleanup() {
@@ -888,6 +1023,9 @@ test_unreadable_superseded_archive_keeps_return_gated
 test_missing_final_archive_keeps_retained_contract_gated
 test_return_brief_composes_from_record_store_and_held_set
 test_return_brief_lists_landed_work_awaiting_cleanup
+test_return_brief_points_at_the_drain_on_a_host_home_only
+test_return_brief_all_silent_window_does_not_point_at_drain
+test_return_keeps_catchup_gated_when_the_drain_cannot_record_outcomes
 test_return_brief_keeps_refresh_history
 test_malformed_posture_record_keeps_catchup_gated
 test_missing_epoch_record_stays_required_after_disappearing
