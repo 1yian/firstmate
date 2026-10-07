@@ -1,0 +1,13 @@
+lab: /private/tmp/fmlab.KIwfM6 (tear down with: bin/fm-live-lab.sh down /private/tmp/fmlab.KIwfM6)
+tree: f4cbc1290e8069ce854789a1ab4a617daa784e72 from /Users/yian/.no-mistakes/worktrees/27c8282ea781/01M4BAPRT3TPFYS20QAJ5X3NY8
+spawned labb4383e95acea-worker harness=claude kind=ship mode=local-only yolo=on window=firstmate:fm-labb4383e95acea-worker worktree=/private/tmp/fmlab.KIwfM6/treehouse/.treehouse/notes-2cec92/1/notes
+gate: /private/tmp/fmlab.KIwfM6/home/data/labb4383e95acea-worker/gate (touch, then message the worker to resume)
+primary: claude --setting-sources project,local --model sonnet --effort medium --permission-mode auto
+ok primary: claude pid 89763 in /private/tmp/fmlab.KIwfM6/home
+fail probe: no LABREADY-b4383e95acea reply in window main (model refused, turn still running, or a dialog is open)
+ok trust: /private/tmp/fmlab.KIwfM6/home is trusted in the Claude store
+ok host: none running, as expected
+fail watcher: no live watcher with a fresh beacon holds the lab home
+fail worker: the worker is not currently parked on /private/tmp/fmlab.KIwfM6/home/data/labb4383e95acea-worker/gate (state: working · source: pane · harness busy (claude-hook))
+ok treehouse: ~/.treehouse unchanged
+not ready after 240s; the lab is left up for inspection: bin/fm-live-lab.sh pane /private/tmp/fmlab.KIwfM6, then bin/fm-live-lab.sh down /private/tmp/fmlab.KIwfM6

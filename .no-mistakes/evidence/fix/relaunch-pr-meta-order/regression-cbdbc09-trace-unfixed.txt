@@ -1,0 +1,6 @@
+### cbdbc09 (relaunch reorder only, no traceparent fix)
+ok - fm-control relaunch: a task with a PR keeps its merge watch armed across the relaunch (trace off)
+not ok - the relaunch left the merge watch unreadable, so the watcher rejected it (unexpected: 'rejected unauthenticated state checks')
+--- output ---
+check: rejected unauthenticated state checks: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-control-relaunch.dwqYHR/pr-watch-on-1503/home/state/rl52.check.sh
+exit=1

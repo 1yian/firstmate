@@ -1,0 +1,179 @@
+### lab home tree: f4cbc12 no-mistakes(document): Document trace carrier insertion before the PR identity block
+### arm the merge watch with real bin/fm-pr-check.sh labb4383e95acea-worker https://github.com/example/repo/pull/52 (forge stub: OPEN)
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+armed: state/labb4383e95acea-worker.check.sh
+rc=0
+### task record before relaunch
+window=firstmate:fm-labb4383e95acea-worker
+endpoint_task_id=labb4383e95acea-worker
+worktree=/private/tmp/fmlab.KIwfM6/treehouse/.treehouse/notes-2cec92/1/notes
+project=/private/tmp/fmlab.KIwfM6/home/projects/notes
+harness=claude
+kind=ship
+mode=local-only
+yolo=on
+tasktmp=/tmp/fm-labb4383e95acea-worker
+model=sonnet
+effort=low
+busy_gen=g1791383782.87433.26287
+spawn_gen=s1791383783.85519.31502
+pr=https://github.com/example/repo/pull/52
+pr_head=0123456789abcdef0123456789abcdef01234567
+### parse
+PARSE OK url=https://github.com/example/repo/pull/52
+
+### relaunch #1 (trace off): bin/fm-control.sh labb4383e95acea-worker relaunch --note ...
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+notice: /private/tmp/fmlab.KIwfM6/home/data/labb4383e95acea-worker/launch-brief.md records no ship branch; relaunching on the recorded branch fm/labb4383e95acea-worker
+relaunched labb4383e95acea-worker harness=claude from=claude model=sonnet effort=low backend=tmux endpoint=firstmate:fm-labb4383e95acea-worker worktree=/private/tmp/fmlab.KIwfM6/treehouse/.treehouse/notes-2cec92/1/notes
+rc=0
+### task record after relaunch #1
+window=firstmate:fm-labb4383e95acea-worker
+endpoint_task_id=labb4383e95acea-worker
+worktree=/private/tmp/fmlab.KIwfM6/treehouse/.treehouse/notes-2cec92/1/notes
+project=/private/tmp/fmlab.KIwfM6/home/projects/notes
+harness=claude
+kind=ship
+mode=local-only
+yolo=on
+branch=fm/labb4383e95acea-worker
+tasktmp=/tmp/fm-labb4383e95acea-worker
+model=sonnet
+effort=low
+busy_gen=g1791384402.7321.8013
+spawn_gen=s1791384402.6613.16694
+control_relaunch_tx=5720.20261007T144640Z.28813
+pr=https://github.com/example/repo/pull/52
+pr_head=0123456789abcdef0123456789abcdef01234567
+### parse
+PARSE OK url=https://github.com/example/repo/pull/52
+
+### (worker hit a permission dialog; Escape sent so its composer is idle)
+### enable trace propagation: touch config/trace-context; real fm_trace_context_session_start records the session decision
+89763 on
+89763
+### relaunch #2 (trace on)
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+notice: /private/tmp/fmlab.KIwfM6/home/data/labb4383e95acea-worker/launch-brief.md records no ship branch; relaunching on the recorded branch fm/labb4383e95acea-worker
+relaunched labb4383e95acea-worker harness=claude from=claude model=sonnet effort=low backend=tmux endpoint=firstmate:fm-labb4383e95acea-worker worktree=/private/tmp/fmlab.KIwfM6/treehouse/.treehouse/notes-2cec92/1/notes
+rc=0
+### task record after relaunch #2
+window=firstmate:fm-labb4383e95acea-worker
+endpoint_task_id=labb4383e95acea-worker
+worktree=/private/tmp/fmlab.KIwfM6/treehouse/.treehouse/notes-2cec92/1/notes
+project=/private/tmp/fmlab.KIwfM6/home/projects/notes
+harness=claude
+kind=ship
+mode=local-only
+yolo=on
+branch=fm/labb4383e95acea-worker
+tasktmp=/tmp/fm-labb4383e95acea-worker
+model=sonnet
+effort=low
+busy_gen=g1791384444.23686.28384
+spawn_gen=s1791384444.21838.846
+control_relaunch_tx=20942.20261007T144722Z.20104
+traceparent=00-75b4b9c52d29b80ecfd634694ff158ca-c5a3154146008cbb-01
+pr=https://github.com/example/repo/pull/52
+pr_head=0123456789abcdef0123456789abcdef01234567
+### parse
+PARSE OK url=https://github.com/example/repo/pull/52
+
+### worker pane received the trace carrier on relaunch #2:
+### config: backend claude-permission-mode crew-harness secondmate-harness startup-memory-budget supervision-host-off trace-context 
+### forge now reports MERGED; one bounded real watcher cycle: bin/fm-watch-checkpoint.sh --seconds 30
+check: /private/tmp/fmlab.KIwfM6/home/state/contributions.check.sh: contributions: observation unavailable for https://github.com/example/repo/pull/52
+rc=0
+### fake gh call log
+pr view https://github.com/example/repo/pull/52 --json isDraft
+pr view https://github.com/example/repo/pull/52 --json headRefOid -q .headRefOid
+api repos/example/repo/pulls/52
+
+### the first cycle surfaced the separate contribution observer (its forge reads are not modelled by the gh stub); drain that wake and retire that observer so the next cycle exercises only the merge watch
+1791384454	1	check	/private/tmp/fmlab.KIwfM6/home/state/contributions.check.sh	check: /private/tmp/fmlab.KIwfM6/home/state/contributions.check.sh: contributions: observation unavailable for https://github.com/example/repo/pull/52
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 26437.1791384454.nBTCo6
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+### ack: bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 26437.1791384454.nBTCo6
+### parse (still armed?)
+PARSE OK url=https://github.com/example/repo/pull/52
+/private/tmp/fmlab.KIwfM6/home/state/labb4383e95acea-worker.check.sh
+### forge MERGED; real watcher cycle: bin/fm-watch-checkpoint.sh --seconds 30
+check: /private/tmp/fmlab.KIwfM6/home/state/labb4383e95acea-worker.check.sh: merged
+rc=0
+### fake gh call log
+pr view https://github.com/example/repo/pull/52 --json isDraft
+pr view https://github.com/example/repo/pull/52 --json headRefOid -q .headRefOid
+api repos/example/repo/pulls/52
+pr view https://github.com/example/repo/pull/52 --json state -q .state
+
+### ADVERSARIAL CONTROL: drain the merge wake, re-arm a fresh PR (#53) watch, swap the lab home's bin/fm-spawn.sh to the pre-fix base 990b4b6, relaunch with trace on
+1791384472	2	check	merged-labb4383e95acea-worker-https://github.com/example/repo/pull/52	check: merge landed: labb4383e95acea-worker https://github.com/example/repo/pull/52 external
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 34442.1791384472.OvwTb8
+WARNING: watcher still down (same stale episode; last beat: 18s ago, grace 300s) - full banner already printed this episode.
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+armed: state/labb4383e95acea-worker.check.sh
+PARSE OK url=https://github.com/example/repo/pull/53
+WARNING: watcher still down (same stale episode; last beat: 23s ago, grace 300s) - full banner already printed this episode.
+notice: /private/tmp/fmlab.KIwfM6/home/data/labb4383e95acea-worker/launch-brief.md records no ship branch; relaunching on the recorded branch fm/labb4383e95acea-worker
+relaunched labb4383e95acea-worker harness=claude from=claude model=sonnet effort=low backend=tmux endpoint=firstmate:fm-labb4383e95acea-worker worktree=/private/tmp/fmlab.KIwfM6/treehouse/.treehouse/notes-2cec92/1/notes
+rc=0
+### task record after pre-fix relaunch
+window=firstmate:fm-labb4383e95acea-worker
+endpoint_task_id=labb4383e95acea-worker
+worktree=/private/tmp/fmlab.KIwfM6/treehouse/.treehouse/notes-2cec92/1/notes
+project=/private/tmp/fmlab.KIwfM6/home/projects/notes
+harness=claude
+kind=ship
+mode=local-only
+yolo=on
+branch=fm/labb4383e95acea-worker
+tasktmp=/tmp/fm-labb4383e95acea-worker
+model=sonnet
+effort=low
+busy_gen=g1791384496.46876.5551
+spawn_gen=s1791384497.45237.30115
+pr=https://github.com/example/repo/pull/53
+pr_head=0123456789abcdef0123456789abcdef01234567
+control_relaunch_tx=43189.20261007T144815Z.2934
+traceparent=00-75b4b9c52d29b80ecfd634694ff158ca-c5a3154146008cbb-01
+### parse
+PARSE REJECTED
+### forge MERGED; real watcher cycle
+check: rejected unauthenticated state checks: /private/tmp/fmlab.KIwfM6/home/state/labb4383e95acea-worker.check.sh
+rc=0
+
+### RECOVERY: restore the lab home's bin/fm-spawn.sh to the fix (f4cbc12); relaunch (trace on) the task whose record the pre-fix relaunch broke
+(empty status = lab tree back at f4cbc12)
+1791384500	3	check	unauthenticated-state-checks	check: rejected unauthenticated state checks: /private/tmp/fmlab.KIwfM6/home/state/labb4383e95acea-worker.check.sh
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 3 --recovery-generation 48053.1791384500.RN9rQh
+WARNING: watcher still down (same stale episode; last beat: 29s ago, grace 300s) - full banner already printed this episode.
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+WARNING: watcher still down (same stale episode; last beat: 33s ago, grace 300s) - full banner already printed this episode.
+notice: /private/tmp/fmlab.KIwfM6/home/data/labb4383e95acea-worker/launch-brief.md records no ship branch; relaunching on the recorded branch fm/labb4383e95acea-worker
+relaunched labb4383e95acea-worker harness=claude from=claude model=sonnet effort=low backend=tmux endpoint=firstmate:fm-labb4383e95acea-worker worktree=/private/tmp/fmlab.KIwfM6/treehouse/.treehouse/notes-2cec92/1/notes
+rc=0
+### task record after post-fix relaunch
+window=firstmate:fm-labb4383e95acea-worker
+endpoint_task_id=labb4383e95acea-worker
+worktree=/private/tmp/fmlab.KIwfM6/treehouse/.treehouse/notes-2cec92/1/notes
+project=/private/tmp/fmlab.KIwfM6/home/projects/notes
+harness=claude
+kind=ship
+mode=local-only
+yolo=on
+branch=fm/labb4383e95acea-worker
+tasktmp=/tmp/fm-labb4383e95acea-worker
+model=sonnet
+effort=low
+busy_gen=g1791384533.58459.21759
+spawn_gen=s1791384534.57676.6732
+control_relaunch_tx=56859.20261007T144852Z.18651
+traceparent=00-75b4b9c52d29b80ecfd634694ff158ca-c5a3154146008cbb-01
+pr=https://github.com/example/repo/pull/53
+pr_head=0123456789abcdef0123456789abcdef01234567
+### parse
+PARSE OK url=https://github.com/example/repo/pull/53
+### check file still present: /private/tmp/fmlab.KIwfM6/home/state/labb4383e95acea-worker.check.sh
+### forge MERGED; real watcher cycle after the post-fix relaunch
+check: /private/tmp/fmlab.KIwfM6/home/state/labb4383e95acea-worker.check.sh: merged
+rc=0

@@ -1,0 +1,6 @@
+### fixed (HEAD f4cbc12)
+ok - fm-control relaunch: a task with a PR keeps its merge watch armed across the relaunch (trace off)
+ok - fm-control relaunch: a task with a PR keeps its merge watch armed across the relaunch (trace on)
+ok - fm-control relaunch: durable task metadata survives replacement launch publication
+ok - fm-control relaunch: disabling tracing clears metadata and pane context
+exit=0

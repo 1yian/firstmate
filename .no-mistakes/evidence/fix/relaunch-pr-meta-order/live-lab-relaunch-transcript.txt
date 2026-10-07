@@ -1,0 +1,216 @@
+### live lab: worker task record after real fm-pr-check.sh (before relaunch)
+window=firstmate:fm-lab10094f6efa1d-worker
+endpoint_task_id=lab10094f6efa1d-worker
+worktree=/private/tmp/fmlab.MQyI90/treehouse/.treehouse/notes-4602a2/1/notes
+project=/private/tmp/fmlab.MQyI90/home/projects/notes
+harness=claude
+kind=ship
+mode=local-only
+yolo=on
+tasktmp=/tmp/fm-lab10094f6efa1d-worker
+model=sonnet
+effort=low
+busy_gen=g1791382500.24879.20805
+spawn_gen=s1791382501.22873.14067
+pr=https://github.com/example/repo/pull/52
+pr_head=0123456789abcdef0123456789abcdef01234567
+
+### relaunch #1 (trace off): bin/fm-control.sh lab10094f6efa1d-worker relaunch --note ...
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+notice: /private/tmp/fmlab.MQyI90/home/data/lab10094f6efa1d-worker/launch-brief.md records no ship branch; relaunching on the recorded branch fm/lab10094f6efa1d-worker
+relaunched lab10094f6efa1d-worker harness=claude from=claude model=sonnet effort=low backend=tmux endpoint=firstmate:fm-lab10094f6efa1d-worker worktree=/private/tmp/fmlab.MQyI90/treehouse/.treehouse/notes-4602a2/1/notes
+rc=0
+### task record after relaunch #1
+window=firstmate:fm-lab10094f6efa1d-worker
+endpoint_task_id=lab10094f6efa1d-worker
+worktree=/private/tmp/fmlab.MQyI90/treehouse/.treehouse/notes-4602a2/1/notes
+project=/private/tmp/fmlab.MQyI90/home/projects/notes
+harness=claude
+kind=ship
+mode=local-only
+yolo=on
+branch=fm/lab10094f6efa1d-worker
+tasktmp=/tmp/fm-lab10094f6efa1d-worker
+model=sonnet
+effort=low
+busy_gen=g1791383269.48095.14322
+spawn_gen=s1791383270.46519.12899
+control_relaunch_tx=43543.20261007T142747Z.19126
+pr=https://github.com/example/repo/pull/52
+pr_head=0123456789abcdef0123456789abcdef01234567
+
+### parse after relaunch #1 with fm_pr_metadata_identity_parse
+PARSE OK url=https://github.com/example/repo/pull/52
+
+### enable trace: touch config/trace-context; fm_trace_context_session_start (real lib) records the session decision
+on
+9225 on
+### relaunch #2 (trace on)
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+notice: /private/tmp/fmlab.MQyI90/home/data/lab10094f6efa1d-worker/launch-brief.md records no ship branch; relaunching on the recorded branch fm/lab10094f6efa1d-worker
+relaunched lab10094f6efa1d-worker harness=claude from=claude model=sonnet effort=low backend=tmux endpoint=firstmate:fm-lab10094f6efa1d-worker worktree=/private/tmp/fmlab.MQyI90/treehouse/.treehouse/notes-4602a2/1/notes
+rc=0
+### task record after relaunch #2
+window=firstmate:fm-lab10094f6efa1d-worker
+endpoint_task_id=lab10094f6efa1d-worker
+worktree=/private/tmp/fmlab.MQyI90/treehouse/.treehouse/notes-4602a2/1/notes
+project=/private/tmp/fmlab.MQyI90/home/projects/notes
+harness=claude
+kind=ship
+mode=local-only
+yolo=on
+branch=fm/lab10094f6efa1d-worker
+tasktmp=/tmp/fm-lab10094f6efa1d-worker
+model=sonnet
+effort=low
+busy_gen=g1791383288.61212.6245
+spawn_gen=s1791383288.59925.30501
+control_relaunch_tx=58808.20261007T142806Z.15994
+traceparent=00-d05e94e42aec2d8338b5948ab4c16159-bcc8a3f8f394739a-01
+pr=https://github.com/example/repo/pull/52
+pr_head=0123456789abcdef0123456789abcdef01234567
+### parse after relaunch #2
+PARSE OK url=https://github.com/example/repo/pull/52
+
+### forge now reports MERGED; one bounded real watcher cycle: bin/fm-watch-checkpoint.sh --seconds 30
+supervision-host stood down: this session does not own supervision
+rc=1
+### (lab primary's Claude login is expired so its supervision host never ran; opt the lab home out with config/supervision-host-off so the plain watcher runs the cycle)
+check: /private/tmp/fmlab.MQyI90/home/state/lab10094f6efa1d-worker.check.sh: merged
+rc=0
+
+### ADVERSARIAL CONTROL: lab home's bin/fm-spawn.sh swapped to the pre-fix base 990b4b6; forge OPEN; relaunch #3 (trace on, existing traceparent reused)
+error: task lab10094f6efa1d-worker's composer visibly holds pending text; refusing to type the /exit exit command because it would concatenate onto that text. Clear or submit the pending text, then retry 'relaunch'
+error: relaunch of lab10094f6efa1d-worker failed while stopping the old agent, which is still running; its original instructions were restored
+rc=1
+### task record after pre-fix relaunch #3
+window=firstmate:fm-lab10094f6efa1d-worker
+endpoint_task_id=lab10094f6efa1d-worker
+worktree=/private/tmp/fmlab.MQyI90/treehouse/.treehouse/notes-4602a2/1/notes
+project=/private/tmp/fmlab.MQyI90/home/projects/notes
+harness=claude
+kind=ship
+mode=local-only
+yolo=on
+branch=fm/lab10094f6efa1d-worker
+tasktmp=/tmp/fm-lab10094f6efa1d-worker
+model=sonnet
+effort=low
+busy_gen=g1791383288.61212.6245
+spawn_gen=s1791383288.59925.30501
+control_relaunch_tx=58808.20261007T142806Z.15994
+traceparent=00-d05e94e42aec2d8338b5948ab4c16159-bcc8a3f8f394739a-01
+pr=https://github.com/example/repo/pull/52
+pr_head=0123456789abcdef0123456789abcdef01234567
+### parse
+PARSE OK url=https://github.com/example/repo/pull/52
+### forge MERGED; real watcher cycle
+check: rearm-resurface
+rc=0
+
+### (retry: worker idle again) re-arm the merge watch with real fm-pr-check.sh
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no live watcher process holds this home lock (last beat: 14s ago).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  After draining queued wakes, repair missing watcher supervision according to the session-start block for this harness; do not use shell &.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+armed: state/lab10094f6efa1d-worker.check.sh
+### ADVERSARIAL CONTROL: lab bin/fm-spawn.sh = pre-fix base 990b4b6; relaunch #3 (trace on)
+WARNING: watcher still down (same stale episode; last beat: 19s ago, grace 300s) - full banner already printed this episode.
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+notice: /private/tmp/fmlab.MQyI90/home/data/lab10094f6efa1d-worker/launch-brief.md records no ship branch; relaunching on the recorded branch fm/lab10094f6efa1d-worker
+relaunched lab10094f6efa1d-worker harness=claude from=claude model=sonnet effort=low backend=tmux endpoint=firstmate:fm-lab10094f6efa1d-worker worktree=/private/tmp/fmlab.MQyI90/treehouse/.treehouse/notes-4602a2/1/notes
+rc=0
+### task record after pre-fix relaunch #3
+window=firstmate:fm-lab10094f6efa1d-worker
+endpoint_task_id=lab10094f6efa1d-worker
+worktree=/private/tmp/fmlab.MQyI90/treehouse/.treehouse/notes-4602a2/1/notes
+project=/private/tmp/fmlab.MQyI90/home/projects/notes
+harness=claude
+kind=ship
+mode=local-only
+yolo=on
+branch=fm/lab10094f6efa1d-worker
+tasktmp=/tmp/fm-lab10094f6efa1d-worker
+model=sonnet
+effort=low
+busy_gen=g1791383348.86191.646
+spawn_gen=s1791383348.84742.4449
+pr=https://github.com/example/repo/pull/52
+pr_head=0123456789abcdef0123456789abcdef01234567
+control_relaunch_tx=82872.20261007T142906Z.10330
+traceparent=00-d05e94e42aec2d8338b5948ab4c16159-bcc8a3f8f394739a-01
+### parse
+PARSE REJECTED
+### forge MERGED; real watcher cycle
+check: rearm-resurface
+rc=0
+### pre-fix: second real watcher cycle (first one only surfaced the queued rearm wake)
+check: rearm-resurface
+rc=0
+### drain the earlier (post-fix) merge wake so the next cycle polls fresh
+1791383310	1	check	merged-lab10094f6efa1d-worker-https://github.com/example/repo/pull/52	check: merge landed: lab10094f6efa1d-worker https://github.com/example/repo/pull/52 external
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 89693.1791383357.SWF8MT
+WARNING: watcher still down (same stale episode; last beat: 12s ago, grace 300s) - full banner already printed this episode.
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+### pre-fix: real watcher cycle after drain
+check: rearm-resurface
+rc=0
+### ack drained wake: bin/fm-wake-drain.sh --ack-through 1 --recovery-generation 94220.1791383370.vxdrJY
+### pre-fix: real watcher cycle after ack
+check: rejected unauthenticated state checks: /private/tmp/fmlab.MQyI90/home/state/lab10094f6efa1d-worker.check.sh
+rc=0
+
+### RECOVERY: lab bin/fm-spawn.sh restored to the fix (7842d79); relaunch #4 (trace on) of the task whose record the pre-fix relaunch broke
+WARNING: watcher still down (same stale episode; last beat: 43s ago, grace 300s) - full banner already printed this episode.
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+notice: /private/tmp/fmlab.MQyI90/home/data/lab10094f6efa1d-worker/launch-brief.md records no ship branch; relaunching on the recorded branch fm/lab10094f6efa1d-worker
+relaunched lab10094f6efa1d-worker harness=claude from=claude model=sonnet effort=low backend=tmux endpoint=firstmate:fm-lab10094f6efa1d-worker worktree=/private/tmp/fmlab.MQyI90/treehouse/.treehouse/notes-4602a2/1/notes
+rc=0
+window=firstmate:fm-lab10094f6efa1d-worker
+endpoint_task_id=lab10094f6efa1d-worker
+worktree=/private/tmp/fmlab.MQyI90/treehouse/.treehouse/notes-4602a2/1/notes
+project=/private/tmp/fmlab.MQyI90/home/projects/notes
+harness=claude
+kind=ship
+mode=local-only
+yolo=on
+branch=fm/lab10094f6efa1d-worker
+tasktmp=/tmp/fm-lab10094f6efa1d-worker
+model=sonnet
+effort=low
+busy_gen=g1791383421.11941.24027
+spawn_gen=s1791383421.11208.24778
+control_relaunch_tx=10151.20261007T143019Z.15770
+traceparent=00-d05e94e42aec2d8338b5948ab4c16159-bcc8a3f8f394739a-01
+pr=https://github.com/example/repo/pull/52
+pr_head=0123456789abcdef0123456789abcdef01234567
+### parse
+PARSE OK url=https://github.com/example/repo/pull/52
+### forge MERGED; real watcher cycle
+check: rearm-resurface
+rc=0
+### drain queued wakes from the pre-fix episode:
+1791383377	2	check	unauthenticated-state-checks	check: rejected unauthenticated state checks: /private/tmp/fmlab.MQyI90/home/state/lab10094f6efa1d-worker.check.sh
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 96605.1791383377.sgLdMP
+### post-fix: real watcher cycle
+checkpoint: no actionable wake within 30s
+rc=124
+### note: the post-fix cycle authenticated and ran the poll (fake gh logged 'pr view ... --json state'), and the check retired; no new wake because state/lab10094f6efa1d-worker.pr-poll-merge-notified already records this PR's merge notification from relaunch #2's cycle:
+fm-pr-poll-merge-notified-v1
+github
+github.com
+example/repo
+52
+
+0
+### fake gh call log (tail)
+pr view https://github.com/example/repo/pull/52 --json isDraft
+pr view https://github.com/example/repo/pull/52 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/52 --json state -q .state
+pr view https://github.com/example/repo/pull/52 --json isDraft
+pr view https://github.com/example/repo/pull/52 --json headRefOid -q .headRefOid
+pr view https://github.com/example/repo/pull/52 --json state -q .state

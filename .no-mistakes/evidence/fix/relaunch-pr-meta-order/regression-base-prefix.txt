@@ -1,0 +1,5 @@
+### base 990b4b6 (pre-fix bin/fm-spawn.sh)
+not ok - the relaunch left the merge watch unreadable, so the watcher rejected it (unexpected: 'rejected unauthenticated state checks')
+--- output ---
+check: rejected unauthenticated state checks: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-control-relaunch.oZhfWA/pr-watch-off-31513/home/state/rl52.check.sh
+exit=1
