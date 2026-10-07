@@ -5304,6 +5304,8 @@ spawn_record_traceparent() {
     acquired=1
   fi
   SPAWN_META_TMP="$STATE/.$ID.meta.trace.${BASHPID:-$$}"
+  # Insert the carrier before any pr= line rather than appending it, so the
+  # PR identity block stays last for fm_pr_metadata_identity_parse.
   if [ ! -f "$meta" ] || [ ! -w "$meta" ] ||
     ! awk -F= -v tp="traceparent=$SPAWN_TRACEPARENT" '
       $1 == "traceparent" { next }
