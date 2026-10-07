@@ -6,6 +6,7 @@
 # real agent):
 #   1. A same-harness relaunch keeps every identity axis and reuses the SAME
 #      endpoint and worktree - it replaces an agent, it never forks a task.
+#      A task that already has a PR keeps its merge watch armed.
 #   2. A harness switch is one ordinary relaunch: the record follows, the
 #      previous harness's per-task wiring is cleared, and profile axes chosen
 #      for the old harness do not silently carry to the new one.
@@ -488,6 +489,63 @@ test_relaunch_preserves_durable_task_metadata() {
   [ "$(meta_field "$dir" rl19 decisions_reviewed)" = 1 ] \
     || fail "the task decision state must survive relaunch"
   pass "fm-control relaunch: durable task metadata survives replacement launch publication"
+}
+
+# A relaunched task that already has a PR must keep its merge watch: the PR is
+# recorded and the watch armed through the real fm-pr-check.sh, the task is
+# relaunched, and one bounded real watcher cycle must still read the armed poll
+# and report the merge instead of rejecting it as unauthenticated.
+check_relaunch_keeps_an_armed_pr_merge_watch() {
+  local trace=$1 dir out rc url=https://github.com/example/repo/pull/52
+  local head=0123456789abcdef0123456789abcdef01234567
+  dir=$(new_case "pr-watch-$trace" rl52)
+  add_ship_task "$dir" rl52 claude
+  printf '%s\n' "$$" > "$dir/home/state/.lock"
+  printf '%s %s\n' "$$" "$trace" > "$dir/home/state/.trace-context-effective"
+  cat > "$dir/fakebin/gh" <<SH
+#!/usr/bin/env bash
+case " \$* " in
+  *" --json isDraft "*) printf '%s\n' '{"isDraft":false}' ;;
+  *" --json headRefOid "*) printf '%s\n' $head ;;
+  *" --json state "*) printf '%s\n' "\${FM_FAKE_GH_STATE:-OPEN}" ;;
+  *) exit 1 ;;
+esac
+SH
+  chmod +x "$dir/fakebin/gh"
+  out=$(env PATH="$dir/fakebin:$PATH" FM_HOME="$dir/home" \
+    "$ROOT/bin/fm-pr-check.sh" rl52 "$url" 2>&1); rc=$?
+  expect_code 0 "$rc" "the PR should be recorded and its merge watch armed"$'\n'"$out"
+  [ "$(meta_field "$dir" rl52 pr_head)" = "$head" ] \
+    || fail "the PR head should be recorded before the relaunch"
+  # Registration also arms the separate contribution observer, whose forge
+  # reads this stub does not model; drop it so the cycle below exercises only
+  # the merge watch.
+  rm -f "$dir/home/state/contributions.check.sh"
+
+  out=$(run_control "$dir" rl52 relaunch --note "continuing after the PR opened"); rc=$?
+  expect_code 0 "$rc" "relaunching a task with an armed merge watch should succeed"$'\n'"$out"
+  [ -n "$(meta_field "$dir" rl52 control_relaunch_tx)" ] \
+    || fail "the relaunch transaction should be recorded on the republished task record"
+  [ "$(meta_field "$dir" rl52 pr)" = "$url" ] && [ "$(meta_field "$dir" rl52 pr_head)" = "$head" ] \
+    || fail "the PR identity should survive the relaunch"
+  if [ "$trace" = on ]; then
+    fm_trace_context_valid "$(meta_field "$dir" rl52 traceparent)" \
+      || fail "the trace-enabled relaunch should record its trace carrier"
+  fi
+
+  out=$(env PATH="$dir/fakebin:$PATH" FM_HOME="$dir/home" FM_FAKE_DIR="$dir/fake" \
+    FM_FAKE_GH_STATE=MERGED FM_CHECK_INTERVAL=0 FM_POLL=0.05 FM_HEARTBEAT=999999 \
+    FM_SIGNAL_GRACE=0 "$ROOT/bin/fm-watch-checkpoint.sh" --seconds 30 2>&1)
+  assert_not_contains "$out" "rejected unauthenticated state checks" \
+    "the relaunch left the merge watch unreadable, so the watcher rejected it"
+  assert_contains "$out" "rl52.check.sh: merged" \
+    "the watcher should still report the PR merge after the relaunch"
+  pass "fm-control relaunch: a task with a PR keeps its merge watch armed across the relaunch (trace $trace)"
+}
+
+test_relaunch_keeps_an_armed_pr_merge_watch() {
+  check_relaunch_keeps_an_armed_pr_merge_watch off
+  check_relaunch_keeps_an_armed_pr_merge_watch on
 }
 
 test_relaunch_serializes_concurrent_durable_metadata_publication() {
@@ -2506,6 +2564,7 @@ test_relaunch_refuses_before_exit_when_the_composer_holds_pending_text
 test_relaunch_refuses_before_exit_when_the_composer_state_is_unproven
 test_relaunch_from_linked_home_preserves_recorded_worktree
 test_relaunch_preserves_durable_task_metadata
+test_relaunch_keeps_an_armed_pr_merge_watch
 test_relaunch_serializes_concurrent_durable_metadata_publication
 test_disabled_relaunch_clears_prior_trace_context
 test_relaunch_appends_the_progress_note_to_the_instructions
