@@ -28,12 +28,14 @@
 # no-mistakes or database call.
 #
 # Attribution. A task's runs are the runs no-mistakes recorded for the task
-# copy's repository and current branch since that branch was created:
+# copy's repository and task branch since that branch was created:
 #   - repository: the `repo:` line `no-mistakes axi` prints from the task copy,
 #     which is the CLI's own resolution (a pooled worker copy resolves to the
 #     registered primary clone), matched exactly against repos.working_path;
-#   - branch: the task copy's current branch, the one bin/fm-crew-state.sh
-#     reads;
+#   - branch: the task's branch as bin/fm-task-branch-lib.sh resolves it from
+#     the recorded branch= (or the older plain and fm/ names), so a copy that
+#     validation left detached still attributes; only when none resolves does
+#     the task copy's current branch stand in;
 #   - since: the oldest surviving reflog entry of that branch. spawn_gen cannot
 #     bound the task, because a relaunch mints a new one while the same branch
 #     keeps validating. Teardown deletes the branch, so a later task that
