@@ -89,6 +89,8 @@ CONFIG="${FM_CONFIG_OVERRIDE:-$FM_HOME/config}"
 . "$SCRIPT_DIR/fm-pr-lib.sh"
 # shellcheck source=bin/fm-nm-run-lib.sh
 . "$SCRIPT_DIR/fm-nm-run-lib.sh"
+# shellcheck source=bin/fm-task-branch-lib.sh
+. "$SCRIPT_DIR/fm-task-branch-lib.sh"
 
 usage() {
   sed -n '2,/^set -eu$/s/^# \{0,1\}//p' "$0"
@@ -126,7 +128,8 @@ DB=
 REASON=
 if [ -z "$WT" ] || [ ! -d "$WT" ]; then
   REASON="the task copy ${WT:-<unrecorded>} is gone"
-elif ! BRANCH=$(git -C "$WT" symbolic-ref --quiet --short HEAD 2>/dev/null) || [ -z "$BRANCH" ]; then
+elif ! BRANCH=$(fm_task_branch_resolve "$WT" "$ID" "$WT" "$(fm_task_branch_recorded "$META")") \
+    && ! BRANCH=$(git -C "$WT" symbolic-ref --quiet --short HEAD 2>/dev/null) || [ -z "$BRANCH" ]; then
   BRANCH=
   REASON="the task copy is not on a branch"
 elif ! command -v no-mistakes >/dev/null 2>&1; then

@@ -173,6 +173,23 @@ EOF
   pass 'known spend, including failed and cancelled invocations, is attributed to the task that ran it'
 }
 
+test_detached_task_copy_is_attributed_to_its_recorded_branch() {
+  local d out
+  d=$(make_case detached)
+  git -C "$d/wt" checkout -q --detach
+  printf 'branch=fm/task\n' >> "$d/home/state/task.meta"
+  seed_db "$d" current <<EOF
+repo r1 $d/project
+run first r1 fm/task completed 100
+inv first review cold ok 100 10 20 30 40 10 20 30
+EOF
+  out=$(recorded "$d") || fail "record failed for a detached task copy"
+  assert_equals '"no-mistakes-state"' "$(field "$out" .source)" 'a detached task copy still reads spend'
+  assert_equals '"fm/task"' "$(field "$out" .branch)" 'the recorded branch names the detached task'
+  assert_equals '["first"]' "$(field "$out" '[.runs[].id]')" 'the task run is attributed'
+  pass 'a task copy detached at its recorded branch keeps spend attribution'
+}
+
 test_repeated_review_rounds_in_a_resumed_session_are_not_double_counted() {
   local d out
   d=$(make_case resumed)
@@ -346,6 +363,7 @@ test_refusals() {
 }
 
 test_known_spend_including_failed_and_cancelled_is_attributed_to_the_task
+test_detached_task_copy_is_attributed_to_its_recorded_branch
 test_repeated_review_rounds_in_a_resumed_session_are_not_double_counted
 test_absent_spend_is_zero_or_unavailable_never_invented
 test_older_state_without_delta_columns_counts_only_provable_rounds
