@@ -1,0 +1,38 @@
+Live lab ship lifecycle (FM_HOME=$LAB from bin/fm-lab-home.sh, private tmux socket fm-lab, real pi CLI worker, target commit 8402334)
+
+$ bin/fm-brief.sh greet demo --mode local-only   (placeholders then filled)
+22:1. First action: create your task branch, named `<type>/<slug>`: `<type>` is the conventional-commit type that fits this task (feat, fix, refactor, perf, docs, test, chore, ci, build) and `<slug>` is a short kebab-case summary of the change, about 2-5 words and not the task id (for example `fix/mileage-readback`).
+23-   Create and record it with `'/Users/yian/.no-mistakes/worktrees/27c8282ea781/01M49YC9ECGS8VJ6EKQ5AZVJWX/bin/fm-task-branch.sh' create '$LAB/state/greet.meta' <type>/<slug>` rather than plain `git checkout -b`, so firstmate's tools find it.
+
+$ bin/fm-spawn.sh greet $LAB/projects/demo --mode local-only --yolo on --harness pi
+fm-gate-refuse: gate agent lifecycle permitted only against lab home $LAB
+notice: greet ships mode=local-only while the standing posture for demo is no-mistakes - less rigor than the captain's standing posture; proceed only on a current explicit captain instruction or an intake judgment you can state
+spawned greet harness=pi kind=ship mode=local-only yolo=on window=primary:fm-greet worktree=/Users/yian/.treehouse/demo-f270ab/1/demo
+SPAWN_RC=0
+
+--- rendered pi launch (fork plain-composer pin present; captured before teardown removed it):
+pi' --tui-mode regular -e '$LAB/state/greet.pi-ext.ts' -e '<worktree>/.pi/fm-worker-plain-composer.ts' "$('<worktree>/bin/fm-operational-input.sh' encode launch-brief < '$LAB/data/greet/launch-brief.md')"
+
+--- state/greet.status
+done [at=1791338513]: ready in branch chore/add-greeting-file  (captured before teardown)
+meta branch= (recorded by worker via bin/fm-task-branch.sh create): chore/add-greeting-file
+
+$ bin/fm-merge-local.sh greet
+merged chore/add-greeting-file into local main (fddc9c3 -> 7e03f3d) in $LAB/projects/demo
+
+$ git -C <task copy> checkout --detach   -> "## HEAD (no branch)" at 7e03f3d (branch tip)
+$ touch $LAB/config/pipeline-spend; bin/fm-teardown.sh greet
+fm-gate-refuse: gate agent lifecycle permitted only against lab home $LAB
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+teardown: reaping leaked worktree process(es) for greet: 63268 64413
+teardown: force-killing leaked worktree process(es) for greet: 63268
+A new version of treehouse is available: v2.3.0 → v3.1.2
+Run "treehouse update" to update
+
+🌳 Worktree returned to pool.
+teardown greet complete (window primary:fm-greet, worktree /Users/yian/.treehouse/demo-f270ab/1/demo)
+Backlog: greet just finished (this home keeps no markdown backlog at /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lab.WNqxav/data/backlog.md). Update /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lab.WNqxav/data/backlog.md - move greet to Done, keep Done to the 10 most recent, then re-scan Queued and dispatch only work whose blockers are gone and date is due.
+TEARDOWN_RC=0
+
+--- data/pipeline-spend.jsonl record written by teardown for the detached copy:
+{"task": "greet", "spawn_gen": "s1791338502.62479.18032", "source": "unavailable", "reason": "no-mistakes resolved no repository for the task copy: error: repo not initialized (run 'no-mistakes init' first)", "repo": null, "branch": "chore/add-greeting-file", "since": "2026-10-07T02:01:52Z"}

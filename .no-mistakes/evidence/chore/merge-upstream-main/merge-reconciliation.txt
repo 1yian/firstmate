@@ -1,0 +1,13 @@
+$ git merge-base --is-ancestor e06a46f HEAD  (upstream main tip at merge time)
+yes: upstream e06a46f is contained
+$ git merge-base --is-ancestor 98a9e53 HEAD  (fork main)
+yes: fork main contained
+$ git rev-list --count 98a9e53..e06a46f  (upstream commits brought in)
+19
+$ git rev-list --count e06a46f..98a9e53  (fork-only commits kept)
+30
+$ git merge-tree --write-tree HEAD e06a46f  (re-merging upstream yields HEAD tree: no conflict, no change)
+fa840105c44e180d3de8935f78ba21e621a54241
+fa840105c44e180d3de8935f78ba21e621a54241
+$ git grep -nE "^(<<<<<<<|>>>>>>>|=======$)" -- bin docs tests AGENTS.md
+(no conflict markers)

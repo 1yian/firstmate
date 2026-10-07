@@ -1,0 +1,6 @@
+bin/fm-pipeline-spend.sh record against a task copy detached at its recorded branch (real gate worktree, detached at 8402334; branch=chore/merge-upstream-main exists)
+fixed (8402334):
+{"task": "spendlive", "spawn_gen": "g-live1", "source": "unavailable", "reason": "no-mistakes resolved no repository for the task copy: error: repo not initialized (run 'no-mistakes init' first)", "branch": "chore/merge-upstream-main"}
+pre-fix counterfactual (bin/ from merge commit 263f7c7):
+{"task": "spendlive", "spawn_gen": "g-live2", "source": "unavailable", "reason": "the task copy is not on a branch", "branch": null}
+repeat of g-live1 with fixed script: "already recorded spendlive g-live1" (ledger unchanged, 2 lines)

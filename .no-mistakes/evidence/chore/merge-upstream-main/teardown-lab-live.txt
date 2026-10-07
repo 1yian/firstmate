@@ -1,0 +1,37 @@
+===== Dirty ship worktree: teardown refuses and lists the dirt
+$ echo scratch > wt-spend/debug-notes.txt; echo x > wt-spend/tracked.txt; bin/fm-teardown.sh spendt
+fm-gate-refuse: gate agent lifecycle permitted only against lab home $LAB
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+REFUSED: worktree $LAB/wt-spend has uncommitted changes.
+uncommitted changes present (untracked-only leftovers)
+untracked paths (up to 10):
+  debug-notes.txt
+  tracked.txt
+Commit them (or get the captain's explicit OK to discard, then --force).
+rc=1
+
+===== Clean, detached at recorded branch tip, config/pipeline-spend present
+$ git -C wt-spend status -sb; git -C projects/demo branch
+## HEAD (no branch)
+  fix/widget-readback
+* main
+$ grep -E "^(branch|spawn_gen|kind)=" state/spendt.meta
+kind=ship
+spawn_gen=g3
+branch=fix/widget-readback
+$ bin/fm-teardown.sh spendt
+fm-gate-refuse: gate agent lifecycle permitted only against lab home $LAB
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+teardown: reaping leaked worktree process(es) for spendt: 74455
+A new version of treehouse is available: v2.3.0 → v3.1.2
+Run "treehouse update" to update
+
+worktree /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lab.fUFdmx/wt-spend is not managed by treehouse
+error: treehouse return failed for worktree $LAB/wt-spend; teardown aborted
+rc=1
+$ tail -1 data/pipeline-spend.jsonl (selected fields)
+{"task": "spendt", "spawn_gen": "g3", "source": "unavailable", "reason": "no-mistakes resolved no repository for the task copy: error: repo not initialized (run 'no-mistakes init' first)", "branch": "fix/widget-readback", "since": "2026-10-07T01:47:59Z"}
+$ git -C projects/demo branch   (recorded task branch deleted although HEAD was detached)
+* main
+
+Note: the final "treehouse return failed" abort is expected for this hand-made lab worktree, which is not a treehouse slot; spend recording and branch cleanup run before it.

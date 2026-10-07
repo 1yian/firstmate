@@ -1,0 +1,28 @@
+Live drive of bin/fm-update.sh fork model (primary clone with origin + distinct upstream remote,
+both throwaway bare repos under $TMPDIR; FM_HOME = throwaway home; no gate/real fleet repo touched).
+
+--- A) origin main = pre-merge fork tip 98a9e53, upstream main = e06a46f (reproduces the captain's report)
+$ bin/fm-update.sh
+firstmate upstream: skipped: merge conflict, left unchanged
+firstmate: already current
+reread-firstmate: no
+
+--- B) origin main advanced to the reconciled merge 8402334 (this change)
+$ bin/fm-update.sh        # first pass still runs the old 98a9e53 script, then fast-forwards
+firstmate upstream: skipped: merge conflict, left unchanged
+firstmate: updated 98a9e53..8402334 (instructions changed: AGENTS.md, bin, .agents/skills)
+reread-firstmate: yes
+$ bin/fm-update.sh        # second pass, reconciled tree
+firstmate upstream: already current
+firstmate: already current
+reread-firstmate: no
+
+--- D) upstream main refreshed from https://github.com/kunchenguid/firstmate main = 99da16d (1 commit past e06a46f)
+$ bin/fm-update.sh
+firstmate upstream: merged 8402334..ba47b43 and pushed to origin   # (throwaway origin.git)
+firstmate: already current
+reread-firstmate: yes
+$ git log --oneline -3
+ba47b43 Merge remote-tracking branch 'upstream/main'
+8402334 no-mistakes(document): Document recorded-branch spend attribution in pipeline-spend header
+3a768f0 no-mistakes(review): Resolve spend branch via recorded task branch

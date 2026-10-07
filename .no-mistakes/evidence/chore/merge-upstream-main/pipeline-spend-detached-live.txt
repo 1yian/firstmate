@@ -1,0 +1,13 @@
+$ git -C wt-spend status -sb
+## HEAD (no branch)
+$ grep branch state/spendt.meta
+branch=fix/widget-readback
+$ bin/fm-pipeline-spend.sh record spendt   (target commit)
+recorded spendt g1
+rc=0
+{"task": "spendt", "source": "unavailable", "reason": "no-mistakes resolved no repository for the task copy: error: repo not initialized (run 'no-mistakes init' first)", "branch": "fix/widget-readback", "since": "2026-10-07T01:27:18Z", "repo": null}
+
+--- counterfactual: same detached copy, pre-fix script from merge commit 263f7c7, new incarnation g2
+recorded spendt g2
+rc=0
+{"task": "spendt", "source": "unavailable", "reason": "the task copy is not on a branch", "branch": null, "since": null, "repo": null}

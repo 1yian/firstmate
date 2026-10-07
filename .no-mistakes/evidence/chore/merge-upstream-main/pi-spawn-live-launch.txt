@@ -1,0 +1,27 @@
+$ (in lab primary pane, FM_HOME=$LAB) bin/fm-spawn.sh scpi $LAB/projects/demo --scout --harness pi
+fm-gate-refuse: gate agent lifecycle permitted only against lab home $LAB
+WARNING: watcher still down (same stale episode; last beat: never, grace 300s) - full banner already printed this episode.
+spawned scpi harness=pi kind=scout window=primary:fm-scpi worktree=/Users/yian/.treehouse/demo-568a04/1/demo
+
+--- rendered launch script (/tmp/fm-scpi+<hash>/launch.<gen>.sh):
+export COMPACT_ADVISER_DISABLE=1;
+  export FM_TASK_INBOX='/private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lab.fUFdmx/state/scpi.inbox';
+  export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0='/private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lab.fUFdmx/state/scpi.git-hooks';
+  env -u CURSOR_AGENT -u CURSOR_INVOKED_AS -u GEMINI_CLI FM_PI_HARNESS=pi '/Users/yian/.local/bin/pi' --tui-mode regular -e '$LAB/state/scpi.pi-ext.ts' -e '/Users/yian/.no-mistakes/worktrees/27c8282ea781/01M49YC9ECGS8VJ6EKQ5AZVJWX/.pi/fm-worker-plain-composer.ts' "$('/Users/yian/.no-mistakes/worktrees/27c8282ea781/01M49YC9ECGS8VJ6EKQ5AZVJWX/bin/fm-operational-input.sh' encode launch-brief < '$LAB/data/scpi/launch-brief.md')"
+
+--- state/scpi.status
+done [at=1791337488]: repo root contains only .git; report written
+
+--- worker pane (tail):
+ '$LAB/config/fleet-ledger' ] || '/Users/yian/.no-mistakes/worktrees/27c8282ea781/01M49YC9ECGS8VJ6EKQ5AZVJWX/bin/fm-fleet-ledger.sh'
+ appended '$LAB/config' '$LAB/state/scpi.status' >/dev/null 2>&1 || true; }
+ (timeout 10s)
+ (no output)
+ Took 0.0s
+ The repository root has only one entry: .git, a 113-byte pointer file that links this worktree to the main repository. Plain ls printed nothing because the name starts with a dot. ls -la showed it,
+ and there are no other files in the root.
+ The report is at $LAB/data/scpi/report.md. Nothing came up that needs a captain decision. I ran the completion check with --none and it
+ passed, and I added the done line to the status file. The inbox had no messages.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ demo on  HEAD                                                                                                        off | tok/s 72.8 | 1.8%/1.0M (auto) | ↑12 ↓1.6k 󰆼 97.6% R66k W18k | $0.191 (sub)

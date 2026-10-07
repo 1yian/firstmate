@@ -1,0 +1,28 @@
+===== data/shipa/brief.md (key lines)
+22:1. First action: create your task branch, named `<type>/<slug>`: `<type>` is the conventional-commit type that fits this task (feat, fix, refactor, perf, docs, test, chore, ci, build) and `<slug>` is a short kebab-case summary of the change, about 2-5 words and not the task id (for example `fix/mileage-readback`).
+23:   Create and record it with `'/Users/yian/.no-mistakes/worktrees/27c8282ea781/01M49YC9ECGS8VJ6EKQ5AZVJWX/bin/fm-task-branch.sh' create '$LAB/state/shipa.meta' <type>/<slug>` rather than plain `git checkout -b`, so firstmate's tools find it.
+27:# Rules
+28:1. Never push to the default branch. Never merge a PR.
+32:3. Use gh-axi for GitHub operations and the project's own browser tooling for browser operations, defaulting to chrome-devtools-axi only when the project defines none.
+77:     never write into a sibling slot's directory. Rule 2 does not cover this: removing a worktree
+105:When starting no-mistakes, pass `--intent` as only this brief's `## Captain's intent` subsection body, not its heading, plus any later words the captain actually said.
+110:The `--intent` string you pass must be self-sufficient: that string plus the codebase must let a reader reconstruct roughly the same specification, without depending on a separate report, a PR, or context that lives only in this conversation.
+111:When the captain's intent refers to a report, decision, or PR ("do items 1, 2, 3, and 7 of the report"), write the substance of the referenced items into `--intent` in the captain's terms, not only the pointer; that substance is the captain's ask by reference, while Firstmate's build instructions and your own decisions still stay out.
+112:This replaces the no-mistakes skill's advice to enrich `--intent` with decisions and tradeoffs; that advice does not apply to Firstmate-dispatched work.
+===== data/shipb/brief.md (key lines)
+16:You are in a disposable git worktree of demo, at a detached HEAD on a clean copy of its base branch.
+17:Base branch: release-1
+23:1. First action: create your branch: `git checkout -b fix/shipb --`
+25:# Rules
+26:1. Never push to the base branch `release-1` or the default branch (push only your `fix/shipb` branch). Never merge a PR.
+30:3. Use gh-axi for GitHub operations and the project's own browser tooling for browser operations, defaulting to chrome-devtools-axi only when the project defines none.
+73:     never write into a sibling slot's directory. Rule 2 does not cover this: removing a worktree
+93:Ship branch: fix/shipb
+96:When it is implemented and committed, push your branch and open a PR with `gh-axi` that is ready for review, not a draft, against the base branch `release-1` (`--base release-1`), not the repository default.
+===== data/scouta/brief.md (key lines)
+16:You are in a disposable git worktree of demo, at a detached HEAD on a clean copy of its base branch.
+17:Base branch: release-1
+22:# Rules
+23:1. Never push to any remote and never open a PR.
+25:3. Use gh-axi for GitHub operations and the project's own browser tooling for browser operations, defaulting to chrome-devtools-axi only when the project defines none.
+64:     never write into a sibling slot's directory. Rule 2 does not cover this: removing a worktree

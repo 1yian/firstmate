@@ -1,0 +1,2 @@
+ok - known spend, including failed and cancelled invocations, is attributed to the task that ran it
+not ok - a detached task copy still reads spend (expected '"no-mistakes-state"', got '"unavailable"')
