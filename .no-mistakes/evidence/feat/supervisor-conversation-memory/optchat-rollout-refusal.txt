@@ -1,0 +1,18 @@
+=== partial setup: only config/optchat.json exists ===
+$ (cd loader-home && sh rollout.sh)
+refusing: config/optchat.json already exists; inspect it instead
+exit=1
+content unchanged: config/optchat.json
+no new files under config/ data/ (no npm install, no profile writes)
+=== partial setup: only data/optchat/profiles/main/AGENTS.md exists ===
+$ (cd agents-home && sh rollout.sh)
+refusing: data/optchat/profiles/main/AGENTS.md already exists; inspect it instead
+exit=1
+content unchanged: data/optchat/profiles/main/AGENTS.md
+no new files under config/ data/ (no npm install, no profile writes)
+=== partial setup: only data/optchat/profiles/main/config.json exists ===
+$ (cd settings-home && sh rollout.sh)
+refusing: data/optchat/profiles/main/config.json already exists; inspect it instead
+exit=1
+content unchanged: data/optchat/profiles/main/config.json
+no new files under config/ data/ (no npm install, no profile writes)

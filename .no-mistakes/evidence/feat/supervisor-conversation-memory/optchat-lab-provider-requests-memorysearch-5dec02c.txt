@@ -1,0 +1,5 @@
+request 1 pid=59535: tools=[read,bash,edit,write,fm_branch_outcomes,fm_branch_processed,fm_watch_arm_pi,zoom,date,search] keys=messages profile_instructions=true authority=true
+  system: You are OptChat, an AI agent that works for one user in a single chat that never ends. Do the user's tasks yourself, with your tools, following the user's instructions at the end of this prompt: they say who the user is, how their files are organized and how they want work done. Use subagents only w
+  user: <chat> 0+1|user: Remember: the lab release color is amber. 1+1|talk: LAB_ACK_1 memory lab reply. 2+1|user: What is the lab release color? 3+1|talk: RECALLED: the lab release color is amber. 4+1|user: What is the lab release color? 5+1|talk: RECALLED: the lab release color is amber. </chat> What is t
+  assistant: RECALLED: the lab release color is amber.
+  user: What is the lab release color?

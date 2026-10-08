@@ -1,0 +1,11 @@
+request 1: tools=[read,bash,edit,write,fm_branch_outcomes,fm_branch_processed,zoom,date,fm_watch_arm_pi] authority_trailer=true profile_instructions=true
+  user: <chat>
+
+</chat> | Remember: the lab release color is amber.
+request 2: tools=[read,bash,edit,write,fm_branch_outcomes,fm_branch_processed,zoom,date,fm_watch_arm_pi] authority_trailer=true profile_instructions=true
+  user: <chat>
+0+1|user: Remember: the lab release color is amber.
+1+1|talk: LAB_ACK_1 memory lab reply.
+</chat> | Remember: the lab release color is amber.
+  assistant: LAB_ACK_1 memory lab reply.
+  user: What is the lab release color?

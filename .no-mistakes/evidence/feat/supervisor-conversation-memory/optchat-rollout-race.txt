@@ -1,0 +1,11 @@
+=== destination (profile AGENTS.md) created by a concurrent writer after the up-front check ===
+exit=1
+
+
+{"destination":"/private/tmp/fmoc-roll.Tu3l/race/config/optchat/package","reused":false}
+/tmp/fmoc-roll.Tu3l/rollout.sh: line 14: data/optchat/profiles/main/AGENTS.md: cannot overwrite existing file
+--- AGENTS.md after run ---
+# concurrently saved custom instructions
+--- settings / loader written? ---
+AGENTS.md
+ls: /tmp/fmoc-roll.Tu3l/race/config/optchat.json: No such file or directory

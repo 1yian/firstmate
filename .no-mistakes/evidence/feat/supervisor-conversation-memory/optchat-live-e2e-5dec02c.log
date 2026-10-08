@@ -1,0 +1,28 @@
+FM_TEST_BEGIN 2026-10-08T09:51:57Z tests/fm-optchat-live-e2e.test.sh family=live-harness-optin expected_gate_skip=live-capability
+PASS published: connected-window listener and saved-child recovery remain enabled by default
+PASS patched: connected-window listener and saved-child recovery remain enabled by default
+PASS package preparation: published source preserved, pinned separate patch, idempotent destination
+PASS SDK main: no connected-window socket, native connection refused, child recovery and mixed controls disabled
+PASS SDK main: edited instructions remain current across repeated idle and tool-result requests
+PASS SDK main: full current/canonical output, private lossless archive, and search/zoom/read recovery after restart
+PASS SDK main: suppressed notices never enter recall or reappear across return and restart
+PASS SDK main: notification-first, idle, resumed, recall, streaming, policy, canonical records, provider and delegation boundaries
+PASS SDK main: archiving failure stops the next decision and preserves canonical output
+PASS SDK domain: no connected-window socket, native connection refused, child recovery and mixed controls disabled
+PASS SDK domain: edited instructions remain current across repeated idle and tool-result requests
+PASS SDK domain: full current/canonical output, private lossless archive, and search/zoom/read recovery after restart
+PASS SDK domain: suppressed notices never enter recall or reappear across return and restart
+PASS SDK domain: notification-first, idle, resumed, recall, streaming, policy, canonical records, provider and delegation boundaries
+PASS SDK domain: archiving failure stops the next decision and preserves canonical output
+PASS worker: configured supervisor package registers nothing
+PASS project/branch resources: home-bound guard and no-extension loader register no memory
+PASS dependency guard: unexpected source changes refuse preparation and runtime activation, without repair
+PASS CLI launch: automatic discovery and persistent profile, no OptChat exports/flags
+PASS CLI exact-session restart: automatic discovery and persistent profile, no OptChat exports/flags
+PASS CLI recovery: automatic discovery and persistent profile, no OptChat exports/flags
+PASS all real Pi optional-memory scenarios (local scripted providers only)
+PASS: pinned memory integration preserves restart, notifications, lossless recall and Firstmate-only delegation
+FM_TEST_END 2026-10-08T09:52:09Z tests/fm-optchat-live-e2e.test.sh exit=0 duration_ms=12177 gate_skip=false
+FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0 duration_ms=12275
+FM_TEST_SUMMARY_FAMILY family=live-harness-optin count=1 duration_ms=12177 failed=0
+FM_TEST_SLOWEST rank=1 script=tests/fm-optchat-live-e2e.test.sh duration_ms=12177

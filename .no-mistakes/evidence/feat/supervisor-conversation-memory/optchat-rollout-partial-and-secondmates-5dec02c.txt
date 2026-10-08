@@ -1,0 +1,26 @@
+=== cleo home, partial setup: only config/optchat.json pre-exists ===
+refusing: config/optchat.json already exists; inspect it instead
+exit=1
+content after: PRIOR CUSTOMIZATION for cleo
+no new files under config/ data/ (no npm install, no writes)
+=== cnp home, partial setup: only data/optchat/profiles/cnp/AGENTS.md pre-exists ===
+refusing: data/optchat/profiles/cnp/AGENTS.md already exists; inspect it instead
+exit=1
+content after: PRIOR CUSTOMIZATION for cnp
+no new files under config/ data/ (no npm install, no writes)
+=== concierge home, partial setup: only data/optchat/profiles/concierge/config.json pre-exists ===
+refusing: data/optchat/profiles/concierge/config.json already exists; inspect it instead
+exit=1
+content after: PRIOR CUSTOMIZATION for concierge
+no new files under config/ data/ (no npm install, no writes)
+=== fresh cleo secondmate lab home, profile=cleo ===
+exit=0
+{
+  "enabled": true,
+  "package": "config/optchat/package",
+  "memoryHome": "data/optchat",
+  "profile": "cleo",
+  "thinking": "low"
+}
+total 0
+drwx------@ 4 yian  wheel  128 Oct  8 04:52 cleo

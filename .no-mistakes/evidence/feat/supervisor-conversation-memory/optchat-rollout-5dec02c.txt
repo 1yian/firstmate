@@ -1,0 +1,27 @@
+=== fresh lab home (git archive of 5dec02c), documented rollout script, profile=main ===
+
+added 125 packages in 6s
+
+{"destination":"/private/tmp/fmoc-t.glmP/lab/config/optchat/package","reused":false}
+exit=0
+--- created files and modes ---
+600 config/optchat.json
+700 data/optchat
+700 data/optchat/profiles/main
+600 data/optchat/profiles/main/AGENTS.md
+600 data/optchat/profiles/main/config.json
+700 config/optchat/package
+--- config/optchat.json ---
+{
+  "enabled": true,
+  "package": "config/optchat/package",
+  "memoryHome": "data/optchat",
+  "profile": "main",
+  "thinking": "low"
+}
+--- package guard verify ---
+{"package":"pi-optchat","version":"0.7.2","npmIntegrity":"sha512-S3VreOgaLbBIizJfW8lQdOL5pA2p9rS0XnAnJ4tKSOHu+HAeam1PYbptfzFD6EjyXJJsibiMooBFDPsDb8lzfA==","patchSha256":"394252be57d38301b59431374a134f26205b7cb648e0a64f8b3151d4e62455c2"}
+=== repeat run on the same home ===
+refusing: config/optchat.json already exists; inspect it instead
+exit=1
+all three destinations byte-identical after repeat

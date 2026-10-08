@@ -1,0 +1,10 @@
+=== worker launch in the configured home (FM_TASK_ID set), print mode ===
+LAB_ACK_1 memory lab reply.
+activation receipt untouched by worker
+worker request has no OptChat memory prompt
+tools=[read,bash,edit,write,fm_branch_outcomes,fm_branch_processed,fm_watch_arm_pi]
+=== supervisor print-mode launch in same home (no FM_TASK_ID) ===
+RECALLED: the lab release color is amber.
+receipt phase=active profile=main pid=2245 sessionFile=/tmp/fmoc-t.glmP/lab/print-sessions/2026-10-08T09-57-59-730Z_01a11af2-c331-7070-a0d7-c85270723b50.jsonl
+supervisor request carried OptChat memory prompt
+tools=[read,bash,edit,write,fm_branch_outcomes,fm_branch_processed,zoom,date,fm_watch_arm_pi,search]

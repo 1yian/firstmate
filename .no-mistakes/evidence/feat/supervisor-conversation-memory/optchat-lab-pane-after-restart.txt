@@ -1,0 +1,50 @@
+  fm-branch-supervision.ts, fm-calm.ts, fm-discord-bridge.ts, fm-optchat.ts, fm-primary-pi-watch.ts, fm-primary-turnend-guard.ts
+
+
+ OptChat · main · 2 messages
+ Compactor: labfake/fake (low)
+
+
+ Remember: the lab release color is amber.
+
+
+ LAB_ACK_1 memory lab reply.
+
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set -g extended-keys on` to ~/.tmux.conf and restart tmux.
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Update Available
+ New version 1.1.0 is available. Run pi update
+ Changelog: https://pi.dev/changelog
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+ What is the lab release color?
+
+
+ LAB_ACK_2 memory lab reply.
+
+ {
+   "phase": "active",
+   "profile": "main",
+   "memoryHome": "/tmp/fmoc-roll.Tu3l/lab/data/optchat",
+   "packageVersion": "0.7.2",
+   "packagePatchSha256": "394252be57d38301b59431374a134f26205b7cb648e0a64f8b3151d4e62455c2",
+   "sessionId": "01a11ae6-40c8-71bd-89d1-8189c1686811",
+   "sessionFile": "/tmp/fmoc-roll.Tu3l/agent/sessions/--private-tmp-fmoc-roll.Tu3l-lab--/2026-10-08T09-44-19-913Z_01a11ae6-40c8-71bd-89d1-8189c1686811.jsonl",
+   "pid": 43857,
+   "recordedAt": "2026-10-08T09:45:37.202Z",
+   "activatedAt": "2026-10-08T09:45:37.202Z",
+   "compactor": {
+     "provider": "labfake",
+     "model": "fake",
+     "thinking": "low"
+   }
+ }
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/tmp/fmoc-roll.Tu3l/lab
+↑20 ↓10 0.0%/200k (auto)                                                                                                                                              (labfake) fake
+Recall: main

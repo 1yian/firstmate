@@ -1,0 +1,8 @@
+request 1 pid=65725: tools=[] profile_instructions=false
+  system: You are OptChat, an AI agent that works for one user in a single chat that never ends. Do the user's tasks yourself, with your tools, following the user's instructions at the end of this prompt: they say who the user is, how their files are organized and how they want work done. Use subagents only w
+  user: <chat> </chat> Remember: the lab release color is amber.
+request 1 pid=9323: tools=[] profile_instructions=false
+  system: You are OptChat, an AI agent that works for one user in a single chat that never ends. Do the user's tasks yourself, with your tools, following the user's instructions at the end of this prompt: they say who the user is, how their files are organized and how they want work done. Use subagents only w
+  user: <chat> 0+1|user: Remember: the lab release color is amber. 1+1|talk: LAB_ACK_1 memory lab reply. </chat> Remember: the lab release color is amber.
+  assistant: LAB_ACK_1 memory lab reply.
+  user: What is the lab release color?

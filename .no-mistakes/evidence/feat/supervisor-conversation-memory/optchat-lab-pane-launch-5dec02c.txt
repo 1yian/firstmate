@@ -1,0 +1,37 @@
+[Context]
+  AGENTS.md
+[Skills]
+  afk, agent-skill-trigger-index, ahoy, ask-user-authority, away-quiet-supervision, axi, bearings, bootstrap-diagnostics, captain-hold-lifecycle, decision-hold-lifecycle,
+diagnostic-reasoning, firstmate-codexapp, firstmate-coding-guidelines, firstmate-orca, fmx-respond, goldie, grill-me, harness-adapters, higgsfield-brandkit, higgsfield-generate,
+higgsfield-marketplace-cards, higgsfield-product-photoshoot, higgsfield-soul-id, higgsfield-video-explainer, higgsfield-websites, higgsfield-youtube-thumbnail, lavish, no-mistakes,
+operational-home-layout, process-event-sources, project-management, quiet, quota-array-dispatch, scout-completion, secondmate-provisioning, session-start-recovery, ship-landing,
+software-engineering-library, stow, stuck-crewmate-recovery, ui-ux-pro-max, updatefirstmate, validation-supervision, vision
+[Extensions]
+  fm-branch-supervision.ts, fm-calm.ts, fm-discord-bridge.ts, fm-optchat.ts, fm-primary-pi-watch.ts, fm-primary-turnend-guard.ts, labfake.ts
+ OptChat · main · 0 messages
+ Compactor: labfake/fake (low)
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set -g extended-keys on` to ~/.tmux.conf and restart tmux.
+ Remember: the lab release color is amber.
+ LAB_ACK_1 memory lab reply.
+ {
+   "phase": "active",
+   "profile": "main",
+   "memoryHome": "/tmp/fmoc-t.glmP/lab/data/optchat",
+   "packageVersion": "0.7.2",
+   "packagePatchSha256": "394252be57d38301b59431374a134f26205b7cb648e0a64f8b3151d4e62455c2",
+   "sessionId": "01a11aee-9839-7113-b9e6-c747d125e380",
+   "sessionFile": "/tmp/fmoc-t.glmP/lab/sessions/2026-10-08T09-53-26-586Z_01a11aee-9839-7113-b9e6-c747d125e380.jsonl",
+   "pid": 65725,
+   "recordedAt": "2026-10-08T09:54:16.607Z",
+   "activatedAt": "2026-10-08T09:54:16.607Z",
+   "compactor": {
+     "provider": "labfake",
+     "model": "fake",
+     "thinking": "low"
+   }
+ }
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/tmp/fmoc-t.glmP/lab
+21.2%/100k (auto)                                                                                                                                                     (labfake) fake
+Recall: main

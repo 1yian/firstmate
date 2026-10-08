@@ -1,0 +1,37 @@
+=== fresh home (lab copy of target commit 25dd20e): run rollout procedure, profile=main ===
+exit=0
+added 125 packages in 6s
+
+9 packages are looking for funding
+  run `npm fund` for details
+{"destination":"/private/tmp/fmoc-roll.Tu3l/lab/config/optchat/package","reused":false}
+--- created files and modes ---
+600 config/optchat.json
+700 data/optchat
+700 data/optchat/profiles
+700 data/optchat/profiles/main
+600 data/optchat/profiles/main/AGENTS.md
+600 data/optchat/profiles/main/config.json
+700 config/optchat
+700 config/optchat/package
+600 config/optchat/package/firstmate-patch.json
+--- config/optchat.json ---
+{
+  "enabled": true,
+  "package": "config/optchat/package",
+  "memoryHome": "data/optchat",
+  "profile": "main",
+  "thinking": "low"
+}
+--- AGENTS.md ---
+# main
+
+Supervisor conversation recall. Current Firstmate instructions and task records remain authoritative.
+--- profile config.json ---
+{"compactor":{"provider":"unset","model":"unset","thinking":"off"},"subagent":{"provider":"unset","model":"unset","thinking":"off"}}
+--- package guard verify ---
+{"package":"pi-optchat","version":"0.7.2","npmIntegrity":"sha512-S3VreOgaLbBIizJfW8lQdOL5pA2p9rS0XnAnJ4tKSOHu+HAeam1PYbptfzFD6EjyXJJsibiMooBFDPsDb8lzfA==","patchSha256":"394252be57d38301b59431374a134f26205b7cb648e0a64f8b3151d4e62455c2"}
+=== repeat run on the same home ===
+refusing: config/optchat.json already exists; inspect it instead
+exit=1
+all three destinations byte-identical after repeat
