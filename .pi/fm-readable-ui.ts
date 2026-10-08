@@ -61,20 +61,34 @@ const BLOCK_OPENER =
   /^(?:[-+*](?:[ \t]|$)|\d{1,9}[.)](?:[ \t]|$)|>|#{1,6}(?:[ \t]|$)|\||`{3,}|~{3,}|<[A-Za-z!?/]|={2,}|-{2,}|\*{3,}|_{3,})/;
 const MASK = "\u0000";
 
+// The index of the first unescaped `stop` at or after `from`, or -1.
+function unescapedIndex(source: string, from: number, stop: string): number {
+  for (let j = from; j < source.length; j++) {
+    if (source[j] === "\\") j++;
+    else if (source[j] === stop) return j;
+  }
+  return -1;
+}
+
 // The index of the delimiter closing a link destination "(" or a reference label "[" that
-// opened just before `from`, or -1 while it is unfinished. Escapes are skipped, destinations
-// may nest balanced parentheses, and a quoted title may hold any delimiter.
+// opened just before `from`, or -1 while it is unfinished. Escapes are skipped, an angle-bracket
+// destination and a quoted title may hold any delimiter, and a plain destination may nest
+// balanced parentheses.
 function inlineTargetEnd(source: string, from: number, closer: ")" | "]"): number {
+  if (closer === "]") return unescapedIndex(source, from, "]");
   let depth = 1;
+  let first = true;
   for (let j = from; j < source.length; j++) {
     const ch = source[j];
+    const opens = first && !/\s/.test(ch);
+    if (opens) first = false;
     if (ch === "\\") {
       j++;
-    } else if (closer === "]") {
-      if (ch === "]") return j;
+    } else if (ch === "<" && opens) {
+      j = unescapedIndex(source, j + 1, ">");
+      if (j === -1) return -1;
     } else if ((ch === '"' || ch === "'") && /\s/.test(source[j - 1] ?? "")) {
-      j = source.indexOf(ch, j + 1);
-      while (j > 0 && source[j - 1] === "\\") j = source.indexOf(ch, j + 1);
+      j = unescapedIndex(source, j + 1, ch);
       if (j === -1) return -1;
     } else if (ch === "(") {
       depth++;
@@ -150,7 +164,7 @@ function maskInline(source: string, streaming: boolean): string {
       if (after === "(" || after === "[") {
         const end = inlineTargetEnd(source, labelEnd + 2, after === "(" ? ")" : "]");
         if (end === -1) {
-          if (streaming) {
+          if (streaming || after === "(") {
             mask(i, source.length);
             break;
           }
@@ -587,6 +601,14 @@ export default function (pi: ExtensionAPI) {
         if (exporting()) return exportCall(args, theme, context);
         remember(context);
         if (stockMode() || context.expanded) return stockCall(args, theme, context);
+        if (base?.renderCall) {
+          const state = context.state as RowState;
+          try {
+            state.baseCall = base.renderCall(args, theme, { ...context, lastComponent: state.baseCall });
+          } catch {
+            state.baseCall = undefined;
+          }
+        }
         return compactCall(args, theme, context);
       },
       renderResult(result, options, theme, context) {
@@ -600,6 +622,13 @@ export default function (pi: ExtensionAPI) {
           return base.renderResult(result, options, theme, context);
         }
         if (stockMode() || options.expanded) return stockResult(result, options, theme, context);
+        if (base?.renderResult) {
+          try {
+            state.baseResult = base.renderResult(result, options, theme, { ...context, lastComponent: state.baseResult });
+          } catch {
+            state.baseResult = undefined;
+          }
+        }
         return new Container();
       },
     };

@@ -290,6 +290,8 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 const PROSE = "The run finished. Use `npm run build. Then` again only if needed, e.g. after edits. " +
   "See [the guide. Part two](https://example.com/guide) for details! Was that clear? Yes.";
 
+const LINK_PROSE = 'See [guide](<https://example.org/a)b> "First part. Second part") for more. Done.';
+
 export default function (pi: ExtensionAPI): void {
   const faux = createFauxCore({
     api: "readable-ui-faux-api",
@@ -320,6 +322,11 @@ export default function (pi: ExtensionAPI): void {
     fauxAssistantMessage([fauxToolCall("bash", { command: "sleep 30; echo too late" }, { id: "live2" })], { stopReason: "toolUse" }),
     fauxAssistantMessage([fauxText("Stopped.")]),
   ], "hold a command");
+  run("readable-link", [fauxAssistantMessage([fauxText(LINK_PROSE)])], "stream a link");
+  run("readable-elapsed", [
+    fauxAssistantMessage([fauxToolCall("bash", { command: "echo started; sleep 30" }, { id: "live3" })], { stopReason: "toolUse" }),
+    fauxAssistantMessage([fauxText("Stopped.")]),
+  ], "time a command");
 }
 TS
 launch live 100 regular --session-dir "$TMP_ROOT/sessions" -e "$TMP_ROOT/faux-turns.ts" -e "$EXT"
@@ -454,6 +461,45 @@ long=$(raw_screen plainnarrow | node -e 'for (const line of require("node:fs").r
 CHECKED=$((CHECKED + 1))
 pass "$LABEL: registered tools without renderers keep Pi's arguments and preview, and narrow argumentless failures keep their status"
 kill_session plainnarrow
+
+# --- 8. Unfinished link title, and renderer lifecycle across collapse --------------
+launch live2 100 regular --session-dir "$TMP_ROOT/sessions2" -e "$TMP_ROOT/faux-turns.ts" -e "$EXT"
+wait_for live2 '────' || die "the second live session never reached its composer"
+tmux -L "$SOCKET" send-keys -t live2 -l '/readable-link'
+tmux -L "$SOCKET" send-keys -t live2 Enter
+title_frames=0
+split_title=''
+i=0
+while [ "$i" -lt 1200 ]; do
+  frame=$(screen live2)
+  case "$frame" in *'First part.'*) title_frames=$((title_frames + 1)) ;; esac
+  if printf '%s\n' "$frame" | sed 's/^[[:space:]]*//' | grep -q '^Second'; then
+    split_title=$(printf '%s\n' "$frame" | grep -E '^[[:space:]]*Second' | head -1)
+    break
+  fi
+  printf '%s\n' "$frame" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | grep -qxF 'Done.' && break
+  i=$((i + 1))
+  sleep 0.05
+done
+[ -z "$split_title" ] || die "a streaming sentence break landed inside an unfinished link title: $split_title"
+[ "$title_frames" -gt 0 ] || die "no frame caught the link title while it was unfinished; the title case would be vacuous"
+wait_for live2 'Done.' || die "the link reply never finished"
+expect_line live2 'Done.' "the sentence after the link was not on its own line"
+note "$LABEL: link title observed across $title_frames frames without a break inside it"
+
+tmux -L "$SOCKET" send-keys -t live2 -l '/readable-elapsed'
+tmux -L "$SOCKET" send-keys -t live2 Enter
+wait_for live2 '● bash(echo started; sleep 30)' || die "the running command did not draw its row"
+sleep 4
+tmux -L "$SOCKET" send-keys -t live2 C-o
+wait_for live2 'Elapsed' || die "expanding a running command did not show its elapsed time"
+screen live2 | grep -qE 'Elapsed ([3-9]|[1-9][0-9])\.[0-9]s' \
+  || die "a command expanded after running collapsed did not report the time since it started"
+tmux -L "$SOCKET" send-keys -t live2 Escape
+wait_for live2 'Command aborted' || die "the interrupted command did not settle"
+CHECKED=$((CHECKED + 1))
+pass "$LABEL: an unfinished link title stays whole, and a command expanded after running collapsed reports its full elapsed time"
+kill_session live2
 
 [ "$CHECKED" -gt 0 ] || fail "readable transcript guard verified nothing; refusing a vacuous pass"
 pass "live readable transcript guard verified $CHECKED surface(s) on $LABEL"
