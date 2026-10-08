@@ -378,5 +378,82 @@ CHECKED=$((CHECKED + 1))
 pass "$LABEL: the reopened session redraws the same rows and layout while its stored text keeps the original prose"
 kill_session reopened
 
+# --- 7. Registered tools without renderers, and narrow argumentless failures ------
+cat > "$TMP_ROOT/lab-tools.ts" <<'TS'
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+
+export default function (pi: ExtensionAPI): void {
+  for (const name of ["lab_plain", "list_workspace_resources"]) {
+    pi.registerTool({
+      name,
+      label: name,
+      description: "Scripted tool with no renderers.",
+      parameters: { type: "object", properties: {} } as never,
+      execute: async () => ({ content: [{ type: "text", text: "unused" }], details: {} }),
+    });
+  }
+}
+TS
+CANNED_PLAIN="$TMP_ROOT/canned-plain.jsonl"
+node - "$CWD" "$CANNED_PLAIN" <<'JS' || die "could not write the registered-tool session"
+const [cwd, out] = process.argv.slice(2);
+const fs = require("node:fs");
+const t0 = Date.parse("2026-10-08T08:00:00Z");
+const usage = { input: 1, output: 1, cacheRead: 0, cacheWrite: 0, totalTokens: 2, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } };
+const lines = [{ type: "session", version: 3, id: "0199c1a0-0000-7000-8000-00000000f00e", timestamp: new Date(t0).toISOString(), cwd }];
+let n = 0, parent = null;
+const push = (message) => {
+  const id = (++n).toString(16).padStart(8, "0");
+  lines.push({ type: "message", id, parentId: parent, timestamp: new Date(t0 + n * 1000).toISOString(), message: { ...message, timestamp: t0 + n * 1000 } });
+  parent = id;
+};
+push({ role: "user", content: "Run the lab tools." });
+push({ role: "assistant", content: [
+  { type: "toolCall", id: "p1", name: "lab_plain", arguments: { topic: "alpha", depth: 2 } },
+  { type: "toolCall", id: "p2", name: "list_workspace_resources", arguments: {} },
+], api: "anthropic-messages", provider: "anthropic", model: "canned", usage, stopReason: "toolUse" });
+const body = Array.from({ length: 14 }, (_, i) => `plain output line ${i + 1}`).join("\n");
+push({ role: "toolResult", toolCallId: "p1", toolName: "lab_plain", content: [{ type: "text", text: body }], details: {}, isError: false });
+push({ role: "toolResult", toolCallId: "p2", toolName: "list_workspace_resources", content: [{ type: "text", text: "Command timed out after 60 seconds" }], details: {}, isError: true });
+fs.writeFileSync(out, lines.map((line) => JSON.stringify(line)).join("\n") + "\n");
+JS
+reopen_plain() {  # <name> <width> <tui-mode> [extra pi args...]
+  local name=$1 width=$2 mode=$3 copy="$TMP_ROOT/$1.jsonl"
+  shift 3
+  cp "$CANNED_PLAIN" "$copy"
+  launch "$name" "$width" "$mode" --session "$copy" -e "$TMP_ROOT/lab-tools.ts" "$@"
+}
+reopen_plain plainstock 110 regular
+wait_for plainstock 'topic="alpha"' || die "stock Pi did not draw its generic call header with arguments for a registered tool without renderers"
+wait_for plainstock '(4 more lines,' || die "stock Pi did not cut a renderer-less result to its preview"
+kill_session plainstock
+
+printf 'on\n' > "$FM_CONFIG/calm"
+reopen_plain plaincalm 110 regular -e "$CALM" -e "$EXT"
+wait_for plaincalm 'topic="alpha"' || die "Calm on lost the argument-bearing call header of a registered tool without renderers"
+wait_for plaincalm '(4 more lines,' || die "Calm on lost the stock result preview of a registered tool without renderers"
+refuse_text plaincalm 'plain output line 14' "Calm on showed a renderer-less result beyond its stock preview"
+kill_session plaincalm
+printf 'off\n' > "$FM_CONFIG/calm"
+
+reopen_plain plainext 110 regular -e "$EXT"
+wait_for plainext '● lab_plain(' || die "a registered tool without renderers did not collapse to one row"
+tmux -L "$SOCKET" send-keys -t plainext C-o
+wait_for plainext 'plain output line 14' || die "ctrl+o did not show the full renderer-less result"
+for text in 'topic: alpha' 'depth: 2'; do
+  screen plainext | grep -qF -- "$text" || die "an expanded registered tool without renderers lost its arguments (missing: $text)"
+done
+refuse_text plainext 'more lines,' "an expanded renderer-less result kept its preview cut"
+kill_session plainext
+
+reopen_plain plainnarrow 44 fullscreen -e "$EXT"
+wait_for plainnarrow 'after 60s' || die "a narrow argumentless failure lost its timeout meta"
+expect_line plainnarrow '● list_workspace_resources() - timed out' "a narrow argumentless failure did not wrap its status beside the name"
+long=$(raw_screen plainnarrow | node -e 'for (const line of require("node:fs").readFileSync(0, "utf8").split("\n")) if ([...line].length > 44) { process.stdout.write(line); break; }')
+[ -z "$long" ] || die "a narrow argumentless row overflowed 44 columns: $long"
+CHECKED=$((CHECKED + 1))
+pass "$LABEL: registered tools without renderers keep Pi's arguments and preview, and narrow argumentless failures keep their status"
+kill_session plainnarrow
+
 [ "$CHECKED" -gt 0 ] || fail "readable transcript guard verified nothing; refusing a vacuous pass"
 pass "live readable transcript guard verified $CHECKED surface(s) on $LABEL"

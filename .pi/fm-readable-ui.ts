@@ -23,7 +23,7 @@
 //   - /export and /share render stock rows for that one command, as Calm does, so exported
 //     HTML keeps Pi's own call headers and template rendering.
 // docs/pi-readable-ui.md owns installation and the user-facing contract.
-import type { ExtensionAPI, ToolRenderers } from "@earendil-works/pi-coding-agent";
+import { keyHint, type ExtensionAPI, type ToolRenderers } from "@earendil-works/pi-coding-agent";
 import {
   Box,
   Container,
@@ -60,6 +60,30 @@ const SENTENCE_OPEN = /^[\p{Lu}\p{N}"'\u201c\u2018([`*_]/u;
 const BLOCK_OPENER =
   /^(?:[-+*](?:[ \t]|$)|\d{1,9}[.)](?:[ \t]|$)|>|#{1,6}(?:[ \t]|$)|\||`{3,}|~{3,}|<[A-Za-z!?/]|={2,}|-{2,}|\*{3,}|_{3,})/;
 const MASK = "\u0000";
+
+// The index of the delimiter closing a link destination "(" or a reference label "[" that
+// opened just before `from`, or -1 while it is unfinished. Escapes are skipped, destinations
+// may nest balanced parentheses, and a quoted title may hold any delimiter.
+function inlineTargetEnd(source: string, from: number, closer: ")" | "]"): number {
+  let depth = 1;
+  for (let j = from; j < source.length; j++) {
+    const ch = source[j];
+    if (ch === "\\") {
+      j++;
+    } else if (closer === "]") {
+      if (ch === "]") return j;
+    } else if ((ch === '"' || ch === "'") && /\s/.test(source[j - 1] ?? "")) {
+      j = source.indexOf(ch, j + 1);
+      while (j > 0 && source[j - 1] === "\\") j = source.indexOf(ch, j + 1);
+      if (j === -1) return -1;
+    } else if (ch === "(") {
+      depth++;
+    } else if (ch === ")" && --depth === 0) {
+      return j;
+    }
+  }
+  return -1;
+}
 
 function maskRange(chars: string[], start: number, end: number): void {
   for (let i = start; i < end; i++) chars[i] = MASK;
@@ -124,8 +148,7 @@ function maskInline(source: string, streaming: boolean): string {
       }
       const after = source[labelEnd + 1];
       if (after === "(" || after === "[") {
-        const closer = after === "(" ? ")" : "]";
-        const end = source.indexOf(closer, labelEnd + 2);
+        const end = inlineTargetEnd(source, labelEnd + 2, after === "(" ? ")" : "]");
         if (end === -1) {
           if (streaming) {
             mask(i, source.length);
@@ -326,11 +349,8 @@ function metaOf(result: ResultLike, isError: boolean): string {
   return "error";
 }
 
-// Pi's own text for a tool row that has no renderer at all.
-function stockFallbackText(toolName: string, args: unknown, result: ResultLike | undefined, showImages: boolean, theme: ThemeLike): string {
-  let text = theme.fg("toolTitle", theme.bold(toolName));
-  const content = JSON.stringify(args, null, 2);
-  if (content) text += `\n\n${content}`;
+// A result's text, followed by an indicator line per image Pi cannot draw.
+function outputText(result: ResultLike | undefined, showImages: boolean): string {
   let output = resultText(result);
   const images = result?.content.filter((block) => block.type === "image") ?? [];
   if (images.length > 0 && (!getCapabilities().images || !showImages)) {
@@ -343,8 +363,54 @@ function stockFallbackText(toolName: string, args: unknown, result: ResultLike |
       .join("\n");
     output = output ? `${output}\n${indicators}` : indicators;
   }
+  return output;
+}
+
+// Pi's own text for a tool row that has no renderer at all.
+function stockFallbackText(toolName: string, args: unknown, result: ResultLike | undefined, showImages: boolean, theme: ThemeLike): string {
+  let text = theme.fg("toolTitle", theme.bold(toolName));
+  const content = JSON.stringify(args, null, 2);
+  if (content) text += `\n\n${content}`;
+  const output = outputText(result, showImages);
   if (output) text += `\n${output}`;
   return text;
+}
+
+const FALLBACK_PREVIEW_LINES = 10;
+const COLLAPSED_ARGS_CHARS = 100;
+
+// Pi's own call header for a registered tool that has no call renderer: the title, then its
+// arguments as `key=value` pairs, or one `key: value` line each when expanded.
+function callHeaderWithArgs(title: string, args: unknown, theme: ThemeLike, expanded: boolean): string {
+  const header = theme.fg("toolTitle", theme.bold(title));
+  if (args == null) return header;
+  const entries: Array<[string, unknown]> = typeof args === "object" && !Array.isArray(args) ? Object.entries(args) : [["args", args]];
+  if (entries.length === 0) return header;
+  if (expanded) {
+    const lines = entries.map(([key, value]) => {
+      const text = typeof value === "string" ? value : (JSON.stringify(value, null, 2) ?? String(value));
+      return `  ${key}: ${text.replace(/\t/g, "   ").replace(/\r/g, "").split("\n").join("\n    ")}`;
+    });
+    return `${header}\n${theme.fg("muted", lines.join("\n"))}`;
+  }
+  const pairs = entries.map(([key, value]) => `${key}=${JSON.stringify(value) ?? String(value)}`).join(" ");
+  const preview = pairs.length > COLLAPSED_ARGS_CHARS ? `${pairs.slice(0, COLLAPSED_ARGS_CHARS - 3)}...` : pairs;
+  return `${header} ${theme.fg("muted", preview)}`;
+}
+
+// Pi's own result body for a registered tool that has no result renderer: the output, cut to a
+// preview unless expanded.
+function resultFallback(result: ResultLike, expanded: boolean, showImages: boolean, theme: ThemeLike): Component {
+  const output = outputText(result, showImages);
+  if (!output) return new Container();
+  const lines = output.split("\n");
+  const shown = expanded ? lines : lines.slice(0, FALLBACK_PREVIEW_LINES);
+  const remaining = lines.length - shown.length;
+  let text = shown.map((line) => theme.fg("toolOutput", line)).join("\n");
+  if (remaining > 0) {
+    text += `${theme.fg("muted", `\n... (${remaining} more lines,`)} ${keyHint("app.tools.expand", "to expand")}${theme.fg("muted", ")")}`;
+  }
+  return new Text(text, 0, 0);
 }
 
 type ThemeLike = Parameters<NonNullable<ToolRenderers["renderCall"]>>[1];
@@ -444,7 +510,7 @@ export default function (pi: ExtensionAPI) {
       }
       const call = base.renderCall
         ? base.renderCall(args, theme, { ...context, lastComponent: state.baseCall })
-        : new Text(theme.fg("toolTitle", theme.bold(toolName)), 0, 0);
+        : new Text(callHeaderWithArgs(toolName, args, theme, context.expanded), 0, 0);
       state.baseCall = call;
       if (baseSelf) return call;
       const shell = state.shell ?? new Box(1, 1);
@@ -466,8 +532,7 @@ export default function (pi: ExtensionAPI) {
         return new Container();
       }
       if (!base.renderResult) {
-        const text = resultText(result as ResultLike);
-        const body = new Text(text.split("\n").map((line) => theme.fg("toolOutput", line)).join("\n"), 0, 0);
+        const body = resultFallback(result as ResultLike, context.expanded, context.showImages, theme);
         if (baseSelf || !state.shell) return body;
         state.shell.addChild(body);
         return new Container();
@@ -491,20 +556,23 @@ export default function (pi: ExtensionAPI) {
           const meta = finished || isError ? (state.meta ?? (isError ? "error" : "")) : "";
           const metaText = meta ? ` - ${meta}` : "";
           const styledMeta = metaText ? theme.fg(isError ? "error" : "dim", metaText) : "";
-          const name = `${theme.fg("toolTitle", theme.bold(toolName))}(`;
-          const lead = ` ${dot} ${name}`;
+          const styledName = (title: string) => `${theme.fg("toolTitle", theme.bold(title))}(`;
+          const lead = ` ${dot} ${styledName(toolName)}`;
           const subject = subjectOf(args);
           const room = Math.min(SUBJECT_MAX, width - visibleWidth(lead) - 1 - visibleWidth(metaText));
-          if (subject === "" || room >= Math.min(8, visibleWidth(subject))) {
+          if (subject === "" ? room >= 0 : room >= Math.min(8, visibleWidth(subject))) {
             return [truncateToWidth(`${lead}${clip(subject, Math.max(room, 1))})${styledMeta}`, width)];
           }
           // Too narrow for one row: wrap beside the dot, up to three rows, shortening the subject
-          // rather than the status meta.
+          // and then the tool name rather than the status meta.
           const gutter = "   ";
           const inner = Math.max(1, width - gutter.length);
+          const attempts: Array<[string, string]> = [];
+          for (let size = Math.min(SUBJECT_MAX, visibleWidth(subject)); size >= 0; size--) attempts.push([toolName, clip(subject, size)]);
+          for (let size = visibleWidth(toolName) - 1; size >= 1; size--) attempts.push([clip(toolName, size), ""]);
           let lines: string[] = [];
-          for (let size = Math.min(SUBJECT_MAX, visibleWidth(subject)); size >= 1; size--) {
-            lines = wrapTextWithAnsi(`${name}${clip(subject, size)})${styledMeta}`, inner);
+          for (const [title, shown] of attempts) {
+            lines = wrapTextWithAnsi(`${styledName(title)}${shown})${styledMeta}`, inner);
             if (lines.length <= MAX_ROWS) break;
           }
           lines = lines.slice(0, MAX_ROWS);
