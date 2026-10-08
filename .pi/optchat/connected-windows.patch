@@ -1,28 +1,41 @@
 --- a/src/index.ts
 +++ b/src/index.ts
-@@ -43 +43,3 @@
+@@ -43 +43,4 @@
 -export default function optchat(pi: ExtensionAPI) {
-+export interface OptChatCapabilities { connectedWindows?: boolean }
++export interface OptChatCapabilities { connectedWindows?: boolean; transientCustomTypes?: readonly string[] }
 +
 +export default function optchat(pi: ExtensionAPI, capabilities: OptChatCapabilities = {}) {
-@@ -159 +161 @@
++  const transientMessages = new WeakSet<AgentMessage>();
+@@ -95 +98 @@
+-      logMessage(active.memory, message, receipt); logged++;
++      if (!transientMessages.has(message)) logMessage(active.memory, message, receipt); logged++;
+@@ -159 +162 @@
 -      const saved: unknown = existsSync(pending) ? JSON.parse(readFileSync(pending, 'utf8')) : [];
 +      const saved: unknown = capabilities.connectedWindows !== false && existsSync(pending) ? JSON.parse(readFileSync(pending, 'utf8')) : [];
-@@ -170 +172 @@
+@@ -170 +173 @@
 -        deliverReport, text => ctx.ui.notify(text, 'error'), dir, { parentSession: sessionId, usage, builtins: () => loadedBuiltins(pi), settings: () => config, hold: holdReports,
 +        deliverReport, text => ctx.ui.notify(text, 'error'), dir, { recoverHistory: capabilities.connectedWindows !== false, parentSession: sessionId, usage, builtins: () => loadedBuiltins(pi), settings: () => config, hold: holdReports,
-@@ -176 +178 @@
+@@ -176 +179 @@
 -      atomicWrite(pending, JSON.stringify(reports));
 +      if (capabilities.connectedWindows !== false) atomicWrite(pending, JSON.stringify(reports));
-@@ -180 +182,2 @@
+@@ -180 +183,2 @@
 -      closeWindows = await serveWindows(dir, children, () => !stopping && !importing && !pendingImport(dir), deliverReport);
 +      if (capabilities.connectedWindows !== false)
 +        closeWindows = await serveWindows(dir, children, () => !stopping && !importing && !pendingImport(dir), deliverReport);
-@@ -185,2 +188,2 @@
+@@ -185,2 +189,2 @@
 -      if (!pendingImport(dir)) recovery = children.recoverHandoffs().catch(error => ctx.ui.notify(`Handoff recovery: ${errorText(error)}`, 'error'));
 -      setImmediate(() => { if (active?.memory === memory && !pendingImport(dir)) for (const r of queuedReports) sendReport(r.text, r.count); });
 +      if (capabilities.connectedWindows !== false && !pendingImport(dir)) recovery = children.recoverHandoffs().catch(error => ctx.ui.notify(`Handoff recovery: ${errorText(error)}`, 'error'));
 +      if (capabilities.connectedWindows !== false) setImmediate(() => { if (active?.memory === memory && !pendingImport(dir)) for (const r of queuedReports) sendReport(r.text, r.count); });
+@@ -273,2 +277,6 @@
+-    const message = asUser(bounded);
+-    if (message.role === 'user') {
++    const transientType = bounded.role === 'custom' && capabilities.transientCustomTypes?.includes(bounded.customType) ? bounded.customType : undefined;
++    const message: AgentMessage & { optchatTransientType?: string } = bounded.role === 'custom' && transientType
++      ? { role: 'user', content: textContent(bounded.content), timestamp: bounded.timestamp, optchatTransientType: transientType }
++      : asUser(bounded);
++    if (transientType) transientMessages.add(message);
++    if (message.role === 'user' && !transientType) {
 --- a/src/agents.ts
 +++ b/src/agents.ts
 @@ -33 +33 @@

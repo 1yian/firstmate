@@ -122,7 +122,8 @@ async function drive(owner, provider) {
   process.chdir(owner.alias); process.env.FM_HOME = owner.alias; delete process.env.FM_TASK_ID;
   process.env.PI_CODING_AGENT_DIR = path.join(owner.real, "agent");
   const runtime = await ModelRuntime.create({ authPath: path.join(owner.real, "auth.json"), modelsPath: null, modelsStorePath: path.join(owner.real, "catalog.json"), refreshOnCreate: false });
-  const requests = []; const errors = []; let release; let started; let hold = false; let suppress = false;
+  const requests = []; const errors = []; let release; let started; let hold = false;
+  const awayRecord = path.join(owner.real, "state/.afk-contract");
   const memoryRecords = () => fs.readdirSync(path.join(owner.dir, "main")).flatMap(name => fs.readFileSync(path.join(owner.dir, "main", name), "utf8").trim().split("\n").map(line => JSON.parse(line)));
   const child = savedChild(owner);
   runtime.registerProvider(provider, { apiKey: "synthetic", api: "openai-completions", baseUrl: "https://invalid.local", models: [{ id: "fixture", name: "Fixture", reasoning: false, input: ["text"], contextWindow: 100000, maxTokens: 1000, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } }],
@@ -136,7 +137,10 @@ async function drive(owner, provider) {
       assert(declarations.some(tool => tool.name === "zoom"), "model-visible memory tool declaration was lost");
       assert(declarations.some(tool => tool.name === "bash"), "model-visible built-in tool declaration was lost");
       const last = context.messages.at(-1);
-      const text = typeof last?.content === "string" ? last.content : (last?.content || []).filter(part => part.type === "text").map(part => part.text).join("\n");
+      const parts = typeof last?.content === "string" ? [last.content] : (last?.content || []).filter(part => part.type === "text").map(part => part.text);
+      // A rendered memory view can contain earlier fixture requests. Route only
+      // the actual new user input, not historical text injected before it.
+      const text = last?.role === "user" ? parts.at(-1) || "" : parts.join("\n");
       if (hold && text.includes("STREAM_USER")) {
         const events = createAssistantMessageEventStream();
         started();
@@ -144,14 +148,16 @@ async function drive(owner, provider) {
         void deferred.then(() => { hold = false; const result = stream(model, "Streaming work complete.", false); void (async () => { for await (const event of result) events.push(event); events.end(); })(); });
         return events;
       }
+      if (last?.role === "user" && text.includes("INSTRUCTION_TOOL_REFRESH")) return stream(model, [{ type: "toolCall", id: "instruction-tool", name: "bash", arguments: { command: "echo current-instructions" } }], false);
       if (last?.role === "user" && text.includes("SUPPRESS_RUN")) {
+        fs.writeFileSync(awayRecord, "Harmless isolated away posture.\n");
         void session.sendCustomMessage({ customType: "fm-branch-process", content: "SUPPRESSED_TOKEN", display: false }, { triggerTurn: true, deliverAs: "steer" });
         return stream(model, [{ type: "toolCall", id: "suppress-tool", name: "bash", arguments: { command: "echo suppressed-run" } }], false);
       }
       if (last?.role === "user" && text.includes("BOUNDARY_TOOL_OUTPUT")) return stream(model, [{ type: "toolCall", id: "boundary-output", name: "bash", arguments: {
         command: `${JSON.stringify(process.execPath)} -e 'process.stdout.write("x".repeat(29999))'`,
       } }], false);
-      if (last?.role === "user" && text.includes("RECALL_COLOR")) return stream(model, [{ type: "toolCall", id: "recall", name: "zoom", arguments: { id: 2, n: 1 } }], false);
+      if (last?.role === "user" && text.includes("RECALL_COLOR")) return stream(model, [{ type: "toolCall", id: "recall", name: "search", arguments: { text: "release color is amber" } }], false);
       if (last?.role === "user" && text.includes("LONG_TOOL_OUTPUT")) return stream(model, [{ type: "toolCall", id: "long-output", name: "bash", arguments: {
         command: `${JSON.stringify(process.execPath)} -e 'process.stdout.write("HEAD_LONG_RESULT\\n"+"a".repeat(24000)+"\\nMIDDLE_REQUIRED_DECISION\\n"+"b".repeat(24000)+"\\nTAIL_LONG_RESULT\\n")'`,
       } }], false);
@@ -173,7 +179,7 @@ async function drive(owner, provider) {
     const loader = new DefaultResourceLoader({ cwd: owner.alias, agentDir: path.join(owner.real, "agent"), settingsManager: settings,
       noExtensions: true, noSkills: true, noPromptTemplates: true, noThemes: true, noContextFiles: true,
       agentsFilesOverride: () => ({ agentsFiles: [{ path: path.join(owner.real, "AGENTS.md"), content: "FIRSTMATE_CONTEXT_TOKEN: current policy, not recalled approval." }] }),
-      extensionFactories: [pi => { pi.on("context", event => suppress
+      extensionFactories: [pi => { pi.on("context", event => fs.existsSync(awayRecord)
         ? { messages: event.messages.filter(message => !(message.role === "custom" && message.customType === "fm-branch-process")) } : undefined); }],
       additionalExtensionPaths: [path.join(owner.alias, ".pi/extensions/fm-optchat.ts")] });
     await loader.reload(); assert.deepEqual(loader.getExtensions().errors, []);
@@ -189,15 +195,15 @@ async function drive(owner, provider) {
     assert.equal(fs.readFileSync(child.pendingReports, "utf8"), child.reportBytes, "disabled recovery consumed/rewrote pending child reports");
   }
   async function close() { await session.extensionRunner.emit({ type: "session_shutdown", reason: "quit" }); session.dispose(); }
-  async function notify(token, type = "fm-branch-process") {
+  async function notify(token, type = "fm-branch-process", expectedRequests = 1) {
     const n = requests.length;
     await session.sendCustomMessage({ customType: type, content: token, display: false }, { triggerTurn: true, deliverAs: "followUp" });
     await session.waitForIdle();
-    const additions = requests.slice(n); assert.equal(additions.length, 1);
+    const additions = requests.slice(n); assert.equal(additions.length, expectedRequests);
     const request = additions[0]; assert(getCurrentSystemPrompt(request).includes("FIRSTMATE_CONTEXT_TOKEN"));
     assert(getCurrentSystemPrompt(request).includes("<firstmate_memory_authority>"));
     assert.equal(request.filter(message => message.role !== "system" && JSON.stringify(message.content).includes(token)).length, 1);
-    assert(JSON.stringify(request.at(-1).content).includes(token));
+    assert(JSON.stringify(additions[0].at(-1).content).includes(token));
   }
   const manager = SessionManager.create(owner.alias, path.join(owner.real, "sessions"));
   await open(manager);
@@ -213,6 +219,19 @@ async function drive(owner, provider) {
   const refreshed = getCurrentSystemPrompt(requests.at(-1));
   assert(refreshed.includes("FRESH_INSTRUCTION_TOKEN"), "idle notification ignored saved profile instructions");
   assert.equal(refreshed.split("<instructions>").length, 2); assert.equal(refreshed.split("Existing Firstmate task records").length, 2);
+  const beforeRefreshTools = requests.length;
+  await notify("INSTRUCTION_TOOL_REFRESH_ONE", "fm-branch-process", 2);
+  await notify("INSTRUCTION_REFRESH_AGAIN");
+  assert(requests.slice(beforeRefreshTools).every(request => getCurrentSystemPrompt(request).includes("FRESH_INSTRUCTION_TOKEN")), "instructions reverted on a later idle/tool request");
+  fs.writeFileSync(path.join(owner.dir, "AGENTS.md"), fs.readFileSync(path.join(owner.dir, "AGENTS.md"), "utf8").replace("FRESH_INSTRUCTION_TOKEN", "LATEST_INSTRUCTION_TOKEN"));
+  const beforeLatest = requests.length;
+  await notify("INSTRUCTION_TOOL_REFRESH_TWO", "fm-branch-process", 2);
+  await notify("INSTRUCTION_REFRESH_LATEST");
+  assert(requests.slice(beforeLatest).every(request => {
+    const prompt = getCurrentSystemPrompt(request);
+    return prompt.includes("LATEST_INSTRUCTION_TOKEN") && !prompt.includes("FRESH_INSTRUCTION_TOKEN") && prompt.split("<instructions>").length === 2;
+  }), "a second profile edit reverted or duplicated instructions");
+  console.log(`PASS SDK ${owner.profile}: edited instructions remain current across repeated idle and tool-result requests`);
   const saved = manager.getSessionFile(); await close();
   await open(SessionManager.open(saved)); await notify("RESTART_TOKEN");
   await session.prompt("RECALL_COLOR");
@@ -244,15 +263,28 @@ async function drive(owner, provider) {
   assert(boundaryExcerpt, "a result clipped only by its tool-name prefix had no lossless archive");
   const boundaryFile = JSON.parse(boundaryExcerpt.text.match(/Complete tool result: ("[^"\n]+")/)[1]);
   assert.deepEqual(JSON.parse(fs.readFileSync(boundaryFile, "utf8")), JSON.parse(JSON.stringify(boundary)));
-  suppress = true;
   const beforeSuppressed = requests.length;
   await session.prompt("SUPPRESS_RUN"); await session.waitForIdle();
-  suppress = false;
   const suppressedRequests = requests.slice(beforeSuppressed);
   assert.equal(suppressedRequests.length, 2, "suppressed notification changed the number of model decisions");
   assert(suppressedRequests.every(request => !request.some(message => message.role !== "system" && JSON.stringify(message.content).includes("SUPPRESSED_TOKEN"))), "recall restored a notification Pi's context filter removed");
   assert.equal(suppressedRequests[1].at(-1).role, "toolResult");
   assert(session.messages.some(message => message.role === "custom" && message.content === "SUPPRESSED_TOKEN"), "canonical notification record was changed");
+  assert(!memoryRecords().some(entry => entry.text.includes("SUPPRESSED_TOKEN")), "suppressed notice was journaled as conversation memory");
+  const beforeCrossTurn = requests.length;
+  await session.prompt("Continue harmless user work while the away record still exists.");
+  const beforeUserPrefix = requests.length;
+  await session.prompt("[firstmate] Operational notification (fm-branch-process), not a user approval:\nUSER_AUTHORED_PREFIX_TOKEN");
+  assert.equal(requests.length - beforeUserPrefix, 1, "a user-authored lookalike was incorrectly suppressed");
+  assert(memoryRecords().some(entry => entry.kind === "user" && entry.text.includes("USER_AUTHORED_PREFIX_TOKEN")), "ordinary user input was excluded from memory by its prefix");
+  fs.unlinkSync(awayRecord);
+  await session.prompt("Continue harmless user work after returning.");
+  await close(); await open(SessionManager.open(saved));
+  await session.prompt("Recall harmless user work after exact-session reopening.");
+  assert(requests.slice(beforeCrossTurn).every(request => !JSON.stringify(request).includes("SUPPRESSED_TOKEN")), "suppressed notice reappeared through cross-turn memory or restart");
+  assert(!memoryRecords().some(entry => entry.text.includes("SUPPRESSED_TOKEN")));
+  assert(session.messages.some(message => message.role === "custom" && message.content === "SUPPRESSED_TOKEN"));
+  console.log(`PASS SDK ${owner.profile}: suppressed notices never enter recall or reappear across return and restart`);
   hold = true; let ready; const inFlight = new Promise(resolve => { ready = resolve; }); started = ready;
   const running = session.prompt("STREAM_USER"); await inFlight;
   const before = requests.length;

@@ -1,13 +1,24 @@
 // Optional supervisor-only conversation recall. Configured once in FM_HOME/config/optchat.json;
 // Pi project discovery re-loads this extension on normal launch, restart and recovery.
-// Configuration schema and setup: docs/configuration.md, Optional Pi supervisor memory.
-// Prepare the pinned pi-optchat@0.7.2 dependency patch and profile locally before enabling.
+// Home-local config example (relative paths resolve against FM_HOME):
+// {"enabled":true,"package":"config/optchat/package","memoryHome":"data/optchat","profile":"main","thinking":"low"}
+// The fixed profile must already exist at memoryHome/profiles/profile with AGENTS.md
+// and upstream profile settings. No earlier sessions are imported by this loader.
+// compactorModel optionally selects a model id on the active supervisor's provider;
+// thinking defaults to low (accepted levels are declared in Config below).
+// Prepare pinned pi-optchat@0.7.2 locally with .pi/optchat/package.mjs --help before
+// enabling. Each supervisor owns its own config/profile; never overwrite one.
+// Activation receipts are private state/optchat-activation.json, current pid/session
+// only. Loaded is initialization; active is a successful projection, not inference.
+// Long-result archives are retained profile-local at firstmate-results/ (0700/0600).
+// Transport notices stay canonical but are not journaled into conversation recall.
+// Set enabled:false and restart to disable without deleting history or archives.
 // No package download, account change, alternative delegation, or history import happens here.
 import { existsSync, readFileSync, writeFileSync, renameSync, mkdirSync, realpathSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { withFirstmateOptChat } from "./lib/fm-optchat-compat.ts";
+import { withFirstmateOptChat, operationalTypes } from "./lib/fm-optchat-compat.ts";
 
 interface Config {
   enabled: true;
@@ -104,7 +115,7 @@ export default async function firstmateOptChat(pi: ExtensionAPI): Promise<void> 
       subagent: { provider: ctx.model.provider, model: ctx.model.id, thinking: "off" } });
     activatedAt = undefined;
   };
-  await optchat(withFirstmateOptChat(pi, {
+  const integration = withFirstmateOptChat(pi, {
     profile: config.profile,
     instructionSection: () => `${profiles.instructions(profileDir)}\n\n${guidance.IMPORT_GUIDANCE}`,
     textContent: transcript.textContent,
@@ -113,7 +124,8 @@ export default async function firstmateOptChat(pi: ExtensionAPI): Promise<void> 
     toolTextLimit: memory.CAP,
     prepare,
     receipt,
-  }), { connectedWindows: false });
+  });
+  await optchat(integration, { connectedWindows: false, transientCustomTypes: operationalTypes });
   pi.registerCommand("firstmate-memory", {
     description: "Show this supervisor's conversation-memory profile and activation receipt",
     handler: async (_args, ctx) => {
