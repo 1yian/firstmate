@@ -186,7 +186,7 @@ async function drive(owner, provider) {
     const extension = loader.getExtensions().extensions.find(item => item.path.endsWith("fm-optchat.ts"));
     assert(!extension.tools.has("spawn")); assert(!extension.tools.has("tell"));
     assert(!extension.commands.has("complete")); assert(!extension.commands.has("tell-main"));
-    session = (await createAgentSession({ cwd: owner.alias, agentDir: path.join(owner.real, "agent"), modelRuntime: runtime, model: runtime.getModel(provider, "fixture"), settingsManager: settings, resourceLoader: loader, sessionManager: manager, tools: ["zoom", "date", "search", "bash", "read"] })).session;
+    session = (await createAgentSession({ cwd: owner.alias, agentDir: path.join(owner.real, "agent"), modelRuntime: runtime, model: runtime.getModel(provider, "fixture"), settingsManager: settings, resourceLoader: loader, sessionManager: manager })).session;
     await session.bindExtensions({ onError: error => errors.push(error) });
     assert(!fs.existsSync(path.join(owner.dir, "windows.sock")));
     assert.equal(await connection(path.join(owner.dir, "windows.sock")), "ENOENT");
@@ -211,7 +211,14 @@ async function drive(owner, provider) {
   for (const panel of ["usage", "activity", "agents", "model"]) await session.prompt(`/optchat ${panel}`);
   assert.equal(requests.length, 0, "mixed agent-control inspector was reached");
   console.log(`PASS SDK ${owner.profile}: no connected-window socket, native connection refused, child recovery and mixed controls disabled`);
+  const notificationFirst = request => {
+    const prompt = getCurrentSystemPrompt(request);
+    assert(prompt.includes("search(text) finds"), "notification-first request omitted the configured memory-search prompt");
+    assert(prompt.includes("conversational continuity"), "notification-first request omitted the configured continuity prompt");
+    assert(getCurrentSystemMessage(request)?.toolsAdded?.some(tool => tool.name === "search"), "notification-first request omitted the configured memory-search tool");
+  };
   await notify("STARTUP_ONLY_TOKEN", "firstmate-sessionstart-nudge");
+  notificationFirst(requests.at(-1));
   await session.prompt("The release color is amber. " + "Harmless original detail. ".repeat(35));
   await notify("IDLE_TOKEN");
   fs.appendFileSync(path.join(owner.dir, "AGENTS.md"), "FRESH_INSTRUCTION_TOKEN: saved after the last ordinary input.\n");
@@ -234,6 +241,7 @@ async function drive(owner, provider) {
   console.log(`PASS SDK ${owner.profile}: edited instructions remain current across repeated idle and tool-result requests`);
   const saved = manager.getSessionFile(); await close();
   await open(SessionManager.open(saved)); await notify("RESTART_TOKEN");
+  notificationFirst(requests.at(-1));
   await session.prompt("RECALL_COLOR");
   assert(session.messages.some(message => message.role === "toolResult" && message.toolName === "zoom" && JSON.stringify(message.content).includes("release color is amber")));
   await session.prompt("LONG_TOOL_OUTPUT");

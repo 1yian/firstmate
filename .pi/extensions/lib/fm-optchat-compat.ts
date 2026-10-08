@@ -11,7 +11,8 @@ interface Hooks {
   profile: string;
   instructionSection(): string;
   textContent(content: unknown): string;
-  memoryPrompt: string;
+  memoryPrompt(): string;
+  memorySearch(): boolean;
   resultDirectory: string;
   toolTextLimit: number;
   prepare(ctx: ExtensionContext): void;
@@ -152,7 +153,11 @@ export function withFirstmateOptChat(pi: ExtensionAPI, hooks: Hooks): ExtensionA
             ? { ...event, message: projectResult(event.message, ctx, hooks) } : event,
           projectContext(ctx, type === "session_start", errors));
           if (errors.length) throw new Error(`Supervisor conversation memory could not activate: ${errors.join("; ")}`);
-          if (type === "session_start") hooks.receipt(ctx, "loaded");
+          if (type === "session_start") {
+            const tools = target.getActiveTools(), search = hooks.memorySearch();
+            if (tools.includes("search") !== search) target.setActiveTools(search ? [...tools, "search"] : tools.filter(name => name !== "search"));
+            hooks.receipt(ctx, "loaded");
+          }
           if (type === "before_agent_start") {
             const section = event.systemPromptOptions?.sections?.instructions;
             sourceInstructions = section === undefined ? undefined : instructionBlock(section);
@@ -175,7 +180,7 @@ export function withFirstmateOptChat(pi: ExtensionAPI, hooks: Hooks): ExtensionA
             if (!prompt) {
               const policy = ctx.getSystemPrompt();
               if (!policy) { ctx.abort(); throw new Error("No current supervisor policy for conversation memory"); }
-              prompt = `${hooks.memoryPrompt}\n\n${policy}\n\n${instructions}`;
+              prompt = `${hooks.memoryPrompt()}\n\n${policy}\n\n${instructions}`;
             } else {
               // The matching baseline belongs to upstream's cache, not the response.
               // Only before_agent_start updates it, never an idle/tool request.

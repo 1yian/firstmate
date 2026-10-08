@@ -13,6 +13,8 @@
 // Long-result archives are retained profile-local at firstmate-results/ (0700/0600).
 // Transport notices stay canonical but are not journaled into conversation recall.
 // Set enabled:false and restart to disable without deleting history or archives.
+// Setup and the required main-owned primary/cleo/cnp/concierge rollout with activation
+// verification: docs/configuration.md, Rollout to the primary and secondmate homes.
 // No package download, account change, alternative delegation, or history import happens here.
 import { existsSync, readFileSync, writeFileSync, renameSync, mkdirSync, realpathSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -73,13 +75,15 @@ export default async function firstmateOptChat(pi: ExtensionAPI): Promise<void> 
   const profileDir = resolve(memoryHome, "profiles", config.profile);
   if (!existsSync(resolve(profileDir, "AGENTS.md"))) throw new Error(`Install the ${config.profile} conversation-memory profile before activation`);
   process.env.OPTCHAT_HOME = memoryHome;
-  const optchat = (await import(pathToFileURL(resolve(packageRoot, "src/index.ts")).href)).default;
+  const { default: optchat, promptFor } = await import(pathToFileURL(resolve(packageRoot, "src/index.ts")).href) as {
+    default: unknown; promptFor(prompt: string, settings: ProfileSettings): string;
+  };
   const profiles = await import(pathToFileURL(resolve(packageRoot, "src/profiles.ts")).href) as Profiles;
   const prompts = await import(pathToFileURL(resolve(packageRoot, "src/prompts.ts")).href) as { MASTER: string; VIEW_DOC: string };
   const memory = await import(pathToFileURL(resolve(packageRoot, "src/memory.ts")).href) as { CAP: number };
   const transcript = await import(pathToFileURL(resolve(packageRoot, "src/transcript.ts")).href) as { textContent(content: unknown): string };
   const guidance = await import(pathToFileURL(resolve(packageRoot, "src/import/guidance.ts")).href) as { IMPORT_GUIDANCE: string };
-  if (typeof optchat !== "function" || typeof profiles.loadConfig !== "function" || typeof prompts.VIEW_DOC !== "string" ||
+  if (typeof optchat !== "function" || typeof profiles.loadConfig !== "function" || typeof promptFor !== "function" || typeof prompts.VIEW_DOC !== "string" ||
       !Number.isSafeInteger(memory.CAP) || memory.CAP < 1024 || typeof transcript.textContent !== "function" ||
       typeof guidance.IMPORT_GUIDANCE !== "string") {
     throw new Error("The installed conversation-memory package does not expose the supported interface");
@@ -119,7 +123,8 @@ export default async function firstmateOptChat(pi: ExtensionAPI): Promise<void> 
     profile: config.profile,
     instructionSection: () => `${profiles.instructions(profileDir)}\n\n${guidance.IMPORT_GUIDANCE}`,
     textContent: transcript.textContent,
-    memoryPrompt: `${prompts.MASTER}\n\n${prompts.VIEW_DOC}`,
+    memoryPrompt: () => promptFor(`${prompts.MASTER}\n\n${prompts.VIEW_DOC}`, profiles.loadConfig(profileDir)),
+    memorySearch: () => profiles.loadConfig(profileDir).memorySearch === true,
     resultDirectory: resolve(profileDir, "firstmate-results"),
     toolTextLimit: memory.CAP,
     prepare,

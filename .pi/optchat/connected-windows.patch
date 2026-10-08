@@ -1,5 +1,8 @@
 --- a/src/index.ts
 +++ b/src/index.ts
+@@ -39 +39 @@
+-const promptFor = (prompt: string, { previousExchange, memorySearch }: ProfileConfig) =>
++export const promptFor = (prompt: string, { previousExchange, memorySearch }: ProfileConfig) =>
 @@ -43 +43,4 @@
 -export default function optchat(pi: ExtensionAPI) {
 +export interface OptChatCapabilities { connectedWindows?: boolean; transientCustomTypes?: readonly string[] }
