@@ -48,6 +48,7 @@ It also makes the archive directory unavailable and proves there is no follow-up
 Physical-directory aliases are exercised so macOS path aliases do not silently prevent activation.
 The published and default-enabled patched counterfactuals expose an accepting native local socket, recover a saved connected-child handoff, adopt an old child transcript, and replay a pending child report.
 Configured supervisor sessions instead have no window socket, refuse a native connection, preserve the unfinished child record and pending-report journal unchanged, and do not adopt the old child transcript or make a recovery model request.
+A result clipped only by its tool-name prefix is archived, a processing notification removed by a context filter during a tool-using run does not reach the next request while the canonical record stays, and profile instructions saved before an idle notification reach that notification's request.
 Mixed agent-control panels are blocked, and every scripted main request checks that memory/built-in tool declarations, schemas, and upstream system timestamp survive the authority trailer.
 Changed package sources and versions refuse preparation, while runtime discovery refuses a changed prepared dependency without an activation receipt.
 
@@ -55,6 +56,7 @@ Pi-signed shares the documented Pi extension API, but its separate executable wa
 The integration is Pi-only: OMP discovers `.omp/extensions/` rather than `.pi/extensions/`, and the other supported primary tools do not discover these Pi project extensions.
 Runtime endpoint backends are not changed; the proof concerns Pi resources and exact session-file reopening, not any backend's lifecycle operation.
 No previous session bulk import, operational installation, supervised restart, live UI compatibility, or remote provider transport is claimed.
+The primary, cleo, cnp and concierge home rollout is a required, separate main-owned step with its own receipt verification in [configuration](../configuration.md#rollout-to-the-primary-and-secondmate-homes); this record does not show it has happened.
 
 ## Harness detection precedence
 

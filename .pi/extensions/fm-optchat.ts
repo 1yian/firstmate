@@ -66,8 +66,11 @@ export default async function firstmateOptChat(pi: ExtensionAPI): Promise<void> 
   const profiles = await import(pathToFileURL(resolve(packageRoot, "src/profiles.ts")).href) as Profiles;
   const prompts = await import(pathToFileURL(resolve(packageRoot, "src/prompts.ts")).href) as { MASTER: string; VIEW_DOC: string };
   const memory = await import(pathToFileURL(resolve(packageRoot, "src/memory.ts")).href) as { CAP: number };
+  const transcript = await import(pathToFileURL(resolve(packageRoot, "src/transcript.ts")).href) as { textContent(content: unknown): string };
+  const guidance = await import(pathToFileURL(resolve(packageRoot, "src/import/guidance.ts")).href) as { IMPORT_GUIDANCE: string };
   if (typeof optchat !== "function" || typeof profiles.loadConfig !== "function" || typeof prompts.VIEW_DOC !== "string" ||
-      !Number.isSafeInteger(memory.CAP) || memory.CAP < 1024) {
+      !Number.isSafeInteger(memory.CAP) || memory.CAP < 1024 || typeof transcript.textContent !== "function" ||
+      typeof guidance.IMPORT_GUIDANCE !== "string") {
     throw new Error("The installed conversation-memory package does not expose the supported interface");
   }
   let compactor: ProfileSettings["compactor"] | undefined;
@@ -103,7 +106,8 @@ export default async function firstmateOptChat(pi: ExtensionAPI): Promise<void> 
   };
   await optchat(withFirstmateOptChat(pi, {
     profile: config.profile,
-    instructions: () => profiles.instructions(profileDir),
+    instructionSection: () => `${profiles.instructions(profileDir)}\n\n${guidance.IMPORT_GUIDANCE}`,
+    textContent: transcript.textContent,
     memoryPrompt: `${prompts.MASTER}\n\n${prompts.VIEW_DOC}`,
     resultDirectory: resolve(profileDir, "firstmate-results"),
     toolTextLimit: memory.CAP,

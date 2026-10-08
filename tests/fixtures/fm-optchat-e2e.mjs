@@ -122,7 +122,8 @@ async function drive(owner, provider) {
   process.chdir(owner.alias); process.env.FM_HOME = owner.alias; delete process.env.FM_TASK_ID;
   process.env.PI_CODING_AGENT_DIR = path.join(owner.real, "agent");
   const runtime = await ModelRuntime.create({ authPath: path.join(owner.real, "auth.json"), modelsPath: null, modelsStorePath: path.join(owner.real, "catalog.json"), refreshOnCreate: false });
-  const requests = []; const errors = []; let release; let started; let hold = false;
+  const requests = []; const errors = []; let release; let started; let hold = false; let suppress = false;
+  const memoryRecords = () => fs.readdirSync(path.join(owner.dir, "main")).flatMap(name => fs.readFileSync(path.join(owner.dir, "main", name), "utf8").trim().split("\n").map(line => JSON.parse(line)));
   const child = savedChild(owner);
   runtime.registerProvider(provider, { apiKey: "synthetic", api: "openai-completions", baseUrl: "https://invalid.local", models: [{ id: "fixture", name: "Fixture", reasoning: false, input: ["text"], contextWindow: 100000, maxTokens: 1000, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } }],
     streamSimple(model, context) {
@@ -143,6 +144,13 @@ async function drive(owner, provider) {
         void deferred.then(() => { hold = false; const result = stream(model, "Streaming work complete.", false); void (async () => { for await (const event of result) events.push(event); events.end(); })(); });
         return events;
       }
+      if (last?.role === "user" && text.includes("SUPPRESS_RUN")) {
+        void session.sendCustomMessage({ customType: "fm-branch-process", content: "SUPPRESSED_TOKEN", display: false }, { triggerTurn: true, deliverAs: "steer" });
+        return stream(model, [{ type: "toolCall", id: "suppress-tool", name: "bash", arguments: { command: "echo suppressed-run" } }], false);
+      }
+      if (last?.role === "user" && text.includes("BOUNDARY_TOOL_OUTPUT")) return stream(model, [{ type: "toolCall", id: "boundary-output", name: "bash", arguments: {
+        command: `${JSON.stringify(process.execPath)} -e 'process.stdout.write("x".repeat(29999))'`,
+      } }], false);
       if (last?.role === "user" && text.includes("RECALL_COLOR")) return stream(model, [{ type: "toolCall", id: "recall", name: "zoom", arguments: { id: 2, n: 1 } }], false);
       if (last?.role === "user" && text.includes("LONG_TOOL_OUTPUT")) return stream(model, [{ type: "toolCall", id: "long-output", name: "bash", arguments: {
         command: `${JSON.stringify(process.execPath)} -e 'process.stdout.write("HEAD_LONG_RESULT\\n"+"a".repeat(24000)+"\\nMIDDLE_REQUIRED_DECISION\\n"+"b".repeat(24000)+"\\nTAIL_LONG_RESULT\\n")'`,
@@ -165,6 +173,8 @@ async function drive(owner, provider) {
     const loader = new DefaultResourceLoader({ cwd: owner.alias, agentDir: path.join(owner.real, "agent"), settingsManager: settings,
       noExtensions: true, noSkills: true, noPromptTemplates: true, noThemes: true, noContextFiles: true,
       agentsFilesOverride: () => ({ agentsFiles: [{ path: path.join(owner.real, "AGENTS.md"), content: "FIRSTMATE_CONTEXT_TOKEN: current policy, not recalled approval." }] }),
+      extensionFactories: [pi => { pi.on("context", event => suppress
+        ? { messages: event.messages.filter(message => !(message.role === "custom" && message.customType === "fm-branch-process")) } : undefined); }],
       additionalExtensionPaths: [path.join(owner.alias, ".pi/extensions/fm-optchat.ts")] });
     await loader.reload(); assert.deepEqual(loader.getExtensions().errors, []);
     const extension = loader.getExtensions().extensions.find(item => item.path.endsWith("fm-optchat.ts"));
@@ -198,6 +208,11 @@ async function drive(owner, provider) {
   await notify("STARTUP_ONLY_TOKEN", "firstmate-sessionstart-nudge");
   await session.prompt("The release color is amber. " + "Harmless original detail. ".repeat(35));
   await notify("IDLE_TOKEN");
+  fs.appendFileSync(path.join(owner.dir, "AGENTS.md"), "FRESH_INSTRUCTION_TOKEN: saved after the last ordinary input.\n");
+  await notify("INSTRUCTION_REFRESH_TOKEN");
+  const refreshed = getCurrentSystemPrompt(requests.at(-1));
+  assert(refreshed.includes("FRESH_INSTRUCTION_TOKEN"), "idle notification ignored saved profile instructions");
+  assert.equal(refreshed.split("<instructions>").length, 2); assert.equal(refreshed.split("Existing Firstmate task records").length, 2);
   const saved = manager.getSessionFile(); await close();
   await open(SessionManager.open(saved)); await notify("RESTART_TOKEN");
   await session.prompt("RECALL_COLOR");
@@ -210,8 +225,7 @@ async function drive(owner, provider) {
   assert.deepEqual(nextRequest.at(-1), original, "current decision lost part of a large result");
   const persisted = fs.readFileSync(saved, "utf8").trim().split("\n").map(line => JSON.parse(line));
   assert.deepEqual(persisted.find(entry => entry.message?.toolCallId === "long-output").message, JSON.parse(JSON.stringify(original)));
-  const memoryEntries = fs.readdirSync(path.join(owner.dir, "main")).flatMap(name => fs.readFileSync(path.join(owner.dir, "main", name), "utf8").trim().split("\n").map(line => JSON.parse(line)));
-  const excerpt = memoryEntries.find(entry => entry.kind === "echo" && entry.text.startsWith("bash: Complete tool result:"));
+  const excerpt = memoryRecords().find(entry => entry.kind === "echo" && entry.text.startsWith("bash: Complete tool result:"));
   assert(excerpt); assert(!excerpt.text.includes("MIDDLE_REQUIRED_DECISION"));
   const fullResultFile = JSON.parse(excerpt.text.match(/Complete tool result: ("[^"\n]+")/)[1]);
   assert.deepEqual(JSON.parse(fs.readFileSync(fullResultFile, "utf8")), JSON.parse(JSON.stringify(original)));
@@ -223,6 +237,22 @@ async function drive(owner, provider) {
   assert(recovered); assert(JSON.stringify(recovered.content).includes("MIDDLE_REQUIRED_DECISION"));
   assert(!JSON.stringify(recovered.content).includes("characters omitted"));
   console.log(`PASS SDK ${owner.profile}: full current/canonical output, private lossless archive, and search/zoom/read recovery after restart`);
+  await session.prompt("BOUNDARY_TOOL_OUTPUT");
+  const boundary = session.messages.find(message => message.role === "toolResult" && message.toolCallId === "boundary-output");
+  assert.equal(boundary.content.filter(part => part.type === "text").map(part => part.text).join("\n").length, 29999);
+  const boundaryExcerpt = memoryRecords().find(entry => entry.kind === "echo" && entry.text.startsWith("bash: Complete tool result:") && !entry.text.includes("HEAD_LONG_RESULT"));
+  assert(boundaryExcerpt, "a result clipped only by its tool-name prefix had no lossless archive");
+  const boundaryFile = JSON.parse(boundaryExcerpt.text.match(/Complete tool result: ("[^"\n]+")/)[1]);
+  assert.deepEqual(JSON.parse(fs.readFileSync(boundaryFile, "utf8")), JSON.parse(JSON.stringify(boundary)));
+  suppress = true;
+  const beforeSuppressed = requests.length;
+  await session.prompt("SUPPRESS_RUN"); await session.waitForIdle();
+  suppress = false;
+  const suppressedRequests = requests.slice(beforeSuppressed);
+  assert.equal(suppressedRequests.length, 2, "suppressed notification changed the number of model decisions");
+  assert(suppressedRequests.every(request => !request.some(message => message.role !== "system" && JSON.stringify(message.content).includes("SUPPRESSED_TOKEN"))), "recall restored a notification Pi's context filter removed");
+  assert.equal(suppressedRequests[1].at(-1).role, "toolResult");
+  assert(session.messages.some(message => message.role === "custom" && message.content === "SUPPRESSED_TOKEN"), "canonical notification record was changed");
   hold = true; let ready; const inFlight = new Promise(resolve => { ready = resolve; }); started = ready;
   const running = session.prompt("STREAM_USER"); await inFlight;
   const before = requests.length;

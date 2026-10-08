@@ -262,6 +262,34 @@ Failure to save the full result stops the next decision rather than silently ret
 These archives are retained with the profile and can contain sensitive tool output just like Pi session files; disabling recall does not delete them.
 An exceptionally large single run can still exceed the model window because OptChat disables normal Pi compaction; stop and continue in a new turn rather than relying on clipping to hide required decisions.
 Set `enabled` to `false` or remove the configuration and restart to disable recall without deleting its history.
+Recall never restores an operational notification that Pi's context filter has removed for the current request, such as a processing notification suppressed while the captain is away.
+Saved profile instructions, including an edit made through `/optchat instructions`, apply to the next model decision even when it is an idle notification that reuses the earlier ordinary input's prompt.
+A tool result is archived whenever its complete OptChat memory record, including the tool-name prefix, exceeds the package's text limit.
+
+### Rollout to the primary and secondmate homes
+
+This change delivers the code, the pinned package guard and this procedure.
+It does not install or enable recall in any live home, and it must not be activated in a live home before it is reviewed and merged.
+The required rollout covers the primary Firstmate home and the cleo, cnp and concierge secondmate homes, each with its own profile (`main`, `cleo`, `cnp`, `concierge`).
+Main performs it per home after the merge reaches that home, because each home owns its own `config/` and `data/`; the rollout is incomplete until every home passes the verification below.
+
+Run this from the root of one target home, setting `profile` for that home.
+It adds files only: it does not restart, interrupt or re-bind the running session, and recall stays off until `config/optchat.json` exists and that home's supervisor is restarted through its normal persisted-session restart.
+
+```sh
+profile=main   # main, cleo, cnp or concierge
+npm install --prefix config/optchat pi-optchat@0.7.2
+node .pi/optchat/package.mjs prepare config/optchat/node_modules/pi-optchat config/optchat/package
+mkdir -p "data/optchat/profiles/$profile"
+printf '# %s\n\nSupervisor conversation recall. Current Firstmate instructions and task records remain authoritative.\n' "$profile" > "data/optchat/profiles/$profile/AGENTS.md"
+printf '%s\n' '{"compactor":{"provider":"unset","model":"unset","thinking":"off"},"subagent":{"provider":"unset","model":"unset","thinking":"off"}}' > "data/optchat/profiles/$profile/config.json"
+printf '{\n  "enabled": true,\n  "package": "config/optchat/package",\n  "memoryHome": "data/optchat",\n  "profile": "%s",\n  "thinking": "low"\n}\n' "$profile" > config/optchat.json
+```
+
+The placeholder compactor and subagent models are replaced from the supervisor's own live model when the session starts.
+After the restart, `/firstmate-memory` in that supervisor must print a receipt with `"phase": "active"`, that profile, the prepared package version and patch fingerprint, and the current process and session ids.
+A missing receipt, an older process or session, an error notification, or a `loaded` phase that never becomes `active` means that home is not done.
+Before enabling a live home, the [live proof](../tests/fm-optchat-live-e2e.test.sh) exercises the same extension and package preparation in scratch homes without touching any live home.
 [The live proof](../tests/fm-optchat-live-e2e.test.sh) covers automatic discovery, resumed profiles, notification-only startup, current policy, lossless tool-output recovery, provider ownership and worker exclusion using local scripted providers.
 [Dated verification](verification/runtime-backends.md#optional-pi-supervisor-memory) records the tested versions and unsupported axes.
 
