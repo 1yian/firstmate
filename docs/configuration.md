@@ -199,6 +199,72 @@ The branch prompt's "Verdict: routine or captain" section owns the distinction b
 The generated [Pi supervision protocol](supervision-protocols/pi.md) owns main's event ownership, acknowledgement duty, and conversational treatment for merged outcomes, while the persisted entry itself owns captain visibility.
 A task-level routine no-change outcome or a no-change heartbeat explicitly reported with `silent=true` is delivered without a rendered note; the branch prompt owns task-level eligibility, and every other routine outcome still appends a rendered, sailboat-prefixed note.
 
+## Optional Pi supervisor memory (config/optchat.json)
+
+Pi conversation recall is off by default.
+An explicit, home-local `config/optchat.json` enables a prepared copy of pinned `pi-optchat@0.7.2` through `.pi/extensions/fm-optchat.ts`.
+This is a conversation extension, not Pi Durable or a replacement for Firstmate's records, permissions, delegation, notification transport, or supervision branch.
+The configuration and writable profile are not inherited into another home.
+
+```json
+{
+  "enabled": true,
+  "package": "config/optchat/package",
+  "memoryHome": "data/optchat",
+  "profile": "main",
+  "thinking": "low"
+}
+```
+
+`package` names the locally prepared OptChat directory, and `memoryHome` selects its private storage root; relative paths resolve against this Firstmate home.
+Install the published package locally, then prepare its separate Firstmate-compatible copy before enabling:
+
+```sh
+npm install --prefix config/optchat pi-optchat@0.7.2
+node .pi/optchat/package.mjs prepare config/optchat/node_modules/pi-optchat config/optchat/package
+```
+
+The [preparation helper](../.pi/optchat/package.mjs) owns its CLI and preserves the published files in the original install.
+The [inspectable dependency patch](../.pi/optchat/connected-windows.patch) adds a default-on connected-window/child-recovery capability switch; Firstmate explicitly disables it while ordinary patched-package use keeps upstream behavior.
+The [provenance manifest](../.pi/optchat/manifest.json) pins the published npm integrity, every distribution file, and the patched source fingerprints.
+Preparation validates rather than replaces an existing destination; startup rejects unexpected versions/source changes or an unprepared package before activation.
+No networking, child prototype, Pi, or operating-system monkeypatch is used.
+
+`profile` is a fixed 1-64-character lowercase name containing letters, digits, hyphens or underscores and starting with a letter or digit.
+The profile must already exist under `<memoryHome>/profiles/<profile>` before enabling; OptChat's `createProfile` API scaffolds it without importing conversations.
+Install and scaffold locally, not by changing global Pi settings or another supervisor's writable profile.
+Keep macOS profile socket paths within OptChat's 103-byte limit.
+The [upstream package](https://github.com/jonaslsaa/pi-optchat) owns profile storage and its initial scaffolding API.
+
+The optional `compactorModel` chooses a model id from the active supervisor's own provider; absent, it uses that supervisor's current model.
+`thinking` accepts `off`, `minimal`, `low`, `medium`, `high` or `xhigh` and defaults to `low`.
+The extension checks Pi's live model registry and replaces the package's first-party defaults before use, without copying, changing or selecting credentials.
+Native Codex thread reuse is unsupported for compression and is refused, not silently converted to another provider.
+
+Normal Pi project discovery activates the configured profile on primary and secondmate launch, restart and recovery, including print mode, without an interactive picker, remembered shell export or OptChat profile flag.
+The loader requires the effective home as its physical working directory and excludes workers carrying `FM_TASK_ID`; the existing supervision branch continues to disable project extensions.
+A launch that deliberately disables extension discovery must explicitly load this extension if it wants recall.
+A session already bound to a different profile is refused rather than silently rebound.
+OptChat's agent tools, completion/control commands, connected-window listener, child recovery, profile switching, import flow and model picker are disabled here; Firstmate's existing delegation remains the only path.
+Disabled child recovery does not normalize interrupted child records, adopt old child sessions, or consume/replay the pending child-report journal.
+`/optchat browse` and `/optchat instructions` retain the memory browser and profile-instruction editor.
+The mixed agent-control inspector panels, including `/optchat usage` and `/optchat activity`, are disabled rather than exposing nested agent/model controls.
+The package's agent-count status and terminal-title changes do not replace Firstmate's own presentation.
+
+`/firstmate-memory` shows this process/session's activation receipt from `state/optchat-activation.json`.
+`loaded` records profile initialization; `active` records a successful memory context projection, with the prepared dependency patch fingerprint recorded in both.
+The receipt is not a liveness beacon, proof of a successful remote inference or a billing record, and a saved receipt from an older process/session is not current activation.
+Original Pi session files and Firstmate preferences remain intact; binding a profile does not import the entire earlier Pi history.
+Current-run tool results reach the next model decision without OptChat's 30,000-character clipping, and its message handler never rewrites Pi's canonical tool results.
+For longer results, the adapter first saves a lossless JSON record under `<memoryHome>/profiles/<profile>/firstmate-results/` with private directory/file permissions and adds its path to OptChat's capped memory excerpt.
+Use memory search or zoom to recover that path, then the ordinary read tool to inspect omitted text; memory search indexes the excerpt, not every character of the archive.
+Failure to save the full result stops the next decision rather than silently retaining only a clipped result.
+These archives are retained with the profile and can contain sensitive tool output just like Pi session files; disabling recall does not delete them.
+An exceptionally large single run can still exceed the model window because OptChat disables normal Pi compaction; stop and continue in a new turn rather than relying on clipping to hide required decisions.
+Set `enabled` to `false` or remove the configuration and restart to disable recall without deleting its history.
+[The live proof](../tests/fm-optchat-live-e2e.test.sh) covers automatic discovery, resumed profiles, notification-only startup, current policy, lossless tool-output recovery, provider ownership and worker exclusion using local scripted providers.
+[Dated verification](verification/runtime-backends.md#optional-pi-supervisor-memory) records the tested versions and unsupported axes.
+
 ## Pi supervision branch model and effort (config/supervision-branch-model, config/supervision-branch-effort)
 
 The branch can run on a cheaper model than main because supervision is an easier job than the captain's own conversation.

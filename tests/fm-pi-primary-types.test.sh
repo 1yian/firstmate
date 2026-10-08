@@ -30,6 +30,8 @@ mkdir -p "$TMP_ROOT/lib" "$TMP_ROOT/node_modules/@earendil-works" "$TMP_ROOT/nod
 cp "$ROOT/.pi/extensions/fm-branch-supervision.ts" "$TMP_ROOT/fm-branch-supervision.ts"
 cp "$ROOT/.pi/extensions/fm-calm.ts" "$TMP_ROOT/fm-calm.ts"
 cp "$ROOT/.pi/extensions/fm-discord-bridge.ts" "$TMP_ROOT/fm-discord-bridge.ts"
+cp "$ROOT/.pi/extensions/fm-optchat.ts" "$TMP_ROOT/fm-optchat.ts"
+cp "$ROOT/.pi/extensions/lib/fm-optchat-compat.ts" "$TMP_ROOT/lib/fm-optchat-compat.ts"
 cp "$ROOT/.pi/extensions/fm-primary-pi-watch.ts" "$TMP_ROOT/fm-primary-pi-watch.ts"
 cp "$ROOT/.pi/extensions/fm-primary-turnend-guard.ts" "$TMP_ROOT/fm-primary-turnend-guard.ts"
 cp "$ROOT/.pi/fm-worker-plain-composer.ts" "$TMP_ROOT/fm-worker-plain-composer.ts"
@@ -49,6 +51,7 @@ cp "$ROOT/.pi/extensions/lib/fm-operational-input.ts" "$TMP_ROOT/lib/fm-operatio
 ln -s "$PI_PACKAGE_DIR" "$TMP_ROOT/node_modules/@earendil-works/pi-coding-agent"
 ln -s "$PI_PACKAGE_DIR/node_modules/@earendil-works/pi-tui" "$TMP_ROOT/node_modules/@earendil-works/pi-tui"
 ln -s "$PI_PACKAGE_DIR/node_modules/@earendil-works/pi-ai" "$TMP_ROOT/node_modules/@earendil-works/pi-ai"
+ln -s "$PI_PACKAGE_DIR/node_modules/@earendil-works/pi-agent-core" "$TMP_ROOT/node_modules/@earendil-works/pi-agent-core"
 ln -s "$PI_PACKAGE_DIR/node_modules/typebox" "$TMP_ROOT/node_modules/typebox"
 ln -s "$PI_PACKAGE_DIR/node_modules/@types/node" "$TMP_ROOT/node_modules/@types/node"
 

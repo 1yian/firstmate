@@ -6,6 +6,56 @@ This record contains reusable version-scoped evidence for active runtime guarant
 The backend guides own current setup, safety boundaries, and limitations.
 Exact task chronology, branch names, temporary homes, local paths, process ids, thread ids, and delivery transcripts remain in private reports or PR evidence.
 
+## Optional Pi supervisor memory
+
+Verified on 2026-10-08 with the installed macOS Pi CLI/SDK 1.0.3, published `pi-optchat` 0.7.2, and its maintained connected-window/child-recovery capability patch.
+The [provenance manifest](../../.pi/optchat/manifest.json) owns the exact published and patched fingerprints.
+[Configuration](../configuration.md#optional-pi-supervisor-memory-configoptchatjson) owns setup, schema, receipts, and supported limits.
+The guard loads the real package with local scripted providers, isolated homes/profiles, and persistent Pi sessions; no remote model request, operational supervisor, credential change, or live restart is involved.
+
+```sh
+FM_OPTCHAT_LIVE=1 FM_OPTCHAT_PACKAGE=<installed-pi-optchat-directory> \
+  bash bin/fm-test-run.sh tests/fm-optchat-live-e2e.test.sh
+```
+
+`FM_OPTCHAT_PACKAGE` names the unmodified published package; the guard prepares its separate patched copy in scratch and compares both default-enabled variants before testing Firstmate's disabled capability.
+Representative exact successful output:
+
+```text
+PASS published: connected-window listener and saved-child recovery remain enabled by default
+PASS patched: connected-window listener and saved-child recovery remain enabled by default
+PASS package preparation: published source preserved, pinned separate patch, idempotent destination
+PASS SDK main: no connected-window socket, native connection refused, child recovery and mixed controls disabled
+PASS SDK main: full current/canonical output, private lossless archive, and search/zoom/read recovery after restart
+PASS SDK main: notification-first, idle, resumed, recall, streaming, policy, canonical records, provider and delegation boundaries
+PASS SDK main: archiving failure stops the next decision and preserves canonical output
+PASS SDK domain: no connected-window socket, native connection refused, child recovery and mixed controls disabled
+PASS SDK domain: full current/canonical output, private lossless archive, and search/zoom/read recovery after restart
+PASS SDK domain: notification-first, idle, resumed, recall, streaming, policy, canonical records, provider and delegation boundaries
+PASS SDK domain: archiving failure stops the next decision and preserves canonical output
+PASS worker: configured supervisor package registers nothing
+PASS project/branch resources: home-bound guard and no-extension loader register no memory
+PASS dependency guard: unexpected source changes refuse preparation and runtime activation, without repair
+PASS CLI launch: automatic discovery and persistent profile, no OptChat exports/flags
+PASS CLI exact-session restart: automatic discovery and persistent profile, no OptChat exports/flags
+PASS CLI recovery: automatic discovery and persistent profile, no OptChat exports/flags
+PASS all real Pi optional-memory scenarios (local scripted providers only)
+```
+
+The primary and domain providers are distinct local fixtures, not proof of Anthropic/Vertex/Codex remote authentication or billing.
+The long-output proof places a required marker in the omitted middle of a real bash tool result, checks its next-request and persisted canonical text, then recovers it after reopening through search, zoom, and read.
+It also makes the archive directory unavailable and proves there is no follow-up model decision while the original canonical result survives.
+Physical-directory aliases are exercised so macOS path aliases do not silently prevent activation.
+The published and default-enabled patched counterfactuals expose an accepting native local socket, recover a saved connected-child handoff, adopt an old child transcript, and replay a pending child report.
+Configured supervisor sessions instead have no window socket, refuse a native connection, preserve the unfinished child record and pending-report journal unchanged, and do not adopt the old child transcript or make a recovery model request.
+Mixed agent-control panels are blocked, and every scripted main request checks that memory/built-in tool declarations, schemas, and upstream system timestamp survive the authority trailer.
+Changed package sources and versions refuse preparation, while runtime discovery refuses a changed prepared dependency without an activation receipt.
+
+Pi-signed shares the documented Pi extension API, but its separate executable was unavailable and no signed-wrapper execution is claimed by this run.
+The integration is Pi-only: OMP discovers `.omp/extensions/` rather than `.pi/extensions/`, and the other supported primary tools do not discover these Pi project extensions.
+Runtime endpoint backends are not changed; the proof concerns Pi resources and exact session-file reopening, not any backend's lifecycle operation.
+No previous session bulk import, operational installation, supervised restart, live UI compatibility, or remote provider transport is claimed.
+
 ## Harness detection precedence
 
 Firstmate's own harness comes from two kinds of evidence, and `bin/fm-harness.sh` owns how they combine: an environment marker names its harness, and the nearest harness process in the parent chain proves who owns the process tree.
