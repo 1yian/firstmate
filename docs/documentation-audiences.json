@@ -393,6 +393,10 @@
       "audience": "operator-current"
     },
     {
+      "path": "docs/pi-readable-ui.md",
+      "audience": "operator-current"
+    },
+    {
       "path": "docs/pi-supervision-branch.md",
       "audience": "maintainer-architecture"
     },

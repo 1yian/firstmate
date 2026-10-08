@@ -99,6 +99,7 @@ Input delivery, ordering, model context, session storage, diagnostics, and `/exp
 Every hidden Firstmate input remains available to the model and in serialized session data and exported artifacts.
 Legacy operational custom messages remain in session data and Pi's sidebar tree; depending on the Pi version, the main HTML transcript either omits them or includes them as rows hidden by default.
 Toggling Calm off restores ordinary rendering, and `Ctrl+O` expansion state is preserved.
+The opt-in [Pi readable transcript](pi-readable-ui.md) draws every tool row exactly as Calm would while Calm is on, so its compact rows never reveal what Calm hides.
 
 ### What stays visible on Pi
 
