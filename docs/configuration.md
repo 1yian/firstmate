@@ -278,15 +278,27 @@ Run this from the root of one target home, setting `profile` for that home.
 It adds files only: it does not restart, interrupt or re-bind the running session, and recall stays off until `config/optchat.json` exists and that home's supervisor is restarted through its normal persisted-session restart.
 
 ```sh
+(
+set -eu
+umask 077
 profile=main   # main, cleo, cnp or concierge
+agents="data/optchat/profiles/$profile/AGENTS.md"
+settings="data/optchat/profiles/$profile/config.json"
+for existing in config/optchat.json "$agents" "$settings"; do
+  if [ -e "$existing" ]; then echo "refusing: $existing already exists; inspect it instead" >&2; exit 1; fi
+done
 npm install --prefix config/optchat pi-optchat@0.7.2
 node .pi/optchat/package.mjs prepare config/optchat/node_modules/pi-optchat config/optchat/package
 mkdir -p "data/optchat/profiles/$profile"
-printf '# %s\n\nSupervisor conversation recall. Current Firstmate instructions and task records remain authoritative.\n' "$profile" > "data/optchat/profiles/$profile/AGENTS.md"
-printf '%s\n' '{"compactor":{"provider":"unset","model":"unset","thinking":"off"},"subagent":{"provider":"unset","model":"unset","thinking":"off"}}' > "data/optchat/profiles/$profile/config.json"
+set -C
+printf '# %s\n\nSupervisor conversation recall. Current Firstmate instructions and task records remain authoritative.\n' "$profile" > "$agents"
+printf '%s\n' '{"compactor":{"provider":"unset","model":"unset","thinking":"off"},"subagent":{"provider":"unset","model":"unset","thinking":"off"}}' > "$settings"
 printf '{\n  "enabled": true,\n  "package": "config/optchat/package",\n  "memoryHome": "data/optchat",\n  "profile": "%s",\n  "thinking": "low"\n}\n' "$profile" > config/optchat.json
+)
 ```
 
+The script refuses, before any write, when the loader configuration, profile instructions or profile settings already exist, and it never truncates them even if one appears while it runs; it does not repair, migrate or overwrite.
+For a home that already has any of them, inspect the existing files and run the activation check below instead of re-running the script.
 The placeholder compactor and subagent models are replaced from the supervisor's own live model when the session starts.
 After the restart, `/firstmate-memory` in that supervisor must print a receipt with `"phase": "active"`, that profile, the prepared package version and patch fingerprint, and the current process and session ids.
 A missing receipt, an older process or session, an error notification, or a `loaded` phase that never becomes `active` means that home is not done.
