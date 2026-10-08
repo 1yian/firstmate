@@ -2440,7 +2440,7 @@ The merge suite and the security suite dominate the wall time.
 
 ## Pi readable transcript
 
-Verified on 2026-10-08 on macOS 27.0 arm64 with tmux 3.6a, against Pi 1.0.3 and against a Pi 1.1.0 package run through a `pi` shim on `PATH`.
+Verified on 2026-10-08 on macOS 27.0 arm64 with tmux 3.6a against Pi 1.0.3.
 [`docs/pi-readable-ui.md`](../pi-readable-ui.md) owns the behavior; `.pi/fm-readable-ui.ts` uses only `pi.registerMarkdownTransformer` (Pi 0.84.0+) and `pi.registerToolRenderer` (Pi 1.0.1+), both present unchanged in 1.1.0.
 The guard reopens a canned session and drives Pi's in-process faux provider, so no model tokens are spent:
 
@@ -2448,7 +2448,7 @@ The guard reopens a canned session and drives Pi's in-process faux provider, so 
 tests/fm-readable-ui-pi-live-e2e.test.sh
 ```
 
-Observed output with Pi 1.0.3 (the Pi 1.1.0 run printed the same lines with `pi (1.1.0)`, and 7 and 30 open-markup frames):
+Observed output with Pi 1.0.3 (frame counts vary from run to run):
 
 ```text
 # pi (1.0.3): stock rows and flowing prose confirmed without the extension
@@ -2457,11 +2457,16 @@ ok - pi (1.0.3): ctrl+o restores each tool's own call, output, and generic fallb
 ok - pi (1.0.3): at 44 columns in fullscreen mode every row fits and keeps its status meta
 ok - pi (1.0.3): with Calm on, rows match a Calm-only run character for character and prose layout still applies
 ok - pi (1.0.3): /export embeds the same pre-rendered tool HTML as stock Pi, and rows collapse again afterwards
-# pi (1.0.3): streamed reply observed across 111 frames (7 with open inline code, 27 with an open link) without a break inside them
+# pi (1.0.3): streamed reply observed across 44 frames (2 with open inline code, 9 with an open link) without a break inside them
 ok - pi (1.0.3): live streaming, a failing command, and an interrupted command draw the expected rows
 ok - pi (1.0.3): the reopened session redraws the same rows and layout while its stored text keeps the original prose
-ok - live readable transcript guard verified 7 surface(s) on pi (1.0.3)
+ok - pi (1.0.3): registered tools without renderers keep Pi's arguments and preview, and narrow argumentless failures keep their status
+# pi (1.0.3): link title observed across 3 frames without a break inside it
+ok - pi (1.0.3): an unfinished link title stays whole, and a command expanded after running collapsed reports its full elapsed time
+ok - live readable transcript guard verified 9 surface(s) on pi (1.0.3)
 ```
+
+An earlier revision of the guard, before its last two surfaces were added, also passed its first seven surfaces against a Pi 1.1.0 package run through a `pi` shim on `PATH`.
 
 The guard fails when Calm deference, the `/export` stock window, or streaming markup masking is removed from the extension; each was confirmed by editing it out and rerunning.
 On the same machine and Pi 1.0.3, isolated runs that also loaded pi-zentui 0.29.3, `@ff-labs/pi-fff` 0.11.0 in override mode, Calm, and `.pi/fm-worker-plain-composer.ts` showed FFF's own `grep` output as the expanded row, a Calm-on tool area identical to a Calm-only run, and no extension errors.

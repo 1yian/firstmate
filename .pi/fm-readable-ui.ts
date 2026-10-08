@@ -601,6 +601,8 @@ export default function (pi: ExtensionAPI) {
         if (exporting()) return exportCall(args, theme, context);
         remember(context);
         if (stockMode() || context.expanded) return stockCall(args, theme, context);
+        // Collapsed rows still run the underlying renderers and discard their components, so
+        // renderer state such as bash's start time and elapsed-time timer stays current.
         if (base?.renderCall) {
           const state = context.state as RowState;
           try {
