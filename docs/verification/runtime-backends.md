@@ -26,11 +26,15 @@ PASS published: connected-window listener and saved-child recovery remain enable
 PASS patched: connected-window listener and saved-child recovery remain enabled by default
 PASS package preparation: published source preserved, pinned separate patch, idempotent destination
 PASS SDK main: no connected-window socket, native connection refused, child recovery and mixed controls disabled
+PASS SDK main: edited instructions remain current across repeated idle and tool-result requests
 PASS SDK main: full current/canonical output, private lossless archive, and search/zoom/read recovery after restart
+PASS SDK main: suppressed notices never enter recall or reappear across return and restart
 PASS SDK main: notification-first, idle, resumed, recall, streaming, policy, canonical records, provider and delegation boundaries
 PASS SDK main: archiving failure stops the next decision and preserves canonical output
 PASS SDK domain: no connected-window socket, native connection refused, child recovery and mixed controls disabled
+PASS SDK domain: edited instructions remain current across repeated idle and tool-result requests
 PASS SDK domain: full current/canonical output, private lossless archive, and search/zoom/read recovery after restart
+PASS SDK domain: suppressed notices never enter recall or reappear across return and restart
 PASS SDK domain: notification-first, idle, resumed, recall, streaming, policy, canonical records, provider and delegation boundaries
 PASS SDK domain: archiving failure stops the next decision and preserves canonical output
 PASS worker: configured supervisor package registers nothing
@@ -40,6 +44,7 @@ PASS CLI launch: automatic discovery and persistent profile, no OptChat exports/
 PASS CLI exact-session restart: automatic discovery and persistent profile, no OptChat exports/flags
 PASS CLI recovery: automatic discovery and persistent profile, no OptChat exports/flags
 PASS all real Pi optional-memory scenarios (local scripted providers only)
+PASS: pinned memory integration preserves restart, notifications, lossless recall and Firstmate-only delegation
 ```
 
 The primary and domain providers are distinct local fixtures, not proof of Anthropic/Vertex/Codex remote authentication or billing.
