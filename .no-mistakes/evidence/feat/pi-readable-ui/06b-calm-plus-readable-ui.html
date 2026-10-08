@@ -1,0 +1,61 @@
+<!doctype html><meta charset="utf-8"><title>Calm on, with fm-readable-ui: tool rows identical, prose split by sentence</title><body style="background:#1e1e1e;color:#ddd;margin:0;padding:16px"><h3 style="font-family:sans-serif;color:#aaa">Calm on, with fm-readable-ui: tool rows identical, prose split by sentence</h3><pre style="font-family:Menlo,monospace;font-size:13px;line-height:1.25;display:inline-block;border:1px solid #444;padding:8px"><span style=""></span><span style="background:rgb(33,59,73)">
+ </span><span style="color:rgb(222,224,225);background:rgb(33,59,73)">Check the build and tell me what broke.</span><span style="background:rgb(33,59,73)">
+
+
+</span><span style="background:rgb(91,40,42)">
+ </span><span style="background:rgb(91,40,42);font-weight:bold"></span><span style="color:rgb(222,224,225);background:rgb(91,40,42);font-weight:bold">lab_unknown_tool</span><span style=""></span><span style="background:rgb(91,40,42)">
+
+ {
+   "query": "is this registered?"
+ }
+ Tool lab_unknown_tool not found
+
+
+</span><span style=""> </span><span style="font-weight:bold"></span><span style="color:rgb(205,154,34);font-weight:bold">Build status</span><span style="">
+
+ The build failed because port was typed as a number but assigned a string.
+ I changed it to the numeric literal, e.g. </span><span style="color:rgb(167,152,215)">8080</span><span style="">, which matches the type.
+ Dr. Smith's note is unrelated.
+
+ </span><span style="color:rgb(167,152,215)">- </span><span style="">First item has two sentences.
+   This is the second one.
+
+ </span><span style="color:rgb(157,165,169)">│ </span><span style="color:rgb(157,165,169);font-style:italic">Quoted context with one sentence.</span><span style=""></span><span style="color:rgb(157,165,169)">
+</span><span style=""> </span><span style="color:rgb(157,165,169)">│ </span><span style="color:rgb(157,165,169);font-style:italic">And another sentence here.</span><span style="">
+
+ </span><span style="color:rgb(157,165,169)">```ts</span><span style="">
+   </span><span style="color:rgb(105,173,208)">const</span><span style=""> port: </span><span style="color:rgb(167,152,215)">number</span><span style=""> = </span><span style="color:rgb(104,183,141)">8080</span><span style="">; </span><span style="color:rgb(157,165,169)">// Keep. Code is never split.</span><span style="">
+ </span><span style="color:rgb(157,165,169)">```</span><span style="">
+
+ ┌───────┬─────────────────┐
+ │ </span><span style="font-weight:bold">Check</span><span style=""> │ </span><span style="font-weight:bold">Result         </span><span style=""> │
+ ├───────┼─────────────────┤
+ │ build │ fixed. verified │
+ └───────┴─────────────────┘
+
+ Version 2.5 shipped on time.
+ Next steps are listed above.
+
+ </span><span style="color:rgb(205,154,34)">Warning: Could not restore model anthropic/canned. Using google-vertex/gemini-3.1-pro-preview</span><span style="">
+
+ </span><span style="color:rgb(205,154,34)">Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set -g extended-keys on` to
+</span><span style=""> </span><span style="color:rgb(205,154,34)">~/.tmux.conf and restart tmux.</span><span style="">
+
+</span><span style="color:rgb(97,133,204)">──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</span><span style="color:rgb(97,133,204)"></span><span style=""> </span><span style="">
+</span><span style="color:rgb(97,133,204)">──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</span><span style="color:rgb(126,136,142)">/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-rui-lab.8maLXL/cwd</span><span style="">
+</span><span style="color:rgb(126,136,142)">↑2 ↓2 0.0%/1.0M (auto)                                                         gemini-3.1-pro-preview • medium
+
+
+
+
+
+
+
+
+
+
+
+
+</span></pre></body>

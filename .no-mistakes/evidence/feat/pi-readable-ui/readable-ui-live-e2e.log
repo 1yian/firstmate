@@ -1,0 +1,13 @@
+# pi (1.0.3): stock rows and flowing prose confirmed without the extension
+ok - pi (1.0.3): collapsed rows show subject and status; prose starts each sentence on its own line
+ok - pi (1.0.3): ctrl+o restores each tool's own call, output, and generic fallback
+ok - pi (1.0.3): at 44 columns in fullscreen mode every row fits and keeps its status meta
+ok - pi (1.0.3): with Calm on, rows match a Calm-only run character for character and prose layout still applies
+ok - pi (1.0.3): /export embeds the same pre-rendered tool HTML as stock Pi, and rows collapse again afterwards
+# pi (1.0.3): streamed reply observed across 48 frames (2 with open inline code, 13 with an open link) without a break inside them
+ok - pi (1.0.3): live streaming, a failing command, and an interrupted command draw the expected rows
+ok - pi (1.0.3): the reopened session redraws the same rows and layout while its stored text keeps the original prose
+ok - pi (1.0.3): registered tools without renderers keep Pi's arguments and preview, and narrow argumentless failures keep their status
+# pi (1.0.3): link title observed across 2 frames without a break inside it
+ok - pi (1.0.3): an unfinished link title stays whole, and a command expanded after running collapsed reports its full elapsed time
+ok - live readable transcript guard verified 9 surface(s) on pi (1.0.3)

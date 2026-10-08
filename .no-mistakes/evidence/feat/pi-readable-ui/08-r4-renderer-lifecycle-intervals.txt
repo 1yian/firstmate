@@ -1,0 +1,15 @@
+09:06:51.873 intervals=0
+09:06:57.3N EVENT baseline idle
+09:06:57.422 intervals=1
+09:07:02.460 intervals=2
+09:07:02.3N EVENT collapsed running row drawn
+09:07:03.3N EVENT expanded, partial output tick 2 visible
+09:07:05.3N EVENT collapsed again while running
+SCREEN  ● bash(for i in 1 2 3 4 5 6 7 8; do echo …)
+09:07:11.625 intervals=1
+09:07:13.3N EVENT command finished, reply done
+SCREEN  ● bash(for i in 1 2 3 4 5 6 7 8; do echo …) - exit 4
+09:07:13.385 intervals=0
+09:07:17.3N EVENT 4s after completion
+SCREEN  Command exited with code 4
+SCREEN  Took 8.9s

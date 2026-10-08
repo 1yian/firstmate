@@ -1,0 +1,60 @@
+
+ Took 0.0s
+
+
+
+ $ sleep 5; echo never (timeout 1s)
+
+ Command timed out after 1 seconds
+
+ Took 1.0s
+
+
+
+ read notes.txt
+
+ hello from notes
+
+
+
+ $ printf 'line1\nline2\n'
+
+ line1
+ line2
+
+ Took 0.0s
+
+
+ Tools done.
+ All rows above.
+
+ Tool output: collapsed
+
+
+ ticker
+
+
+
+ $ for i in 1 2 3 4 5 6; do echo tick $i; sleep 1; done
+
+ tick 1
+ tick 2
+ tick 3
+ tick 4
+ tick 5
+ tick 6
+
+ Took 6.7s
+
+
+ Tool output: collapsed
+
+ Ticker done.
+
+ Tool output: expanded
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/rui-manual/cwd
+↑1.8k ↓216 R8.0k W1.8k CH96.0% 43.7%/4.1k (auto)                                           (rui-faux) scripted

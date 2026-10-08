@@ -1,0 +1,61 @@
+<!doctype html><meta charset=utf-8><title>Pi 1.0.3 WITH fm-readable-ui: command collapsed mid-run, expanded after completion shows final Took (no lingering Elapsed timer)</title><body style="background:#1e1e2e;color:#ddd;margin:0;padding:12px"><h3 style="font-family:sans-serif">Pi 1.0.3 WITH fm-readable-ui: command collapsed mid-run, expanded after completion shows final Took (no lingering Elapsed timer)</h3><pre style="font-family:Menlo,monospace;font-size:13px;line-height:1.25"><span style="background:rgb(91,40,42)">
+ </span><span style="color:rgb(157,165,169);background:rgb(91,40,42)">Took 0.0s</span><span style="background:rgb(91,40,42)">
+
+
+
+ </span><span style="background:rgb(91,40,42);font-weight:bold"></span><span style="color:rgb(222,224,225);background:rgb(91,40,42);font-weight:bold">$ sleep 5; echo never</span><span style=""></span><span style="color:rgb(157,165,169)"></span><span style="color:rgb(157,165,169);background:rgb(91,40,42)"> (timeout 1s)</span><span style="background:rgb(91,40,42)">
+
+ </span><span style="color:rgb(157,165,169);background:rgb(91,40,42)">Command timed out after 1 seconds</span><span style="background:rgb(91,40,42)">
+
+ </span><span style="color:rgb(157,165,169);background:rgb(91,40,42)">Took 1.0s</span><span style="background:rgb(91,40,42)">
+
+
+</span><span style="background:rgb(37,65,49)">
+ </span><span style="background:rgb(37,65,49);font-weight:bold"></span><span style="color:rgb(222,224,225);background:rgb(37,65,49);font-weight:bold">read</span><span style=""></span><span style="background:rgb(37,65,49)"> </span><span style="color:rgb(167,152,215);background:rgb(37,65,49)">notes.txt</span><span style="background:rgb(37,65,49)">
+
+ </span><span style="color:rgb(157,165,169);background:rgb(37,65,49)">hello from notes</span><span style="background:rgb(37,65,49)">
+
+
+
+ </span><span style="background:rgb(37,65,49);font-weight:bold"></span><span style="color:rgb(222,224,225);background:rgb(37,65,49);font-weight:bold">$ printf 'line1\nline2\n'</span><span style=""></span><span style="background:rgb(37,65,49)">
+
+ </span><span style="color:rgb(157,165,169);background:rgb(37,65,49)">line1</span><span style="background:rgb(37,65,49)">
+ </span><span style="color:rgb(157,165,169);background:rgb(37,65,49)">line2</span><span style="background:rgb(37,65,49)">
+
+ </span><span style="color:rgb(157,165,169);background:rgb(37,65,49)">Took 0.0s</span><span style="background:rgb(37,65,49)">
+
+
+</span><span style=""> Tools done.
+ All rows above.
+
+ </span><span style="color:rgb(126,136,142)">Tool output: collapsed</span><span style="">
+
+</span><span style="background:rgb(33,59,73)">
+ </span><span style="color:rgb(222,224,225);background:rgb(33,59,73)">ticker</span><span style="background:rgb(33,59,73)">
+
+
+</span><span style="background:rgb(37,65,49)">
+ </span><span style="background:rgb(37,65,49);font-weight:bold"></span><span style="color:rgb(222,224,225);background:rgb(37,65,49);font-weight:bold">$ for i in 1 2 3 4 5 6; do echo tick $i; sleep 1; done</span><span style=""></span><span style="background:rgb(37,65,49)">
+
+ </span><span style="color:rgb(157,165,169);background:rgb(37,65,49)">tick 1</span><span style="background:rgb(37,65,49)">
+ </span><span style="color:rgb(157,165,169);background:rgb(37,65,49)">tick 2</span><span style="background:rgb(37,65,49)">
+ </span><span style="color:rgb(157,165,169);background:rgb(37,65,49)">tick 3</span><span style="background:rgb(37,65,49)">
+ </span><span style="color:rgb(157,165,169);background:rgb(37,65,49)">tick 4</span><span style="background:rgb(37,65,49)">
+ </span><span style="color:rgb(157,165,169);background:rgb(37,65,49)">tick 5</span><span style="background:rgb(37,65,49)">
+ </span><span style="color:rgb(157,165,169);background:rgb(37,65,49)">tick 6</span><span style="background:rgb(37,65,49)">
+
+ </span><span style="color:rgb(157,165,169);background:rgb(37,65,49)">Took 6.7s</span><span style="background:rgb(37,65,49)">
+
+
+</span><span style=""> </span><span style="color:rgb(126,136,142)">Tool output: collapsed</span><span style="">
+
+ Ticker done.
+
+ </span><span style="color:rgb(126,136,142)">Tool output: expanded</span><span style="">
+
+</span><span style="color:rgb(108,118,123)">──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</span><span style="color:rgb(108,118,123)"></span><span style=""> </span><span style="">
+</span><span style="color:rgb(108,118,123)">──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+</span><span style="color:rgb(126,136,142)">/private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/rui-manual/cwd</span><span style="">
+</span><span style="color:rgb(126,136,142)">↑1.8k ↓216 R8.0k W1.8k CH96.0% 43.7%/4.1k (auto)                                           (rui-faux) scripted
+</span></pre>

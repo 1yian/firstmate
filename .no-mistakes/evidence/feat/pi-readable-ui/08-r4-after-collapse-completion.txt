@@ -1,0 +1,70 @@
+
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set -g extended-keys
+ on` to ~/.tmux.conf and restart tmux.
+
+ RUI_INTERVALS=0
+
+
+ never closes
+
+
+ Intro sentence here.
+ See [guide](https://example.org/a)b "First part. Second part never closes. Third bit
+
+
+ image
+
+
+ Look diagram here.
+ After image.
+
+
+ backslash
+
+
+ Try g (https://e.org/x) now.
+ Next one.
+
+
+ tick
+
+
+ ● bash(for i in 1 2 3 4 5 6 7 8; do echo …) - exit 4
+
+ Tool output: collapsed
+
+ Ticks done.
+ Exit was four.
+
+ RUI_INTERVALS=0
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-rui-lab.8maLXL/cwd
+↑1.6k ↓88 R6.0k W1.6k CH93.9% 39.9%/4.1k (auto)                                   (rui-lab) scripted
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

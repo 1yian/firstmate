@@ -1,0 +1,60 @@
+
+ go
+
+
+ ● mcp__extremely_long_server_name__and_an_e
+   ven_longer_tool_name_here(find everything
+   that matters in t…) - timed out after 60s
+
+ ● bash(xxxxxxxxxxxxxxxxxxxxxxx…) - exit 127
+
+ Both failed.
+ Nothing else to report.
+
+ Warning: Could not restore model
+ anthropic/canned. Using
+ google-vertex/gemini-3.1-pro-preview
+
+ Warning: tmux extended-keys is off.
+ Modified Enter keys may not work. Add `set
+ -g extended-keys on` to ~/.tmux.conf and
+ restart tmux.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────
+
+────────────────────────────────────────────
+/var/folders/kc/ynb88hy54wj6yplt096j1bk00...
+↑2 ↓2 0.0%/1.0M (auto)  gemini-3.1-pro-previ

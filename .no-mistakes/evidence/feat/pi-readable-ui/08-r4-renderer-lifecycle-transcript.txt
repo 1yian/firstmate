@@ -1,0 +1,20 @@
+[t=04:04:41] collapsed running row drawn
+ ● bash(for i in 1 2 3 4 5 6 7 8; do echo …)
+[t=04:04:41] ctrl+o (expand) sent
+[t=04:04:43] expanded view shows partial output (tick 2)
+ tick
+ $ for i in 1 2 3 4 5 6 7 8; do echo tick $i; sleep 1; done; exit 4
+ tick 1
+ tick 2
+ Elapsed 1.2s
+[t=04:04:43] ctrl+o (collapse) sent while still running
+ ● bash(for i in 1 2 3 4 5 6 7 8; do echo …)
+[t=04:04:52] command finished and reply streamed
+ ● bash(for i in 1 2 3 4 5 6 7 8; do echo …) - exit 4
+[t=04:04:57] /rui-intervals after completion:  RUI_INTERVALS=0
+ $ for i in 1 2 3 4 5 6 7 8; do echo tick $i; sleep 1; done; exit 4
+ Command exited with code 4
+ Took 9.1s
+--- non-vacuity control: count intervals while the expanded command is running
+[t=04:06:17] /rui-intervals while running:  RUI_INTERVALS=0
+[t=04:06:21] /rui-intervals after the second run completes:  RUI_INTERVALS=0

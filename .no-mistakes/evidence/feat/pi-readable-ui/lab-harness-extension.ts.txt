@@ -1,0 +1,43 @@
+import * as fs from "node:fs";
+import { createFauxCore, fauxAssistantMessage, fauxText, fauxToolCall } from "@earendil-works/pi-ai";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+
+// Test harness only: count live intervals so a leaked renderer timer is observable.
+const g = globalThis as any;
+if (!g.__ruiIntervals) {
+  g.__ruiIntervals = new Set();
+  const si = g.setInterval, ci = g.clearInterval;
+  g.setInterval = (...a: any[]) => { const h = si(...a); g.__ruiIntervals.add(h); return h; };
+  g.clearInterval = (h: any) => { g.__ruiIntervals.delete(h); return ci(h); };
+  const st = g.setTimeout; const out = process.env.RUI_INTERVAL_LOG;
+  const tick = () => { if (out) fs.appendFileSync(out, `${new Date().toISOString().slice(11,23)} intervals=${g.__ruiIntervals.size}\n`); st(tick, 250); };
+  st(tick, 250);
+}
+
+export default function (pi: ExtensionAPI): void {
+  const faux = createFauxCore({
+    api: "rui-lab-api", provider: "rui-lab",
+    models: [{ id: "scripted", name: "RUI lab", reasoning: false, input: ["text"],
+      cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 4096, maxTokens: 512 }],
+    tokensPerSecond: 4, tokenSize: { min: 1, max: 1 },
+  });
+  pi.registerProvider("rui-lab", { baseUrl: "http://127.0.0.1/unused", apiKey: "x", api: faux.api, models: faux.models, streamSimple: faux.streamSimple });
+  const run = (name: string, responses: any, prompt: string) => pi.registerCommand(name, {
+    description: "lab turn",
+    handler: async (_a, ctx) => {
+      const model = ctx.modelRegistry.find("rui-lab", "scripted");
+      if (!model || !(await pi.setModel(model))) throw new Error("no model");
+      faux.setResponses(responses); pi.sendUserMessage(prompt);
+    },
+  });
+  pi.registerCommand("rui-intervals", { description: "count intervals", handler: async (_a, ctx) => {
+    ctx.ui.notify(`RUI_INTERVALS=${g.__ruiIntervals.size}`, "info");
+  }});
+  run("rui-never", [fauxAssistantMessage([fauxText('Intro sentence here. See [guide](<https://example.org/a)b> "First part. Second part never closes. Third bit')])], "never closes");
+  run("rui-image", [fauxAssistantMessage([fauxText('Look ![diagram](<https://example.org/i)m.png> "Img one. Img two") here. After image.')])], "image");
+  run("rui-backslash", [fauxAssistantMessage([fauxText('Try [g](https://e.org/x "a\\\\") now. Next one.')])], "backslash");
+  run("rui-tick", [
+    fauxAssistantMessage([fauxToolCall("bash", { command: "for i in 1 2 3 4 5 6 7 8; do echo tick $i; sleep 1; done; exit 4" }, { id: "t1" })], { stopReason: "toolUse" }),
+    fauxAssistantMessage([fauxText("Ticks done. Exit was four.")]),
+  ], "tick");
+}

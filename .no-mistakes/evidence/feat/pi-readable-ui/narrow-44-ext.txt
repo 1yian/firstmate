@@ -1,0 +1,80 @@
+
+ prose cases
+
+
+ Plain prose first.
+ Second sentence!
+ Third question?
+ Abbreviations like e.g. this and Dr. Who
+ stay whole, and 3.14 stays too.
+
+ Nested parens: read doc
+ (https://example.org/a(b)) now.
+ Next sentence after nested.
+
+ Image: alt. text shown here.
+ After image.
+
+ Reference: use ref ] one. two
+ (https://example.org/ref) here.
+ Then go on.
+
+ Even backslashes: x (https://e.org) end.
+ Next after escape.
+
+
+
+ never closes
+
+
+ Unclosed: see
+ [guide](https://example.org/a)b "First
+ part. Second part never closes
+
+
+ tool cases
+
+
+ ● bash(echo compiling; echo 'err…) - exit 2
+
+ ● bash(sleep 5; echo…) - timed out after 1s
+
+ ● read(notes.txt)
+
+ ● bash(printf 'line1\nline2\n')
+
+ Tools done.
+ All rows above.
+
+ Warning: tmux extended-keys is off.
+ Modified Enter keys may not work. Add `set
+ -g extended-keys on` to ~/.tmux.conf and
+ restart tmux.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────
+
+────────────────────────────────────────────
+/private/var/folders/kc/ynb88hy54wj6yplt0...
+↑1.7k ↓195 R4.6k W1.7k CH89.3% 44.1%/4.1k...

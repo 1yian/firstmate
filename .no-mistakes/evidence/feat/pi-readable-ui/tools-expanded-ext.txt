@@ -1,0 +1,60 @@
+
+ Even backslashes: x (https://e.org) end.
+ Next after escape.
+
+
+
+ never closes
+
+
+ Unclosed: see [guide](https://example.org/a)b "First part. Second part never closes
+
+
+ tool cases
+
+
+
+ $ echo compiling; echo 'error TS2322' >&2; exit 2
+
+ compiling
+ error TS2322
+
+
+ Command exited with code 2
+
+ Took 0.0s
+
+
+
+ $ sleep 5; echo never (timeout 1s)
+
+ Command timed out after 1 seconds
+
+ Took 1.0s
+
+
+
+ read notes.txt
+
+ hello from notes
+
+
+
+ $ printf 'line1\nline2\n'
+
+ line1
+ line2
+
+ Took 0.0s
+
+
+ Tools done.
+ All rows above.
+
+ Tool output: expanded
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+/private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/rui-manual/cwd
+↑1.7k ↓195 R4.6k W1.7k CH89.3% 44.1%/4.1k (auto)                                           (rui-faux) scripted
