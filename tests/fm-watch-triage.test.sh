@@ -2131,6 +2131,24 @@ test_milestone_signal_wakes_without_opening_a_decision() {
     || fail "a milestone hid the crew's terminal line"
   status_is_terminal_verb 'milestone: first production run started' && fail "a milestone was classified terminal"
   status_is_captain_relevant 'milestone: first production run started' || fail "a milestone did not wake a supervisor"
+
+  local override_re='done:|needs-decision:|blocked:|failed:|PR ready|checks green|ready in branch|merged'
+  FM_CAPTAIN_RE="$override_re" status_is_captain_relevant 'milestone [at=1790000012]: AegisCX 4.21.0 released to production' \
+    || fail "an FM_CAPTAIN_RE override dropped a milestone"
+  dir=$(make_case milestone-signal-override); state="$dir/state"; fakebin="$dir/fakebin"
+  out="$dir/watch.out"; status_file="$state/task.status"
+  printf 'working: applying production infrastructure\n' > "$status_file"
+  export FM_FAKE_CREW_STATE='state: working · source: run-step · running'
+  watch_bg "$state" "$fakebin" "$out" env FM_CAPTAIN_RE="$override_re"
+  pid=$!
+  if ! wait_poll_cycle "$state" "$pid"; then
+    reap "$pid"; fail "watcher under FM_CAPTAIN_RE surfaced routine progress: $(cat "$out")"
+  fi
+  printf 'milestone [at=1790000013]: production terraform applied (25 added, 0 destroyed)\nworking: planning the first run\n' >> "$status_file"
+  wait_for_exit "$pid" 100 \
+    || { reap "$pid"; fail "watcher under the documented FM_CAPTAIN_RE absorbed a production milestone"; }
+  grep -F "signal: $status_file" "$out" >/dev/null || fail "watcher under FM_CAPTAIN_RE did not print the milestone signal reason"
+  unset FM_FAKE_CREW_STATE
   pass "a production milestone wakes a provably working crew's supervisor, opens no decision, and leaves pause and terminal state intact"
 }
 

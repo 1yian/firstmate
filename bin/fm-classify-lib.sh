@@ -129,8 +129,8 @@ FM_PAUSE_RESURFACE_SECS_DEFAULT=14400
 # right after a production deploy, a production infrastructure apply, or a
 # production run start (bin/fm-brief.sh owns the worker-facing declaration).
 # It is a side-band declaration, deliberately none of a decision, blocker, or
-# wait: it wakes a supervisor so the captain can be told (the default
-# vocabulary in status_is_captain_relevant below), opens or closes no keyed
+# wait: it wakes a supervisor so the captain can be told (status_is_captain_relevant
+# below, regardless of any FM_CAPTAIN_RE override), opens or closes no keyed
 # decision, never retracts a declared pause, and is not a latest-event
 # candidate (_fm_status_line_is_event), so it can neither hide the terminal
 # done or failed line that follows or precedes it nor change what the crew's
@@ -308,8 +308,8 @@ status_is_terminal_verb() {
 }
 
 # 0 if the given (last) status line matches a captain-relevant verb.
-# Verb-aware by default: terminal verbs always match, and so does the
-# informational milestone verb; nonterminal progress verbs
+# Verb-aware by default: terminal verbs always match; the informational
+# milestone verb matches regardless of any FM_CAPTAIN_RE override; nonterminal progress verbs
 # (working, resolved, captain-held) and paused never match from free-text prose;
 # only lines without those leading verbs may still match free-text tokens for
 # legacy bare lines such as "merged" or "PR ready".
@@ -330,9 +330,12 @@ status_is_captain_relevant() {
   # recognized nonterminal verbs, so working, paused, resolved, and captain-held
   # keep their existing non-relevant classification.
   status_prefix_unrecognized "$line" && return 0
+  # A milestone is relevant regardless of FM_CAPTAIN_RE, so an override cannot
+  # silently drop a production go-live.
+  [ "$verb" != "$FM_CLASSIFY_MILESTONE_VERB" ] || return 0
   if [ -z "${FM_CAPTAIN_RE+x}" ]; then
     case "$verb" in
-      done|needs-decision|blocked|failed|"$FM_CLASSIFY_MILESTONE_VERB") return 0 ;;
+      done|needs-decision|blocked|failed) return 0 ;;
     esac
   fi
   _fm_status_unstamped "$line" unstamped
