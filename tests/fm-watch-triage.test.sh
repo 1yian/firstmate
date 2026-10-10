@@ -2092,6 +2092,48 @@ test_actionable_signal_survives_a_later_routine_append() {
   pass "a captain event hidden behind a later routine append is still surfaced (queue + exit)"
 }
 
+# A production milestone is informational but still wakes: the crew is provably
+# working, so its routine working: progress is absorbed, yet the milestone it
+# appends next surfaces on the very same evidence. It opens no decision, and as a
+# side-band declaration it neither retracts a declared pause nor hides a terminal
+# line, so a supervisor's reading of the crew's state is unchanged by it.
+test_milestone_signal_wakes_without_opening_a_decision() {
+  local dir state fakebin out drain_out status_file pid
+  dir=$(make_case milestone-signal); state="$dir/state"; fakebin="$dir/fakebin"
+  out="$dir/watch.out"; drain_out="$dir/drain.out"
+  status_file="$state/task.status"
+  printf 'working: applying production infrastructure\n' > "$status_file"
+  export FM_FAKE_CREW_STATE='state: working · source: run-step · running'
+  watch_bg "$state" "$fakebin" "$out"
+  pid=$!
+  if ! wait_poll_cycle "$state" "$pid"; then
+    reap "$pid"; fail "watcher surfaced routine working: progress from a provably working crew: $(cat "$out")"
+  fi
+  [ ! -s "$state/.wake-queue" ] || { reap "$pid"; fail "routine progress enqueued a durable wake"; }
+  printf 'milestone [at=1790000011]: production terraform applied (25 added, 0 destroyed)\nworking: planning the first run\n' >> "$status_file"
+  wait_for_exit "$pid" 100 \
+    || { reap "$pid"; fail "watcher absorbed a production milestone from a provably working crew"; }
+  grep -F "signal: $status_file" "$out" >/dev/null || fail "watcher did not print the milestone signal reason"
+  FM_STATE_OVERRIDE="$state" "$DRAIN" > "$drain_out" 2>/dev/null || fail "drain after the milestone signal failed"
+  grep "$(printf '\tsignal\t')" "$drain_out" | grep -F "$status_file" >/dev/null || fail "the milestone signal was not queued"
+  grep -F 'milestone [at=1790000011]: production terraform applied (25 added, 0 destroyed)' "$drain_out" >/dev/null \
+    || fail "the drain did not present the milestone line: $(cat "$drain_out")"
+  grep -F "$(printf '\tsignal\ttask.status\tneeds-decision:')" "$state/.wake-queue" >/dev/null \
+    && fail "a milestone was marked as a decision-owned row: $(cat "$state/.wake-queue")"
+  [ -z "$(status_open_decisions "$status_file" ship)" ] || fail "a milestone opened a keyed decision"
+  unset FM_FAKE_CREW_STATE
+
+  printf 'working: tidy\npaused: waiting on the production run until 2099-01-01T00:00Z\nmilestone: first production run started\n' > "$state/waiting.status"
+  [ "$(status_declared_wait_line "$state/waiting.status")" = 'paused: waiting on the production run until 2099-01-01T00:00Z' ] \
+    || fail "a milestone retracted the crew's declared pause"
+  printf 'working: tidy\ndone: shipped\nmilestone: first production run started\n' > "$state/finished.status"
+  [ "$(last_status_line "$state/finished.status")" = 'done: shipped' ] \
+    || fail "a milestone hid the crew's terminal line"
+  status_is_terminal_verb 'milestone: first production run started' && fail "a milestone was classified terminal"
+  status_is_captain_relevant 'milestone: first production run started' || fail "a milestone did not wake a supervisor"
+  pass "a production milestone wakes a provably working crew's supervisor, opens no decision, and leaves pause and terminal state intact"
+}
+
 # A status log only grows: a remote second mate's mirrored parent channel passes a
 # megabyte and thousands of keyed decisions. Deciding whether a newly appended
 # keyed decision is still open must cost the new span, not the log's lifetime.
@@ -6668,6 +6710,7 @@ test_pending_reply_escalation_signal_payload_marked_for_branch_exclusion
 test_ordinary_blocked_signal_payload_remains_branch_eligible
 test_routine_signal_payload_not_marked_needs_decision
 test_actionable_signal_survives_a_later_routine_append
+test_milestone_signal_wakes_without_opening_a_decision
 test_keyed_decision_signal_reads_only_the_new_span
 test_release_completion_survives_a_later_routine_append
 test_routine_appends_after_a_classified_event_stay_absorbed

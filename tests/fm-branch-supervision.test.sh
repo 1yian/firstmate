@@ -69,6 +69,13 @@ test_branch_prompt_is_byte_stable_and_above_cache_floor() {
     *"A second mate's status log is a relay channel for its child work"*"retiring a second mate is MAIN's alone"*"Report a second mate's signal wake from the status lines that wake newly presents"*"A second mate's stale wake is a liveness event: report it even when it presents no new status lines."*) ;;
     *) fail "branch prompt lost the second-mate relay, signal-span, or stale-liveness rule" ;;
   esac
+  # An informational production milestone is a start-like update on requested work,
+  # which the routine rule above would otherwise keep from the captain: the one
+  # case named a captain outcome so a go-live is never learned only by asking.
+  case "$out_a" in
+    *"a production milestone: a worker's or second mate's \`milestone:\` status line"*"report it once as a captain outcome that says what went live and asks for nothing, never as a decision, hold, or approval"*) ;;
+    *) fail "branch prompt lost the production milestone captain-verdict rule" ;;
+  esac
   pass "branch prompt is byte-stable across homes, cwd, timezone, and time, above the cache floor"
 }
 

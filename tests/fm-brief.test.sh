@@ -1027,6 +1027,41 @@ test_ship_and_scout_teach_validation_round_pause() {
   pass "fm-brief.sh: ship and scout scaffolds declare a validation-round pause once, then hold it"
 }
 
+# A worker that deploys to production, applies production infrastructure, or
+# starts a production run is told to declare it the moment it happens, as an
+# informational line that asks for nothing and that firstmate relays by itself;
+# a secondmate charter names the same declaration for the mate's own actions and
+# tells the mate its children's milestones are published for it.
+# shellcheck disable=SC2016 # Literal backticks and braces must remain unexpanded.
+test_ship_and_charter_teach_production_milestone() {
+  local home ship charter
+  home="$TMP_ROOT/production-milestone-home"
+  mkdir -p "$home/data"
+  FM_HOME="$home" "$ROOT/bin/fm-brief.sh" milestone-ship firstmate --mode no-mistakes >/dev/null 2>&1
+  FM_HOME="$home" FM_SECONDMATE_CHARTER=x "$ROOT/bin/fm-brief.sh" milestone-mate --secondmate --no-projects >/dev/null 2>&1
+  ship="$home/data/milestone-ship/brief.md"
+  charter="$home/data/milestone-mate/brief.md"
+  assert_grep '`milestone [at=<epoch>]: {what happened, where, and the version or run id}`' "$ship" \
+    "ship brief lost the production milestone declaration"
+  assert_grep 'deploy or release to it, apply infrastructure changes to it, or start a run on it' "$ship" \
+    "ship brief did not name the production deploy, infrastructure apply, and run start triggers"
+  assert_grep 'it is not a decision, a blocker, or a wait, so it asks for nothing and you keep working after it' "$ship" \
+    "ship brief did not state that a milestone is informational"
+  assert_grep 'Staging or preview deploys, dry-run or plan-only applies, test runs, and routine progress are not milestones' "$ship" \
+    "ship brief did not bound what counts as a milestone"
+  assert_grep 'States: working, needs-decision, blocked, paused, done, failed.' "$ship" \
+    "ship brief changed the preserved status vocabulary"
+  assert_grep '`milestone [at=<epoch>]: {what happened, where, and the version or run id}` right after it happens' "$charter" \
+    "secondmate charter lost the mate's own production milestone declaration"
+  assert_grep 'a child'"'"'s `milestone:` line for a production deploy, a production infrastructure apply, or a production run start' "$charter" \
+    "secondmate charter did not name a child's milestone as published by the home's own machinery"
+  assert_grep 'A child'"'"'s milestone is published for you, so never append one for it' "$charter" \
+    "secondmate charter lets the mate re-append a child's milestone"
+  assert_grep 'States: working, needs-decision, blocked, paused, done, failed.' "$charter" \
+    "secondmate charter changed the preserved status vocabulary"
+  pass "fm-brief.sh: ship briefs and secondmate charters teach the production milestone declaration"
+}
+
 test_scout_and_secondmate_load_decision_hold_policy() {
   local home scout charter
   home="$TMP_ROOT/decision-policy-home"
@@ -1565,6 +1600,7 @@ test_secondmate_marked_request_reporting_contract
 test_secondmate_directory_paths_are_absolute_and_output_is_stable
 test_pause_verb_override_renders_all_brief_scaffolds
 test_ship_and_scout_teach_validation_round_pause
+test_ship_and_charter_teach_production_milestone
 test_scout_and_secondmate_load_decision_hold_policy
 test_scout_and_secondmate_scaffold
 test_scout_lavish_line_follows_presentation_floor

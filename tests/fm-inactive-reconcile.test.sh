@@ -913,6 +913,162 @@ test_watcher_poll_delivers_child_ledger_line_to_parent() {
   pass "the real watcher poll delivers a child's terminal ledger line to the parent channel"
 }
 
+# The parent-channel lines a mate home has published, with the time tag removed
+# and the receipt key's hash folded, so a test reads the payload the parent sees.
+parent_lines() { # <file>
+  sed -E 's/ \[at=[0-9]+\]//; s/(child-milestone-[A-Za-z0-9._-]+-)[0-9a-f]{8}/\1KEY/' "$1" 2>/dev/null
+}
+
+# A secondmate publishes a child's milestone line on the parent channel on the
+# very next poll, from the child's own ledger and with no line appended by the
+# mate model, and publishes nothing else the child writes while it works. The
+# delivery is once-only across polls, keeps the child's own emission time, takes
+# a line still being appended only once its newline lands, and treats a second
+# identical milestone as a distinct event.
+test_secondmate_forwards_child_milestone_and_nothing_else() {
+  local lines
+  make_world milestone-local; bind_secondmate local
+  write_child "$MATE" child $'working: building the release\nmilestone [at=1790000001]: production deploy of AegisCX 4.21.0 released\nworking: watching the rollout\nnote: unrelated aside\nmilestone [at=1790000002]: production terraform applied (25 added, 0 destroyed)\nworking: preparing the first run\npaused: waiting on the data team'
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MATE"
+  lines=$(parent_lines "$MAIN/state/mate.status")
+  [ "$lines" = "milestone [key=child-milestone-child-KEY]: child child milestone: production deploy of AegisCX 4.21.0 released
+milestone [key=child-milestone-child-KEY]: child child milestone: production terraform applied (25 added, 0 destroyed)" ] \
+    || fail "the parent channel did not carry exactly the child's two milestones: $(cat "$MAIN/state/mate.status" 2>/dev/null)"
+  grep -q '\] \[at=1790000001\]: child child milestone: production deploy' "$MAIN/state/mate.status" \
+    || fail "the parent line lost the child's own emission time: $(cat "$MAIN/state/mate.status")"
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MATE"
+  [ "$(wc -l < "$MAIN/state/mate.status" | tr -d ' ')" = 2 ] || fail "a second poll delivered a milestone again"
+  [ "$(outcome_count "$MATE" reported)" = 2 ] || fail "milestone delivery left no durable receipts"
+  printf 'working: kicked off the first full run\nmilestone: first full production run started (run 7)\n' >> "$MATE/state/child.status"
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MATE"
+  parent_lines "$MAIN/state/mate.status" | tail -1 | grep -Fxq 'milestone [key=child-milestone-child-KEY]: child child milestone: first full production run started (run 7)' \
+    || fail "a milestone appended later was not delivered: $(cat "$MAIN/state/mate.status")"
+  grep -Eq '^milestone \[key=child-milestone-child-[0-9a-f]{8}\] \[at=[0-9]+\]: child child milestone: first full production run started' "$MAIN/state/mate.status" \
+    || fail "an unstamped child milestone was not stamped on delivery"
+  printf 'milestone: still being typed' >> "$MATE/state/child.status"
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MATE"
+  ! grep -q 'still being typed' "$MAIN/state/mate.status" || fail "a milestone still being appended was delivered before its newline"
+  printf '\nmilestone: still being typed\n' >> "$MATE/state/child.status"
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MATE"
+  [ "$(grep -c 'still being typed' "$MAIN/state/mate.status")" = 2 ] \
+    || fail "a completed line and an identical repeat were not both delivered: $(cat "$MAIN/state/mate.status")"
+  ! grep -Eq 'working:|paused:|note:|unrelated aside' "$MAIN/state/mate.status" \
+    || fail "a non-milestone in-progress line reached the parent: $(cat "$MAIN/state/mate.status")"
+  pass "a child's milestone lines reach the parent channel once each while its other in-progress lines stay home"
+}
+
+# A milestone the child wrote after its done: line neither hides that terminal
+# event nor is held behind it: the milestones are delivered first, in ledger
+# order, and the terminal line follows.
+test_secondmate_milestones_precede_and_never_hide_the_terminal_line() {
+  make_world milestone-order; bind_secondmate local
+  write_child "$MATE" child $'working: shipping\nmilestone [at=1790000003]: production run started (run 8)\ndone: run 8 finished clean\nmilestone [at=1790000004]: second production run started (run 9)'
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MATE"
+  [ "$(parent_lines "$MAIN/state/mate.status" | sed -n 's/^\([a-z]*\) .*/\1/p' | tr '\n' ' ')" = 'milestone milestone done ' ] \
+    || fail "milestones were not delivered first, in ledger order, ahead of the terminal line: $(cat "$MAIN/state/mate.status")"
+  [ "$(grep -n 'run 8 started\|run 8)' "$MAIN/state/mate.status" | cut -d: -f1 | head -1)" = 1 ] \
+    || fail "milestones were delivered out of ledger order: $(cat "$MAIN/state/mate.status")"
+  grep -Fq 'child child done: run 8 finished clean' "$MAIN/state/mate.status" \
+    || fail "a trailing milestone hid the child's terminal line"
+  pass "milestones are published in ledger order and a trailing milestone never hides the terminal line"
+}
+
+# The remote route carries the same line into this home's parent-replies input,
+# once, across polls and a restart-shaped re-run.
+test_secondmate_remote_route_milestone_delivery() {
+  make_world milestone-remote; bind_secondmate remote
+  write_child "$MATE" child $'working: x\nmilestone [at=1790000005]: production infrastructure applied'
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MATE"
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MATE"
+  rm -f "$MATE/state/terminal-outcomes"/milestone-child.cursor
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MATE"
+  [ "$(grep -c 'production infrastructure applied' "$MATE/state/parent-replies.status")" = 1 ] \
+    || fail "remote milestone delivery was not once-only: $(cat "$MATE/state/parent-replies.status" 2>/dev/null)"
+  ! grep -q 'working:' "$MATE/state/parent-replies.status" || fail "a working: line reached the remote channel"
+  pass "the remote route carries a child's milestone once, even after its cursor is lost"
+}
+
+# A parent channel that cannot be written holds the milestone, queues one notice,
+# and releases it - in order, once - when the channel returns. A reused task id
+# is a new incarnation and starts its own ledger from the beginning.
+test_secondmate_milestone_retries_when_channel_returns() {
+  make_world milestone-retry; bind_secondmate local
+  write_child "$MATE" child $'milestone [at=1790000006]: production deploy one\nmilestone [at=1790000007]: production deploy two'
+  cp "$MATE/.fm-secondmate-parent" "$WORLD/parent-binding"
+  printf 'schema=fm-secondmate-parent.v1\nroute=invalid\n' > "$MATE/.fm-secondmate-parent"
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MATE"
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MATE"
+  [ ! -e "$MAIN/state/mate.status" ] || fail "a milestone reached a parent through an unusable binding"
+  [ "$(wake_count "$MATE" 'inactive-reconcile:')" = 1 ] || fail "an undeliverable milestone did not queue exactly one notice"
+  cp "$WORLD/parent-binding" "$MATE/.fm-secondmate-parent"
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MATE"
+  [ "$(parent_lines "$MAIN/state/mate.status" | sed 's/.*milestone: //' | tr '\n' '|')" = 'production deploy one|production deploy two|' ] \
+    || fail "the held milestones were not released in order: $(cat "$MAIN/state/mate.status")"
+  write_child "$MATE" child $'milestone [at=1790000006]: production deploy one' s-second-incarnation
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MATE"
+  [ "$(grep -c 'production deploy one' "$MAIN/state/mate.status")" = 2 ] \
+    || fail "a replacement incarnation's identical milestone was suppressed by its predecessor's cursor"
+  pass "a held milestone is retried in order once the channel returns, and a new incarnation starts fresh"
+}
+
+# The teardown-side entry point delivers a milestone the poll has not seen yet,
+# and refuses while the channel cannot be written, so cleanup never discards one.
+test_report_subcommand_delivers_pending_milestone() {
+  local rc=0
+  make_world milestone-report; bind_secondmate local
+  write_child "$MATE" child $'working: closing out\nmilestone [at=1790000008]: production run started (run 10)'
+  cp "$MATE/.fm-secondmate-parent" "$WORLD/parent-binding"
+  printf 'schema=fm-secondmate-parent.v1\nroute=invalid\n' > "$MATE/.fm-secondmate-parent"
+  run_report "$MATE" child >/dev/null || rc=$?
+  [ "$rc" -ne 0 ] || fail "report claimed delivery of a milestone through an unusable parent binding"
+  cp "$WORLD/parent-binding" "$MATE/.fm-secondmate-parent"
+  run_report "$MATE" child || fail "report refused a deliverable milestone"
+  parent_lines "$MAIN/state/mate.status" | grep -Fxq 'milestone [key=child-milestone-child-KEY]: child child milestone: production run started (run 10)' \
+    || fail "report did not deliver the pending milestone: $(cat "$MAIN/state/mate.status" 2>/dev/null)"
+  run_report "$MATE" child || fail "report did not treat a delivered milestone as owed nothing"
+  [ "$(wc -l < "$MAIN/state/mate.status" | tr -d ' ')" = 1 ] || fail "report delivered a milestone twice"
+  pass "report delivers a pending milestone for teardown and refuses only an unwritable channel"
+}
+
+# A main home has no parent channel: its watcher already signals every child
+# status line, so the milestone pass writes nothing there.
+test_main_home_writes_no_milestone_channel() {
+  make_world milestone-main
+  write_child "$MAIN" child $'milestone [at=1790000009]: production deploy'
+  FM_FAKE_CREW_STATE='unknown' run_reconcile "$MAIN"
+  [ ! -e "$MAIN/state/parent-replies.status" ] && [ ! -e "$MAIN/state/terminal-outcomes/milestone-child.cursor" ] \
+    || fail "a main home recorded a milestone delivery"
+  pass "a main home forwards no milestones"
+}
+
+# The real watcher poll in a secondmate home delivers a child's milestone to the
+# parent channel on its first cycle, with no line appended by the mate, while the
+# child's routine progress line stays in the child's own log.
+test_watcher_poll_delivers_child_milestone_to_parent() {
+  local pid i
+  make_world watcher-milestone; bind_secondmate local
+  write_child "$MATE" child $'working: applying production infrastructure\nmilestone [at=1790000010]: production terraform applied (25 added, 0 destroyed)\nworking: starting the first full run'
+  prime_seen "$MATE/state" "$MATE/state/child.status"
+  PATH="$WORLD/fakebin:$PATH" FM_HOME="$MATE" FM_STATE_OVERRIDE="$MATE/state" FM_DATA_OVERRIDE="$MATE/data" \
+    FM_CONFIG_OVERRIDE="$MATE/config" FM_INACTIVE_RECONCILE_SECS=60 \
+    FM_INACTIVE_CREW_STATE_BIN="$WORLD/fakebin/fm-crew-state.sh" FM_FORGE_LOG="$WORLD/forge.log" \
+    FM_POLL=1 FM_SIGNAL_GRACE=1 FM_CHECK_INTERVAL=999999 FM_HEARTBEAT=999999 \
+    FM_FAKE_CREW_STATE='unknown' "$WATCH" > "$WORLD/mate-watch.out" 2>&1 &
+  pid=$!
+  i=0
+  while [ "$i" -lt 100 ]; do
+    kill -0 "$pid" 2>/dev/null || break
+    grep -q 'child-milestone-child' "$MAIN/state/mate.status" 2>/dev/null && break
+    sleep 0.1
+    i=$((i + 1))
+  done
+  reap "$pid"
+  [ "$(parent_lines "$MAIN/state/mate.status")" = "milestone [key=child-milestone-child-KEY]: child child milestone: production terraform applied (25 added, 0 destroyed)" ] \
+    || fail "the watcher poll did not deliver exactly the child's milestone to the parent: $(cat "$MAIN/state/mate.status" 2>/dev/null; cat "$WORLD/mate-watch.out")"
+  [ ! -s "$WORLD/forge.log" ] || fail "milestone delivery invoked a forge command"
+  pass "the real watcher poll delivers a child's milestone to the parent channel and nothing else"
+}
+
 # A stalled authoritative state read consumes only the aggregate scan budget.
 # The durable scan position lets the next invocation reach the following child.
 test_stalled_state_read_is_bounded_and_scan_progresses() {
@@ -1069,6 +1225,13 @@ test_scan_marker_replaces_symlink_safely
 test_nonterminal_and_captain_held_states_do_not_report
 test_watcher_hook_and_idle_secondmate_exemption
 test_watcher_poll_delivers_child_ledger_line_to_parent
+test_secondmate_forwards_child_milestone_and_nothing_else
+test_secondmate_milestones_precede_and_never_hide_the_terminal_line
+test_secondmate_remote_route_milestone_delivery
+test_secondmate_milestone_retries_when_channel_returns
+test_report_subcommand_delivers_pending_milestone
+test_main_home_writes_no_milestone_channel
+test_watcher_poll_delivers_child_milestone_to_parent
 test_stalled_state_read_is_bounded_and_scan_progresses
 test_full_scan_budget_includes_wake_lock_wait
 test_notice_recovery_does_not_duplicate_wake

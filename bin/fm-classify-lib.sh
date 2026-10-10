@@ -123,6 +123,22 @@ FM_CLASSIFY_PAUSED_VERB_DEFAULT='paused'
 # shellcheck disable=SC2034 # Read by the watcher and daemon (fm-watch.sh, fm-supervise-daemon.sh), not this lib.
 FM_PAUSE_RESURFACE_SECS_DEFAULT=14400
 
+# The informational milestone verb. A worker (or a secondmate acting itself)
+# appends
+#   milestone: <what happened, where, and the version or run id>
+# right after a production deploy, a production infrastructure apply, or a
+# production run start (bin/fm-brief.sh owns the worker-facing declaration).
+# It is a side-band declaration, deliberately none of a decision, blocker, or
+# wait: it wakes a supervisor so the captain can be told (the default
+# vocabulary in status_is_captain_relevant below), opens or closes no keyed
+# decision, never retracts a declared pause, and is not a latest-event
+# candidate (_fm_status_line_is_event), so it can neither hide the terminal
+# done or failed line that follows or precedes it nor change what the crew's
+# current state reads as. A secondmate home publishes each one on its parent
+# channel from the child's own ledger (bin/fm-inactive-reconcile.sh). This
+# constant is the ONE definition of the verb.
+FM_CLASSIFY_MILESTONE_VERB='milestone'
+
 # fm_utc_iso_to_epoch <YYYY-MM-DDTHH:MM[:SS]Z>: the one portable UTC ISO 8601
 # reader shared by the declared-wait vocabulary and the away-posture record
 # (bin/fm-afk-contract.sh). Prints epoch seconds; returns 1 on any other shape
@@ -173,7 +189,7 @@ last_status_line() {  # <status-file> [<previous-event-var>]
 # 0 when <verb> is exactly one recognized status verb, with no leftover token.
 _fm_status_verb_recognized() {  # <verb>
   case "$1" in
-    working|needs-decision|blocked|done|failed|note|\
+    working|needs-decision|blocked|done|failed|note|"$FM_CLASSIFY_MILESTONE_VERB"|\
     "${FM_CLASSIFY_PAUSED_VERB:-$FM_CLASSIFY_PAUSED_VERB_DEFAULT}"|\
     "${FM_CLASSIFY_RESOLVE_VERB:-$FM_CLASSIFY_RESOLVE_VERB_DEFAULT}"|\
     "${FM_CLASSIFY_CAPTAIN_HELD_VERB:-$FM_CLASSIFY_CAPTAIN_HELD_VERB_DEFAULT}")
@@ -257,6 +273,9 @@ _fm_status_event_scan() {
 _fm_status_line_is_event() {  # <line> <legacy-captain-re>
   local verb unstamped
   case "$1" in *:*) status_line_verb "$1" verb ;; *) verb='' ;; esac
+  # A milestone is informational side-band (FM_CLASSIFY_MILESTONE_VERB), never
+  # the log's latest event: it must not shadow a terminal line or retract a pause.
+  [ "$verb" != "$FM_CLASSIFY_MILESTONE_VERB" ] || return 1
   _fm_status_verb_recognized "$verb" && return 0
   # Unrecognized verb-shaped prefixes (parked:, holding:, bad corr tokens) stay
   # events so a bad declaration cannot vanish behind an earlier recognized line.
@@ -289,7 +308,8 @@ status_is_terminal_verb() {
 }
 
 # 0 if the given (last) status line matches a captain-relevant verb.
-# Verb-aware by default: terminal verbs always match; nonterminal progress verbs
+# Verb-aware by default: terminal verbs always match, and so does the
+# informational milestone verb; nonterminal progress verbs
 # (working, resolved, captain-held) and paused never match from free-text prose;
 # only lines without those leading verbs may still match free-text tokens for
 # legacy bare lines such as "merged" or "PR ready".
@@ -312,11 +332,22 @@ status_is_captain_relevant() {
   status_prefix_unrecognized "$line" && return 0
   if [ -z "${FM_CAPTAIN_RE+x}" ]; then
     case "$verb" in
-      done|needs-decision|blocked|failed) return 0 ;;
+      done|needs-decision|blocked|failed|"$FM_CLASSIFY_MILESTONE_VERB") return 0 ;;
     esac
   fi
   _fm_status_unstamped "$line" unstamped
   _fm_classify_matches "$unstamped" "${FM_CAPTAIN_RE:-$FM_CLASSIFY_CAPTAIN_RE_DEFAULT}"
+}
+
+# 0 if the given status line's leading verb is the milestone verb
+# (FM_CLASSIFY_MILESTONE_VERB). A pure read of the line itself. Terminal-verb
+# and captain-relevance questions have their own predicates above: a milestone
+# is relevant (it wakes a supervisor) but never terminal.
+status_is_milestone() {  # <status-line>
+  local line=$1 verb
+  [ -n "$line" ] || return 1
+  status_line_verb "$line" verb
+  [ "$verb" = "$FM_CLASSIFY_MILESTONE_VERB" ]
 }
 
 # 0 if a status line's leading verb is the pause verb (paused: <reason>). A pure

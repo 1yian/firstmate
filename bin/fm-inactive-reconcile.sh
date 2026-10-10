@@ -27,6 +27,19 @@
 # and failure outcomes from depending on the mate model appending them
 # (docs/secondmate-parent-channel.md). A main home has no parent channel and
 # skips this path: its watcher already signals every child status line.
+# The same per-poll pass forwards a child's MILESTONE lines (the informational
+# `milestone:` declaration for a production deploy, a production infrastructure
+# apply, or a production run start; bin/fm-classify-lib.sh owns the verb and
+# bin/fm-brief.sh the worker-facing declaration), each before the terminal line:
+#   milestone [key=child-milestone-<child>-<fp8>] [at=<child's epoch>]: child <child> milestone: <note>
+# Every other in-progress line stays in the child's own log. A durable
+# per-child byte cursor (state/terminal-outcomes/milestone-<child>.cursor)
+# keeps each poll proportional to the bytes appended since the last one, each
+# line gets the same per-fingerprint receipt as a terminal outcome, and the
+# deterministic key lets the channel's own retry equivalence absorb a replay
+# after a crash between the append and the cursor write. A delivery that fails
+# leaves the cursor at that line, queues the same once-per-receipt notice, and is
+# retried on the next poll.
 # `report <task-id>` runs that same delivery for one child on behalf of a
 # caller that already holds the child's meta lock, which bin/fm-teardown.sh
 # does before it removes the child's record; it exits 0 when the line is
@@ -408,11 +421,106 @@ claim_inactive_report_for_ledger() { # <task> <incarnation> <state> <ledger-fing
   return 1
 }
 
-# The ledger-first parent delivery for one direct child, for a caller holding
-# the child's meta lock. Returns 0 when the line is delivered, already
+# Forward one milestone line the caller found at byte <offset> of the child's
+# ledger. Idempotent on three levels: the receipt of an already-delivered line
+# yields nothing to do, a replay after a crash is absorbed by the channel's
+# retry equivalence because the key is deterministic, and a failed append
+# leaves its pending receipt for the next poll. Returns non-zero when the
+# parent channel could not be written (the notice is queued once per receipt).
+forward_milestone_line() { # <id> <incarnation> <offset> <line>
+  local id=$1 incarnation=$2 offset=$3 line=$4 fingerprint outcome_key note at lead payload
+  fingerprint=$(sha256_text "$incarnation|$id|milestone|$offset|$line")
+  outcome_key="child-milestone-$id-${fingerprint:0:8}"
+  ensure_record "$fingerprint" "$id" "$incarnation" milestone "$outcome_key" direct upstream "" || return 1
+  [ -n "$RECORD_PENDING" ] || return 0
+  note=$(clean_field "$(status_line_note "$line")")
+  [ -n "$note" ] || note='(no detail given)'
+  lead="$FM_CLASSIFY_MILESTONE_VERB [key=$outcome_key]"
+  # Relays preserve the source's emission time (fm-classify-lib.sh), so the
+  # captain reads when the milestone happened, not when a poll noticed it.
+  if at=$(status_line_at_epoch "$line"); then lead="$lead [at=$at]"; fi
+  payload="$lead: child $id milestone: $note"
+  if fm_parent_channel_report "$FM_HOME" "$STATE" "$payload"; then
+    mark_reported "$RECORD_PENDING" || return 1
+    return 0
+  fi
+  notice_parent_report_failed "$RECORD_PENDING" "$fingerprint" \
+    "child milestone needs parent report: child=$id"
+  return 1
+}
+
+# Forward every milestone line a direct child has appended since this child's
+# cursor, in order, for a caller holding the child's meta lock. A line still
+# being appended (no trailing newline yet) waits for the next poll. The cursor
+# moves past a line only once it is delivered, so a failed delivery blocks the
+# milestones after it rather than reordering them. Returns 0 when nothing is
+# owed or everything owed was delivered, and 1 when delivery failed.
+report_child_milestones_locked() { # <id> <meta>
+  local id=$1 meta=$2 status cursor incarnation offset size span line pos rc=0
+  status="$STATE/$id.status"
+  [ -f "$status" ] && [ ! -L "$status" ] || return 0
+  size=$(_fm_status_file_size "$status") || return 0
+  size=${size//[[:space:]]/}
+  case "$size" in ''|*[!0-9]*) return 0 ;; esac
+  incarnation=$(meta_incarnation "$meta")
+  cursor="$OUTCOME_DIR/milestone-$id.cursor"
+  offset=0
+  if [ "$(record_value "$cursor" incarnation)" = "$incarnation" ]; then
+    offset=$(record_value "$cursor" offset)
+    case "$offset" in ''|*[!0-9]*) offset=0 ;; esac
+  fi
+  # A ledger shorter than the cursor was replaced; read it from the start.
+  [ "$offset" -le "$size" ] || offset=0
+  [ "$offset" -lt "$size" ] || return 0
+  mkdir -p "$OUTCOME_DIR" || return 1
+  [ ! -L "$OUTCOME_DIR" ] || return 1
+  span=$(mktemp "$OUTCOME_DIR/.milestone-span.XXXXXX") || return 1
+  if ! _fm_status_read_span "$status" "$offset" "$((size - offset))" > "$span" 2>/dev/null; then
+    rm -f "$span"
+    return 0
+  fi
+  pos=$offset
+  while IFS= read -r line; do
+    if status_is_milestone "$line"; then
+      forward_milestone_line "$id" "$incarnation" "$pos" "$line" || { rc=1; break; }
+    fi
+    pos=$((pos + ${#line} + 1))
+  done < "$span"
+  rm -f "$span"
+  if [ "$pos" -gt "$offset" ]; then
+    write_milestone_cursor "$cursor" "$incarnation" "$pos" || rc=1
+  fi
+  return "$rc"
+}
+
+write_milestone_cursor() { # <path> <incarnation> <offset>
+  local path=$1 tmp
+  tmp=$(mktemp "$OUTCOME_DIR/.cursor.XXXXXX") || return 1
+  {
+    printf 'schema=fm-milestone-cursor.v1\n'
+    printf 'incarnation=%s\n' "$2"
+    printf 'offset=%s\n' "$3"
+  } > "$tmp" || { rm -f "$tmp"; return 1; }
+  chmod 600 "$tmp" 2>/dev/null || true
+  mv -f "$tmp" "$path" || { rm -f "$tmp"; return 1; }
+}
+
+# The parent delivery for one direct child, for a caller holding the child's
+# meta lock: its milestone lines, then its terminal ledger line. Both are
+# attempted even when the first fails, so a milestone the channel refused can
+# never keep a terminal outcome from being tried.
+report_child_ledger_locked() { # <id> <meta>
+  local rc=0
+  report_child_milestones_locked "$1" "$2" || rc=1
+  report_child_terminal_locked "$1" "$2" || rc=1
+  return "$rc"
+}
+
+# The ledger-first terminal parent delivery for one direct child, for a caller
+# holding the child's meta lock. Returns 0 when the line is delivered, already
 # delivered, or nothing is owed, and 1 when it is owed but the parent channel
 # could not be written (the notice is queued once per record).
-report_child_ledger_locked() { # <id> <meta>
+report_child_terminal_locked() { # <id> <meta>
   local id=$1 meta=$2 status last previous state note pr mode yolo data incarnation fingerprint predecessor_head outcome_key line
   status="$STATE/$id.status"
   last=$(child_terminal_ledger_line "$status") || return 0

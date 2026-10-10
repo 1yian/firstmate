@@ -98,6 +98,13 @@
 # "blocked:": pause for a known wait expected to clear on its own, including
 # the worker's own background work, pipeline or long command; blocked when
 # firstmate must act. The first-sight alert remains; repeats use the long cadence.
+# Ship scaffolds and secondmate charters also carry the informational milestone
+# declaration (FM_CLASSIFY_MILESTONE_VERB, "milestone"): a production deploy, a
+# production infrastructure apply, or a production run start is announced with
+# one line the moment it happens, so it reaches the captain as it happens rather
+# than at done:. bin/fm-classify-lib.sh owns the verb's meaning and
+# bin/fm-inactive-reconcile.sh forwards a child's line to a secondmate's parent
+# channel, so a worker never forwards one itself.
 # Emission-time syntax and legacy unknown-time handling are owned by
 # bin/fm-classify-lib.sh; each scaffold renders the stamp as a literal <epoch>
 # placeholder the worker replaces with a numeric Unix time as it appends, so a
@@ -161,6 +168,16 @@ IFS= read -r -d '' CREWMATE_PAUSE_INSTRUCTIONS <<EOF || true
    Follow the resolution rule below when the wait clears, then resume the task.
    Use \`blocked:\` when you are stuck and need help.
 EOF
+
+MILESTONE_VERB=$FM_CLASSIFY_MILESTONE_VERB
+IFS= read -r -d '' CREWMATE_MILESTONE_INSTRUCTIONS <<EOF || true
+   Declare a production milestone with \`$MILESTONE_VERB [at=<epoch>]: {what happened, where, and the version or run id}\` the moment you do any of these against production: deploy or release to it, apply infrastructure changes to it, or start a run on it.
+   Append it right after the deploy or apply succeeds, or right after the run starts, one line per event, so the captain learns of it as it happens instead of at \`done:\`.
+   A milestone is informational: it is not a decision, a blocker, or a wait, so it asks for nothing and you keep working after it.
+   Staging or preview deploys, dry-run or plan-only applies, test runs, and routine progress are not milestones.
+   Firstmate relays a milestone onward by itself, so never forward one or repeat it in another line.
+EOF
+CREWMATE_MILESTONE_INSTRUCTIONS=${CREWMATE_MILESTONE_INSTRUCTIONS%$'\n'}
 
 resolve_directory_input() {
   local name=$1 path=$2 resolved
@@ -458,7 +475,7 @@ Never start a survey, audit, or "find improvements" sweep on your own initiative
 # The captain and the parent channel
 Nobody reads this chat: the captain and the main firstmate see only what is appended to $STATUS_FILE, and a captain-facing sentence that is not appended there has not been sent.
 That file is your parent channel, and in this home it IS the captain: every sentence you would say to the captain, and every outcome the local AGENTS.md tells a firstmate to bring to the captain, is one appended line there, never chat.
-Your own machinery publishes the durable facts about your crew's work for you (\`bin/fm-parent-channel-lib.sh\`): a child's terminal done or failed line with its note and PR on every supervision poll, a PR-ready line when you register a PR, a task you hold for the captain and its answer, a merge, and a child's final line at cleanup all reach the parent channel from the scripts that record them, whether or not you append anything.
+Your own machinery publishes the durable facts about your crew's work for you (\`bin/fm-parent-channel-lib.sh\`): a child's terminal done or failed line with its note and PR on every supervision poll, a child's \`$MILESTONE_VERB:\` line for a production deploy, a production infrastructure apply, or a production run start, a PR-ready line when you register a PR, a task you hold for the captain and its answer, a merge, and a child's final line at cleanup all reach the parent channel from the scripts that record them, whether or not you append anything.
 What only you can append is judgement: the answer to a marked request below, a recommendation or caveat on a delivered outcome, a blocker or failure of your own, and anything else you would otherwise say to the captain.
 
 # Requests from the main firstmate
@@ -494,6 +511,9 @@ If its first reportable event is \`working [key=<work-slug>]: {material phase}\`
 When a keyed phase ends without another reportable state, append \`resolved [key=<work-slug>] [at=<epoch>]: {why it is no longer active}\`.
 \`resolved\` separately closes an escalated decision or blocker, and only a \`resolved\` line carrying that decision's exact key closes it: a later \`done\` or \`working\` event never does, even when the answer is what started that work.
 The main firstmate's answer normally writes that closing line at answer time; when a blocker or wait clears WITHOUT an answer from the main firstmate, append \`resolved [at=<epoch>]: {how it cleared}\` yourself (keyed with \`[key=<slug>]\` if you opened it with one) as your domain resumes.
+If you yourself, rather than a child, deploy to production, apply infrastructure to production, or start a production run, append \`$MILESTONE_VERB [at=<epoch>]: {what happened, where, and the version or run id}\` right after it happens.
+A milestone is informational: it is not a decision, a blocker, or a wait, so it asks for nothing and you keep working after it.
+A child's milestone is published for you, so never append one for it.
 Routine internal supervision, heartbeats, retries, and crewmate churn stay inside your own home and must not touch that status file.
 
 # Definition of done
@@ -712,6 +732,7 @@ $RULE1
    copies that URL from your line rather than assembling one.
    A mid-task \`working:\` line (including setup complete) is nonterminal: do not end the
    turn after it; continue the same stage until a defined \`done:\` gate under Definition of done.
+$CREWMATE_MILESTONE_INSTRUCTIONS
 $CREWMATE_PAUSE_INSTRUCTIONS
 5. If you hit the same obstacle twice, append \`blocked [at=<epoch>]: {why}\` and stop; firstmate will help.
 6. If a decision belongs above the implementation worker (product choices, destructive actions),

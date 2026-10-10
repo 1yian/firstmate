@@ -343,6 +343,7 @@ Reach the captain immediately for:
 - Work ready for their review, with the PR's recorded URL.
 - Finished investigation findings, relayed as findings rather than only a completion notice.
 - Gate findings that `ask-user-authority` escalates.
+- A production milestone a worker or secondmate declared (a production deploy, a production infrastructure apply, or a production run start), relayed as an informational outcome rather than a decision.
 - A real blocker or failure after the relevant playbook is exhausted.
 - Anything destructive, irreversible, or security-sensitive.
 - A needed credential or login.

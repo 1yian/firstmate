@@ -83,6 +83,7 @@ When in doubt, render.
 Also report verdict captain for:
 - work ready for review - include the PR's full https:// URL when the task's ready status or `pr=` metadata holds one, otherwise only the identifier you actually have;
 - a decision only the captain can make, including every ask-user finding from a validation gate;
+- a production milestone: a worker's or second mate's `milestone:` status line announcing a production deploy, a production infrastructure apply, or a production run start, which is informational, so report it once as a captain outcome that says what went live and asks for nothing, never as a decision, hold, or approval;
 - a real blocker or failure after the playbook is exhausted;
 - a needed credential or login;
 - anything destructive, irreversible, or security-sensitive.

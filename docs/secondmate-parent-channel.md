@@ -12,6 +12,7 @@ The watcher had delivered the parent's request within a minute each time, the ma
 The cause is structural rather than a one-off lapse: the mate can satisfy the [address rule in `AGENTS.md`](../AGENTS.md#firstmate) in local chat while missing the charter's later return-channel instruction.
 The captain's framing of the requirement was: "the root problem is not specific to PRs, right? it looks like any message or outcomes from second mates can miss. we need to make sure our fixes are addressing this in a principled, fundamental way, not surgically treating the symptoms of just this PR update miss."
 A PR-ready report was the observed symptom, but a finding, a decision, a blocker, and a failure all fail the same way, because every one of them depended on the mate model remembering to write one line.
+The same failure recurred for outcomes that are not terminal at all: on 2026-10-09 a child released a production version, applied production infrastructure, and started the first full production run, and all three stayed in the child's own status log as in-progress notes, so the captain learned the system was live only by asking.
 
 The design goal is therefore: the parent channel must not depend on the model remembering to write to it.
 
@@ -25,6 +26,7 @@ Every captain-facing outcome that leaves durable evidence in the mate home is pu
 | Ship child PR ready | the child's `done:` PR ready line, whose accepted spellings the publisher below owns; `pr=` in the child's record once registered | `bin/fm-inactive-reconcile.sh` on the next poll with the child's line; `bin/fm-pr-check.sh` at registration with the canonical URL |
 | Scout child findings | the child's `done:` line plus `data/<child>/report.md` | `bin/fm-inactive-reconcile.sh` on the next poll, with the report pointer |
 | Child failed | the child's `failed:` line | `bin/fm-inactive-reconcile.sh` on the next poll |
+| Child production milestone | the child's `milestone:` line, declared right after a production deploy, a production infrastructure apply, or a production run start (`bin/fm-brief.sh` owns the declaration, `bin/fm-classify-lib.sh` the verb) | `bin/fm-inactive-reconcile.sh` on the next poll, in order and before the child's terminal line, and again at teardown through the same `report` entry point |
 | Child decision escalated to the captain | the task held for the captain in the mate backlog | `bin/fm-captain-hold.sh hold`, and its answer by `answer` |
 | PR merged | the merge poll or the mate's own merge | `bin/fm-merge-outcome-lib.sh` |
 | Child leaving the home | its final ledger line | `bin/fm-teardown.sh`, which refuses to remove the child while that line is undelivered |
@@ -32,6 +34,8 @@ Every captain-facing outcome that leaves durable evidence in the mate home is pu
 | Answer to a marked request | a correlated line guarded by the pending-reply record | `bin/fm-secondmate-report.sh`, which resolves the parent channel from the mate home; the pending-reply guard repairs a line stranded in the local mate's same-basename status file before recovery or escalation |
 | An outcome that exists only in the mate's reasoning | none | the charter and the `AGENTS.md` carve-outs only |
 
+A milestone is informational: it wakes the parent supervisor so the captain is told, and it is none of a decision, a blocker, or a wait, so it opens no decision record, retracts no declared pause, and never replaces the child's latest terminal line.
+Only a `milestone:` line is forwarded; every other in-progress line stays in the child's own log.
 The ledger delivery reads files, plus a local git reachability check on a ship `done:` with no delivery record yet (`bin/fm-dod-lib.sh`): it calls no harness, no forge, and no current-state reader, so it is identical for every harness and runtime backend.
 Each delivery is keyed with the first eight hexadecimal characters of its receipt fingerprint and uses the shared append contract above, and the ledger path reuses the inactive scan's per-fingerprint receipts, so a replayed poll or restart cannot deliver an event twice while a genuinely new terminal event is delivered again.
 A duplicate line is harmless and a missed one is not, so the mate may still append its own judgement about a delivered outcome, and the parent reads the script's line as the fact and the mate's line as commentary.
@@ -52,6 +56,8 @@ A missed-reply escalation includes the complete first sighting path and line num
 ## Regression coverage
 
 `tests/fm-inactive-reconcile.test.sh` covers the ledger delivery against real ledgers with no harness: immediate done and failed delivery with note, PR, mode, posture, and report pointer, once-only delivery across polls, a ship `done:` withheld while its named head exists only in the worker copy, a pending one still delivered after teardown removes that copy, a line still being appended, later routine status prose not minting a fresh parent event because the inactive receipt identity binds structured fields only, the remote route, the yield of the inactive path to a terminal ledger, and the real watcher poll driving it.
+It also covers milestone forwarding end to end: a child's milestone line reaching the parent channel on the local and remote routes while a `working:` line does not, once-only delivery across polls, a repeated identical milestone remaining a distinct event, a line still being appended waiting for its newline, order ahead of the terminal line, and the teardown-side entry point delivering a milestone the poll had not yet seen.
+`tests/fm-watch-triage.test.sh` covers the parent side: a milestone wakes a supervisor even while its crew is provably busy, opens no decision, and leaves a declared pause and a terminal line intact.
 `tests/fm-captain-hold-lifecycle.test.sh` covers a mate home publishing a hold, its answer, and a distinct occurrence on re-hold, and a main home publishing nothing.
 `tests/fm-pr-merge.test.sh` covers the PR-ready line at registration and the merge outcome's upward report.
 `tests/fm-teardown.test.sh` covers teardown delivering a child's final line and refusing when the channel cannot be written.
