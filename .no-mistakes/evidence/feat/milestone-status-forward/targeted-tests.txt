@@ -1,0 +1,26 @@
+== tests/fm-inactive-reconcile.test.sh (milestone + terminal delivery selection)
+ok - the real watcher poll delivers a child's terminal ledger line to the parent channel
+ok - a child's milestone lines reach the parent channel once each while its other in-progress lines stay home
+ok - milestones are published in ledger order and a trailing milestone never hides the terminal line
+ok - the remote route carries a child's milestone once, even after its cursor is lost
+actionable: child milestone needs parent report: child=child (missing or unreadable parent binding .fm-secondmate-parent)
+ok - a held milestone is retried in order once the channel returns, and a new incarnation starts fresh
+ok - report delivers a pending milestone for teardown and refuses only an unwritable channel
+ok - a main home forwards no milestones
+ok - the real watcher poll delivers a child's milestone to the parent channel and nothing else
+all inactive reconciliation tests passed
+exit=0
+== tests/fm-watch-triage.test.sh (milestone)
+/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/tmp.hI29oB8PGc/fm-watch-triage.test.sh: line 21: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/tmp.hI29oB8PGc/wake-helpers.sh: No such file or directory
+/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/tmp.hI29oB8PGc/fm-watch-triage.test.sh: line 23: ROOT: unbound variable
+exit=1
+== tests/fm-brief.test.sh (milestone)
+ok - fm-brief.sh: ship briefs and secondmate charters teach the production milestone declaration
+exit=0
+== tests/fm-branch-supervision.test.sh (prompt)
+ok - branch prompt is byte-stable across homes, cwd, timezone, and time, above the cache floor
+exit=0
+== tests/fm-watch-triage.test.sh (milestone selection)
+ok - a captain event hidden behind a later routine append is still surfaced (queue + exit)
+ok - a production milestone wakes a provably working crew's supervisor, opens no decision, and leaves pause and terminal state intact
+exit=0

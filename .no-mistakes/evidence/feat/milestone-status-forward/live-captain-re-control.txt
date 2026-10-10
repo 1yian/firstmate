@@ -1,0 +1,6 @@
+[control] appended: working: still applying production infrastructure
+  watcher rc=0 (142 = still absorbing at the 15s limit, no wake)
+  watcher output: signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.QJ6lYq/state/infra.status
+[milestone] appended: milestone [at=1791619952]: production terraform applied (25 added, 0 destroyed)
+  watcher rc=0 (142 = still absorbing at the 15s limit, no wake)
+  watcher output: signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.vMrmya/state/infra.status

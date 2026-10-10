@@ -1,0 +1,89 @@
+=== [before-base-990b4b6] tree: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-base.2lhHyi
+=== step 1: child appends in-progress lines and the first two production milestones
+  child ledger | working [at=1791590400]: building AegisCX 4.21.0 release
+  child ledger | milestone [at=1791590700]: AegisCX 4.21.0 released to production (prod-eu1)
+  child ledger | working [at=1791590800]: watching the rollout
+  child ledger | note [at=1791590850]: unrelated aside
+  child ledger | milestone [at=1791591000]: production terraform applied (25 added, 0 destroyed)
+--- secondmate watcher cycle 1 output:
+  | signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-live.EhpChN/mate/state/aegis-release.status
+  drain(mate) | 1791619252	2	signal	aegis-release.status	signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-live.EhpChN/mate/state/aegis-release.status
+  drain(mate) | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 30488.1791619252.pSDWsw
+  drain(mate) | wake annotation: unread wake-EVENT since last drain, not current state: aegis-release.status: working [at=1791590400]: building AegisCX 4.21.0 release
+  drain(mate) | wake annotation: unread wake-EVENT since last drain, not current state: aegis-release.status: milestone [at=1791590700]: AegisCX 4.21.0 released to production (prod-eu1)
+  drain(mate) | wake annotation: unread wake-EVENT since last drain, not current state: aegis-release.status: working [at=1791590800]: watching the rollout
+  drain(mate) | wake annotation: unread wake-EVENT since last drain, not current state: aegis-release.status: note [at=1791590850]: unrelated aside
+  drain(mate) | wake annotation: latest wake-EVENT observed at drain, not current state: aegis-release.status: milestone [at=1791591000]: production terraform applied (25 added, 0 destroyed)
+  drain(mate) | UNREAD STATUS (new since last drain, not re-printed after this presentation):
+  drain(mate) | aegis-release note [at=1791590850]: unrelated aside
+  drain(mate) | STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+  drain(mate) | aegis-release milestone [at=1791591000]: production terraform applied (25 added, 0 destroyed)
+  drain(mate) | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  drain(mate) | ●  WATCHER DOWN - SUPERVISION IS OFF
+  drain(mate) | ●  1 task(s) in flight, but no live watcher process holds this home lock (last beat: 4s ago).
+  drain(mate) | ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+  drain(mate) | ●  This is a supervision warning only; the guarded operation WILL still run.
+  drain(mate) | ●  After draining queued wakes, repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-base.2lhHyi/.pi/extensions/fm-primary-turnend-guard.ts -e /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-base.2lhHyi/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+  drain(mate) | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  drain(mate) | WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+--- parent channel (/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-live.EhpChN/main/state/mate.status) after cycle 1:
+  | working: delegated CNP scope
+=== step 2: second poll with nothing new (once-only check)
+--- secondmate watcher cycle 2 output:
+  drain(mate) | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 0 --recovery-generation 34655.1791619277.Dnkh5U
+  drain(mate) | WARNING: watcher still down (same stale episode; last beat: 2s ago, grace 300s) - full banner already printed this episode.
+--- parent channel line count: 1
+=== step 3: child starts the first full production run, then a half-written line, then done:
+--- secondmate watcher cycle 3 output:
+  | signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-live.EhpChN/mate/state/aegis-release.status
+  drain(mate) | 1791619281	4	signal	aegis-release.status	signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-live.EhpChN/mate/state/aegis-release.status
+  drain(mate) | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 4 --recovery-generation 53911.1791619281.ZhdzdX
+  drain(mate) | wake annotation: unread wake-EVENT since last drain, not current state: aegis-release.status: working [at=1791591100]: preparing the first full run
+  drain(mate) | wake annotation: unread wake-EVENT since last drain, not current state: aegis-release.status: milestone [at=1791591200]: first full production run started (run 7)
+  drain(mate) | wake annotation: latest wake-EVENT observed at drain, not current state: aegis-release.status: milestone: half-written line
+  drain(mate) | STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+  drain(mate) | aegis-release milestone: half-written line
+  drain(mate) | WARNING: watcher still down (same stale episode; last beat: 4s ago, grace 300s) - full banner already printed this episode.
+  drain(mate) | WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+--- parent channel after cycle 3 (half-written line must NOT appear):
+  | working: delegated CNP scope
+--- secondmate watcher cycle 4 output:
+  | signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-live.EhpChN/mate/state/aegis-release.status
+  drain(mate) | 1791619286	6	signal	aegis-release.status	signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-live.EhpChN/mate/state/aegis-release.status
+  drain(mate) | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 6 --recovery-generation 57545.1791619286.YZqxHE
+  drain(mate) | wake annotation: latest wake-EVENT observed at drain, not current state: aegis-release.status: done [at=1791591300]: release shipped and run 7 started
+  drain(mate) | STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+  drain(mate) | aegis-release done [at=1791591300]: release shipped and run 7 started
+  drain(mate) | WARNING: watcher still down (same stale episode; last beat: 4s ago, grace 300s) - full banner already printed this episode.
+  drain(mate) | WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+--- parent channel after cycle 4 (completed line, then terminal done):
+  | working: delegated CNP scope
+  | done [key=child-outcome-aegis-release-done-420fd8a0] [at=1791619285]: child aegis-release done: release shipped and run 7 started mode=no-mistakes yolo=off
+--- durable receipts in the secondmate home:
+  | 420fd8a0f3889c2a50bed4e1d3469069.reported
+=== step 4: real MAIN-home watcher, FM_CAPTAIN_RE set to the documented default override
+--- main watcher first-arm cycle (establishes the seen baseline):
+  | signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-live.EhpChN/main/state/mate.status
+  drain(main) | 1791619291	2	signal	mate.status	signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-live.EhpChN/main/state/mate.status
+  drain(main) | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 61143.1791619291.J6gLUQ
+  drain(main) | wake annotation: latest wake-EVENT observed at drain, not current state: mate.status: working: delegated CNP scope
+  drain(main) | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  drain(main) | ●  WATCHER DOWN - SUPERVISION IS OFF
+  drain(main) | ●  1 task(s) in flight, but no live watcher process holds this home lock (last beat: 4s ago).
+  drain(main) | ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+  drain(main) | ●  This is a supervision warning only; the guarded operation WILL still run.
+  drain(main) | ●  After draining queued wakes, repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-base.2lhHyi/.pi/extensions/fm-primary-turnend-guard.ts -e /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-base.2lhHyi/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+  drain(main) | ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  drain(main) | WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+--- main watcher alive after arming on routine lines: yes
+--- appended forwarded line: 
+--- main watcher exited (woke) after append: yes
+  main watcher | signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-live.EhpChN/main/state/mate.status
+--- main wake queue:
+  | 1791619300	3	signal	mate.status	signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-live.EhpChN/main/state/mate.status
+  | 1791619300	4	signal	mate.status	signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-live.EhpChN/main/state/mate.status
+  drain(main) | 1791619300	4	signal	mate.status	signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-live.EhpChN/main/state/mate.status
+  drain(main) | WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 4 --recovery-generation 69545.1791619300.SzUvyt
+  drain(main) | WARNING: watcher still down (same stale episode; last beat: 4s ago, grace 300s) - full banner already printed this episode.
+  drain(main) | WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+=== [before-base-990b4b6] done

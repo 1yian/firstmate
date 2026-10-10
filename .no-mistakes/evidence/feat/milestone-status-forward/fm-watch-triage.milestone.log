@@ -1,0 +1,8 @@
+ok - a production milestone wakes a provably working crew's supervisor, opens no decision, and leaves pause and terminal state intact
+ok - status_span_has_actionable: benign absorbed, captain events surfaced, classified events not re-fired
+ok - a captain event hidden behind a later routine append is still surfaced (queue + exit)
+selected triage tests passed
+
+real	0m18.277s
+user	0m4.132s
+sys	0m7.600s

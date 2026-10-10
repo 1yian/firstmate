@@ -1,0 +1,78 @@
+
+### S1: child appends the go-live milestones; real secondmate watcher polls
+--- /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.nF7P9p/state/cutover.status
+working: building the AegisCX 4.21.0 release
+milestone [at=1791619908]: AegisCX 4.21.0 released to production
+working: watching the rollout
+note: rollout dashboards green
+milestone [at=1791619908]: production terraform applied (25 added, 0 destroyed)
+working: preparing the first full run
+milestone: first full production run started (run 1)
+mate watcher exit=0
+--- /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.nF7P9p/watch1.out
+signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.nF7P9p/state/cutover.status
+== parent channel (main home state/mate.status) after mate poll:
+--- /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.mc2s3R/state/mate.status
+working: delegated scope: AegisCX production cutover
+milestone [key=child-milestone-cutover-bc5764cc] [at=1791619908]: child cutover milestone: AegisCX 4.21.0 released to production
+milestone [key=child-milestone-cutover-e9d259ae] [at=1791619908]: child cutover milestone: production terraform applied (25 added, 0 destroyed)
+milestone [key=child-milestone-cutover-2548cd84] [at=1791619910]: child cutover milestone: first full production run started (run 1)
+
+### S2: second poll does not re-deliver (once-only)
+scan exit=0
+scan exit=0
+parent lines before=       4 after=       4
+
+### S3: main watcher (default vocabulary) wakes on the forwarded milestone
+main watcher exit=0
+--- /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.mc2s3R/watch.out
+signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.mc2s3R/state/mate.status
+drain exit=0
+--- /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.mc2s3R/drain.out
+1791619916	2	signal	mate.status	signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.mc2s3R/state/mate.status
+wake annotation: unread wake-EVENT since last drain, not current state: mate.status: working: delegated scope: AegisCX production cutover
+wake annotation: unread wake-EVENT since last drain, not current state: mate.status: milestone [key=child-milestone-cutover-bc5764cc] [at=1791619908]: child cutover milestone: AegisCX 4.21.0 released to production
+wake annotation: unread wake-EVENT since last drain, not current state: mate.status: milestone [key=child-milestone-cutover-e9d259ae] [at=1791619908]: child cutover milestone: production terraform applied (25 added, 0 destroyed)
+wake annotation: latest wake-EVENT observed at drain, not current state: mate.status: milestone [key=child-milestone-cutover-2548cd84] [at=1791619910]: child cutover milestone: first full production run started (run 1)
+STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+mate milestone [key=child-milestone-cutover-2548cd84] [at=1791619910]: child cutover milestone: first full production run started (run 1)
+--- /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.mc2s3R/drain.err
+WAKE_ACK_REQUIRED: after handling completes run bin/fm-wake-drain.sh --ack-through 2 --recovery-generation 96104.1791619916.hRnOsf
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no live watcher process holds this home lock (last beat: 3s ago).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  After draining queued wakes, repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /Users/yian/.no-mistakes/worktrees/27c8282ea781/01M4JBZNBEQZA9NC3YPH76TF5G/.pi/extensions/fm-primary-turnend-guard.ts -e /Users/yian/.no-mistakes/worktrees/27c8282ea781/01M4JBZNBEQZA9NC3YPH76TF5G/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WARNING: queued wakes pending - drain them with bin/fm-wake-drain.sh before anything else.
+
+### S4: child finishes; terminal done: still delivered after milestones, latest-state not shadowed
+scan exit=0
+--- /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.mc2s3R/state/mate.status
+working: delegated scope: AegisCX production cutover
+milestone [key=child-milestone-cutover-bc5764cc] [at=1791619908]: child cutover milestone: AegisCX 4.21.0 released to production
+milestone [key=child-milestone-cutover-e9d259ae] [at=1791619908]: child cutover milestone: production terraform applied (25 added, 0 destroyed)
+milestone [key=child-milestone-cutover-2548cd84] [at=1791619910]: child cutover milestone: first full production run started (run 1)
+milestone [key=child-milestone-cutover-0d28af2a] [at=1791619918]: child cutover milestone: second production run started (run 2)
+done [key=child-outcome-cutover-done-494761fa] [at=1791619918]: child cutover done: AegisCX 4.21.0 live in production, first full run healthy mode=no-mistakes yolo=off
+last_status_line(child) = done: AegisCX 4.21.0 live in production, first full run healthy
+fm-crew-state-free classify: terminal? no
+
+### S5: main home with FM_CAPTAIN_RE set to the documented value still wakes on a direct child's milestone
+main watcher (FM_CAPTAIN_RE) exit=0
+--- /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.mc2s3R/watch2.out
+signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.mc2s3R/state/infra.status
+--- /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.mc2s3R/drain2.out
+1791619916	2	signal	mate.status	signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.mc2s3R/state/mate.status
+1791619926	4	signal	infra.status	signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.mc2s3R/state/infra.status
+wake annotation: unread wake-EVENT since last drain, not current state: infra.status: working: applying production infrastructure
+wake annotation: latest wake-EVENT observed at drain, not current state: infra.status: milestone [at=1791619924]: production terraform applied (25 added, 0 destroyed)
+STATUS OUTCOME BACKSTOP (newest captain-facing task event has no covering branch outcome):
+infra milestone [at=1791619924]: production terraform applied (25 added, 0 destroyed)
+
+### S6 (adversarial): FM_CAPTAIN_RE override vs routine working: (control) and milestone
+FM_CAPTAIN_RE=<documented>  not-relevant  <- working: applying production infrastructure
+FM_CAPTAIN_RE=<documented>  relevant  <- milestone: AegisCX 4.21.0 released to production
+FM_CAPTAIN_RE=<documented>  not-relevant  <- note: staging deploy done
+lab homes removed at exit

@@ -1,0 +1,12 @@
+rc=0
+rc=0
+== ship brief (data/cutover/brief.md), milestone lines:
+46:   Declare a production milestone with `milestone [at=<epoch>]: {what happened, where, and the version or run id}` the moment you do any of these against production: deploy or release to it, apply infrastructure changes to it, or start a run on it.
+48:   A milestone is informational: it is not a decision, a blocker, or a wait, so it asks for nothing and you keep working after it.
+49:   Staging or preview deploys, dry-run or plan-only applies, test runs, and routine progress are not milestones.
+50:   Firstmate relays a milestone onward by itself, so never forward one or repeat it in another line.
+== secondmate charter (data/cnp/brief.md), milestone lines:
+24:Your own machinery publishes the durable facts about your crew's work for you (`bin/fm-parent-channel-lib.sh`): a child's terminal done or failed line with its note and PR on every supervision poll, a child's `milestone:` line for a production deploy, a production infrastructure apply, or a production run start, a PR-ready line when you register a PR, a task you hold for the captain and its answer, a merge, and a child's final line at cleanup all reach the parent channel from the scripts that record them, whether or not you append anything.
+63:If you yourself, rather than a child, deploy to production, apply infrastructure to production, or start a production run, append `milestone [at=<epoch>]: {what happened, where, and the version or run id}` right after it happens.
+64:A milestone is informational: it is not a decision, a blocker, or a wait, so it asks for nothing and you keep working after it.
+65:A child's milestone is published for you, so never append one for it.

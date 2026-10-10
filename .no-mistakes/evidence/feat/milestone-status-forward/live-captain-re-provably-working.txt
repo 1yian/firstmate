@@ -1,0 +1,7 @@
+crew-state: provably working (FM_CREW_STATE_BIN pins only the pane-state read; no live harness pane in the lab)
+[control] appended: working: still applying production infrastructure
+  watcher rc=142 (142 = still absorbing at the 15s limit, no wake)
+  watcher output: /Users/yian/.no-mistakes/evidence/01M4JBZNBEQZA9NC3YPH76TF5G/live-captain-re-provably-working.sh: line 8: 53341 Alarm clock: 14            perl -e 'alarm shift; exec @ARGV or die' "$s" "$@"
+[milestone] appended: milestone [at=1791619986]: production terraform applied (25 added, 0 destroyed)
+  watcher rc=0 (142 = still absorbing at the 15s limit, no wake)
+  watcher output: signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-lab.AIZvxg/state/infra.status

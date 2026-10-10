@@ -1,0 +1,17 @@
+=== [pre-review-fix-d72bc6b] FM_CAPTAIN_RE='done:|needs-decision:|blocked:|failed:|PR ready|checks green|ready in branch|merged'
+classifier: status_is_captain_relevant 'milestone [at=1791591000]: production terraform applied (25 added, 0 destroyed)' -> not-relevant
+classifier: status_is_captain_relevant 'working: planning the first run' -> not-relevant
+first arm on the initial working: line -> exited
+  watcher | signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-main.SB74ns/main/state/aegis-deploy.status
+  drain | 1791619351	2	signal	aegis-deploy.status	signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-main.SB74ns/main/state/aegis-deploy.status
+  drain | wake annotation: latest wake-EVENT observed at drain, not current state: aegis-deploy.status: working: applying production infrastructure
+after a routine working: append -> watcher exited
+  watcher | signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-main.SB74ns/main/state/aegis-deploy.status
+  drain | 1791619359	4	signal	aegis-deploy.status	signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-main.SB74ns/main/state/aegis-deploy.status
+  drain | wake annotation: latest wake-EVENT observed at drain, not current state: aegis-deploy.status: working: still applying
+after the milestone append -> watcher exited
+  watcher | signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-main.SB74ns/main/state/aegis-deploy.status
+  watcher | signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-main.SB74ns/main/state/aegis-deploy.status
+  drain | 1791619368	6	signal	aegis-deploy.status	signal: /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T//fm-ms-main.SB74ns/main/state/aegis-deploy.status
+  drain | wake annotation: latest wake-EVENT observed at drain, not current state: aegis-deploy.status: milestone [at=1791591000]: production terraform applied (25 added, 0 destroyed)
+=== [pre-review-fix-d72bc6b] done
