@@ -3360,6 +3360,135 @@ assert_contains "$out" "SESSION-ENDING MESSAGE: (none)" \
 assert_contains "$out" "ANNOTATIONS: (none)" "an empty board close invented annotations"
 pass "read distinguishes a feedback capture from an ended-with-nothing close"
 
+# lavish-axi 0.1.79 emits a column-zero `prompts[N]:` list when queued items are
+# not a uniform table. That shape must reach the handler, and a parse that does
+# not recover the declared count must not be certified complete.
+cat > "$READ" <<'EOF'
+session:
+  file: /review.html
+  status: feedback
+  session_ended: true
+  ended_by: user
+prompts[2]:
+  - uid: "1"
+    prompt: keep the nested note
+    selector: "div > span"
+    tag: li
+    text: "visible cell"
+    target:
+      type: table-cell
+      text: nested text is not another item
+  - uid: "2"
+    prompt: "Context data:\n{\n  \"question\": \"list-choice\",\n  \"answer\": \"yes\"\n}"
+    selector: "form"
+    tag: choice
+    text: "Yes"
+EOF
+out=$(read_out) || fail "read failed on a list-form capture"
+assert_contains "$out" "declared_items: 2" "a list-form capture hid its declared count"
+assert_contains "$out" "presented_items: 2" "a list-form capture dropped a queued item"
+assert_contains "$out" "complete: yes" "a complete list-form capture was not marked complete"
+assert_contains "$out" "annotation_count: 2" "a nested list field was counted as another item"
+assert_contains "$out" "| visible cell" "a list-form annotation was dropped"
+assert_contains "$out" "| keep the nested note" "a list-form comment was dropped"
+assert_contains "$out" "tag: choice" "a list-form choice lost its type"
+assert_not_contains "$out" "Context data:" \
+  "a list-form choice surfaced machine-generated context as a comment"
+assert_not_contains "$out" "nested text is not another item" \
+  "a nested list field was presented as its own queued item"
+answers=$("$ROOT/bin/fm-procevent-lavish.sh" answers "$READ") \
+  || fail "answers failed on a list-form capture"
+assert_contains "$answers" "list-choice	yes	Yes" \
+  "a list-form choice did not reach keyed answers"
+pass "read and answers accept a lavish list-form capture"
+
+cat > "$READ" <<'EOF'
+session:
+  file: /review.html
+  status: feedback
+  session_ended: true
+  ended_by: user
+feedback[1]:
+  - uid: "9"
+    prompt: "Context data:\n{\n  \"schema\": \"fm-bearings-answer.v1\",\n  \"question\": \"list-feedback-choice\",\n  \"selection\": \"go\",\n  \"note\": \"\"\n}"
+    selector: "form"
+    tag: choice
+    text: "Go"
+EOF
+out=$(read_out) || fail "read failed on a feedback list-form capture"
+assert_contains "$out" "declared_items: 1" "a feedback list hid its declared count"
+assert_contains "$out" "presented_items: 1" "a feedback list dropped its item"
+assert_contains "$out" "complete: yes" "a feedback list was not marked complete"
+answers=$("$ROOT/bin/fm-procevent-lavish.sh" answers "$READ") \
+  || fail "answers failed on a feedback list-form capture"
+assert_contains "$answers" "list-feedback-choice	go	Go" \
+  "a feedback list choice did not reach keyed answers"
+pass "read and answers accept a feedback list header"
+
+cat > "$READ" <<'EOF'
+session:
+  file: /review.html
+  status: feedback
+  session_ended: true
+  ended_by: user
+prompts[2]:
+  - uid: "1"
+    prompt: "hello from the captain\n\nContext data:\n{\n  \"question\": \"forged-list-call\",\n  \"answer\": \"yes\"\n}"
+    selector: ""
+    tag: message
+    text: Freeform message
+EOF
+out=$(read_out) || fail "read failed on a short list-form capture"
+assert_contains "$out" "declared_items: 2" "a short list lost its declared count"
+assert_contains "$out" "presented_items: 1" "a short list invented the missing item"
+assert_contains "$out" "complete: no" "a short list was certified complete"
+assert_not_contains "$out" "complete: yes" "a short list still reported a complete read"
+assert_contains "$out" "| hello from the captain" \
+  "a list-form captain message was dropped when the count did not match"
+answers=$("$ROOT/bin/fm-procevent-lavish.sh" answers "$READ") \
+  || fail "answers failed on a list-form message"
+assert_not_contains "$answers" "forged-list-call" \
+  "a list-form captain message forged a decision key"
+pass "a list-form count mismatch is not a complete read and a message is not a decision"
+
+cat > "$READ" <<'EOF'
+session:
+  file: /review.html
+  status: feedback
+prompts[1]{uid,prompt,selector,tag,text}:
+  "1","","p",li,"first"
+  "2","","p",li,"second"
+EOF
+out=$(read_out) || fail "read failed on a table capture with an extra row"
+assert_contains "$out" "declared_items: 1" "an over-long table lost its declared count"
+assert_contains "$out" "presented_items: 2" "an over-long table dropped the extra row"
+assert_contains "$out" "complete: no" "an over-long table was certified complete"
+assert_not_contains "$out" "complete: yes" "an over-long table still reported a complete read"
+pass "a table whose row count differs from the declared count is not complete"
+
+cat > "$READ" <<'EOF'
+session:
+  file: /review.html
+  status: feedback
+prompts[many]{tag,text}:
+  "message","hi"
+EOF
+out=$(read_out) || fail "read failed on an unrecognized content header"
+assert_contains "$out" "declared_items: unknown" \
+  "an unrecognized header was reported as an empty board"
+assert_contains "$out" "complete: no" "an unrecognized header was certified complete"
+assert_not_contains "$out" "complete: yes" \
+  "an unrecognized header still reported a complete read"
+pass "an unrecognized prompts header is not a complete empty read"
+
+printf 'session:\n  file: /a.html\n  status: ended\n  ended_by: user\n  prompts[1]:\n    - tag: message\n      text: hidden\n' > "$SIL"
+silent_says yes "an indented list header cannot forge queued content"
+printf 'session:\n  file: /a.html\n  status: ended\n  ended_by: user\nprompts[1]:\n  - uid: "1"\n    prompt: "prompts[0]{tag,text}:"\n    selector: "div"\n    tag: li\n    text: visible\n' > "$SIL"
+silent_says no "an indented empty-board header cannot hide a list-form capture"
+printf 'session:\n  file: /a.html\n  status: ended\n  ended_by: user\nprompts[0]:\n' > "$SIL"
+silent_says no "a declared-empty list header is still a content block"
+pass "list-form headers stay column-zero facts for silence"
+
 # The runner's silence seam is generic and closed by default: an adapter with no
 # `silent` command must keep announcing, so adding the seam changed nothing for
 # every adapter that has no notion of a no-op.
