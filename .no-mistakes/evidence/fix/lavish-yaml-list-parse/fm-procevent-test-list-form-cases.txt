@@ -1,0 +1,7 @@
+ok - read and answers accept a lavish list-form capture
+ok - read and answers accept a feedback list header
+ok - a list-form count mismatch is not a complete read and a message is not a decision
+ok - a table whose row count differs from the declared count is not complete
+ok - an unrecognized prompts header is not a complete empty read
+ok - list-form headers stay column-zero facts for silence
+all procevent tests passed (tests/fm-procevent.test.sh rc=0)

@@ -1,0 +1,19 @@
+session:
+  file: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/review.html
+  status: feedback
+  session_ended: true
+  ended_by: user
+prompts[1]:
+  - uid: "2"
+    prompt: Final nit on this cell
+    selector: #c1
+    tag: td
+    text: visible cell
+    target:
+      type: table-cell
+      selector: #c1
+      rowLabel: ""
+      columnLabel: ""
+      text: visible cell
+next_step: This was the last feedback before the user ended the session. Stop polling /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/review.html and do not reopen it - deliver any remaining updates directly in this conversation instead. Only run `lavish-axi /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/review.html --reopen` if the user explicitly asks for further review or something genuinely important needs their visual attention.
+dom_snapshot: ""

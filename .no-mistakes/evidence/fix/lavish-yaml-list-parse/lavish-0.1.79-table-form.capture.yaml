@@ -1,0 +1,12 @@
+session:
+  file: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/table.html
+  status: feedback
+  session_ended: true
+  ended_by: user
+prompts[4]{uid,prompt,selector,tag,text}:
+  "1",Plain table row comment,h1,h1,Redesign board
+  "6",Drop the footer,body,body,""
+  "5","Context data:\n{\n  \"schema\": \"fm-bearings-answer.v1\",\n  \"question\": \"table-choice\",\n  \"selection\": \"go\",\n  \"note\": \"\"\n}",#f,choice,Go
+  "",plain message,"",message,Freeform message
+next_step: This was the last feedback before the user ended the session. Stop polling /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/table.html and do not reopen it - deliver any remaining updates directly in this conversation instead. Only run `lavish-axi /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/table.html --reopen` if the user explicitly asks for further review or something genuinely important needs their visual attention.
+dom_snapshot: ""

@@ -1,0 +1,215 @@
+# Lab-home runner run: fm-procevent-lavish.sh arm -> fm-procevent.sh listener -> inbox result -> wake -> read
+== wake queue ==
+1791833328	1	check	procevent:lavish-8ad06ac16ec4194c:1	check: procevent lavish lavish-8ad06ac16ec4194c 1
+1791833363	2	check	procevent:lavish-8ad06ac16ec4194c:2	check: procevent lavish lavish-8ad06ac16ec4194c 2
+
+== seq 1 result ==
+session:
+  file: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/runner.html
+  status: feedback
+prompts[9]:
+  - uid: "1"
+    prompt: Tighten the hero spacing
+    selector: h1
+    tag: h1
+    text: Redesign board
+  - uid: "2"
+    prompt: This cell reads wrong
+    selector: #c1
+    tag: td
+    text: visible cell
+    target:
+      type: table-cell
+      selector: #c1
+      rowLabel: ""
+      columnLabel: ""
+      text: visible cell
+  - uid: ""
+    prompt: Selected phrase needs a citation
+    selector: #p
+    tag: text
+    text: Paragraph
+    target:
+      type: text-range
+      text: Paragraph
+      selector: #p
+      commonAncestorSelector: #p
+      start:
+        selector: #p
+        path[1]: 0
+        offset: 0
+      end:
+        selector: #p
+        path[1]: 0
+        offset: 9
+  - uid: "4"
+    prompt: Use the brand blue here
+    selector: #p
+    tag: p
+    text: Paragraph
+  - uid: "5"
+    prompt: "Context data:\n{\n  \"schema\": \"fm-bearings-answer.v1\",\n  \"question\": \"redesign-nav\",\n  \"selection\": \"tabs\",\n  \"note\": \"\"\n}"
+    selector: #f
+    tag: choice
+    text: Tabs
+  - uid: "6"
+    prompt: Drop the footer
+    selector: body
+    tag: body
+    text: ""
+    target:
+      type: element
+      label: footer
+  - uid: "7"
+    prompt: "Typo: 'Redesgin'"
+    selector: h1
+    tag: h1
+    text: Redesign board
+  - uid: "8"
+    prompt: "Comma, inside, the comment"
+    selector: #c1
+    tag: td
+    text: visible cell
+  - uid: ""
+    prompt: "Overall: good direction, ship round 2. prompts[0]{tag,text}:"
+    selector: ""
+    tag: message
+    text: Freeform message
+next_step: "Apply the requested changes to /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/runner.html. Do not respond to the user just yet. Now you must run `lavish-axi poll /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/runner.html --agent-reply \"<message for the user>\"` without --timeout-ms unless the user ended the session. Keep the reply concise. Only when a longer reply is genuinely necessary, use Markdown structure - blank-line paragraphs, `- ` / `1. ` lists, `## ` headings - so it renders scannably instead of a wall of text, and pass that body with `--agent-reply-file <path>` (`-` reads stdin) so newlines survive quoting. The Conversation panel's Markdown subset is in `lavish-axi poll --help` and README. The poll waits silently until the user sends more feedback, ends the session, or leaves every review window disconnected past the reconnect grace period - never kill it. Keep the poll in the foreground by default and let it return the feedback directly to the agent. A background poll is allowed only through a harness-native tracked background-job facility whose completion result is guaranteed to resume or notify the same agent. Never use `nohup`, shell `&`, `disown`, redirected fire-and-forget processes, or a detached terminal without an explicit verified callback merely to keep polling alive. If the harness has no completion-aware background facility, use the foreground poll or first wire a verified wake callback into the surrounding supervisor. Do not tell the user the artifact is being monitored until that wake path is live. If the poll gets killed or times out before feedback arrives, re-run it - feedback remains queued until delivery. Poll delivery consumes the response, so read it completely. If it returns browser_disconnected, the review window stayed disconnected past its reconnect grace period but the session remains resumable; ask the user whether to reopen or end it, and do neither uninvited."
+dom_snapshot: ""
+== seq 1 FIX read ==
+CAPTAIN MESSAGE
+| Overall: good direction, ship round 2. prompts[0]{tag,text}:
+END CAPTAIN MESSAGE
+
+declared_items: 9
+presented_items: 9
+malformed_items: 0
+complete: yes
+lifecycle: feedback
+session_ended: (unset)
+annotation_count: 8
+session_ending_message_count: 1
+
+ANNOTATIONS
+ANNOTATION 1 of 8
+element_uid: 1
+element_selector: h1
+tag: h1
+text:
+| Redesign board
+prompt:
+| Tighten the hero spacing
+ANNOTATION 2 of 8
+element_uid: 2
+element_selector: #c1
+tag: td
+text:
+| visible cell
+prompt:
+| This cell reads wrong
+ANNOTATION 3 of 8
+element_uid: 
+element_selector: #p
+tag: text
+text:
+| Paragraph
+prompt:
+| Selected phrase needs a citation
+ANNOTATION 4 of 8
+element_uid: 4
+element_selector: #p
+tag: p
+text:
+| Paragraph
+prompt:
+| Use the brand blue here
+ANNOTATION 5 of 8
+element_uid: 5
+element_selector: #f
+tag: choice
+text:
+| Tabs
+ANNOTATION 6 of 8
+element_uid: 6
+element_selector: body
+tag: body
+text:
+| Drop the footer
+prompt:
+| Drop the footer
+ANNOTATION 7 of 8
+element_uid: 7
+element_selector: h1
+tag: h1
+text:
+| Redesign board
+prompt:
+| Typo: 'Redesgin'
+ANNOTATION 8 of 8
+element_uid: 8
+element_selector: #c1
+tag: td
+text:
+| visible cell
+prompt:
+| Comma, inside, the comment
+END ANNOTATIONS
+END LAVISH RESULT (9 of 9)
+== seq 1 FIX answers ==
+redesign-nav	tabs	Tabs
+== seq 1 BASE read (summary) ==
+declared_items: 0
+presented_items: 0
+malformed_items: 0
+complete: yes
+
+== seq 2 result ==
+session:
+  file: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/runner.html
+  status: feedback
+  session_ended: true
+  ended_by: user
+prompts[1]:
+  - uid: "2"
+    prompt: Final nit on this cell
+    selector: #c1
+    tag: td
+    text: visible cell
+    target:
+      type: table-cell
+      selector: #c1
+      rowLabel: ""
+      columnLabel: ""
+      text: visible cell
+next_step: This was the last feedback before the user ended the session. Stop polling /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/runner.html and do not reopen it - deliver any remaining updates directly in this conversation instead. Only run `lavish-axi /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/runner.html --reopen` if the user explicitly asks for further review or something genuinely important needs their visual attention.
+dom_snapshot: ""
+== seq 2 FIX read ==
+SESSION-ENDING MESSAGE: (none)
+
+declared_items: 1
+presented_items: 1
+malformed_items: 0
+complete: yes
+lifecycle: feedback
+session_ended: true
+annotation_count: 1
+session_ending_message_count: 0
+
+ANNOTATIONS
+ANNOTATION 1 of 1
+element_uid: 2
+element_selector: #c1
+tag: td
+text:
+| visible cell
+prompt:
+| Final nit on this cell
+END ANNOTATIONS
+END LAVISH RESULT (1 of 1)
+== seq 2 FIX answers ==
+== seq 2 BASE read (summary) ==
+declared_items: 0
+presented_items: 0
+malformed_items: 0
+complete: yes

@@ -1,0 +1,73 @@
+session:
+  file: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/review.html
+  status: feedback
+prompts[9]:
+  - uid: "1"
+    prompt: Tighten the hero spacing
+    selector: h1
+    tag: h1
+    text: Redesign board
+  - uid: "2"
+    prompt: This cell reads wrong
+    selector: #c1
+    tag: td
+    text: visible cell
+    target:
+      type: table-cell
+      selector: #c1
+      rowLabel: ""
+      columnLabel: ""
+      text: visible cell
+  - uid: ""
+    prompt: Selected phrase needs a citation
+    selector: #p
+    tag: text
+    text: Paragraph
+    target:
+      type: text-range
+      text: Paragraph
+      selector: #p
+      commonAncestorSelector: #p
+      start:
+        selector: #p
+        path[1]: 0
+        offset: 0
+      end:
+        selector: #p
+        path[1]: 0
+        offset: 9
+  - uid: "4"
+    prompt: Use the brand blue here
+    selector: #p
+    tag: p
+    text: Paragraph
+  - uid: "5"
+    prompt: "Context data:\n{\n  \"schema\": \"fm-bearings-answer.v1\",\n  \"question\": \"redesign-nav\",\n  \"selection\": \"tabs\",\n  \"note\": \"\"\n}"
+    selector: #f
+    tag: choice
+    text: Tabs
+  - uid: "6"
+    prompt: Drop the footer
+    selector: body
+    tag: body
+    text: ""
+    target:
+      type: element
+      label: footer
+  - uid: "7"
+    prompt: "Typo: 'Redesgin'"
+    selector: h1
+    tag: h1
+    text: Redesign board
+  - uid: "8"
+    prompt: "Comma, inside, the comment"
+    selector: #c1
+    tag: td
+    text: visible cell
+  - uid: ""
+    prompt: "Overall: good direction, ship round 2. prompts[0]{tag,text}:"
+    selector: ""
+    tag: message
+    text: Freeform message
+next_step: "Apply the requested changes to /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/review.html. Do not respond to the user just yet. Now you must run `lavish-axi poll /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lavish-live.aLKz9j/art/review.html --agent-reply \"<message for the user>\"` without --timeout-ms unless the user ended the session. Keep the reply concise. Only when a longer reply is genuinely necessary, use Markdown structure - blank-line paragraphs, `- ` / `1. ` lists, `## ` headings - so it renders scannably instead of a wall of text, and pass that body with `--agent-reply-file <path>` (`-` reads stdin) so newlines survive quoting. The Conversation panel's Markdown subset is in `lavish-axi poll --help` and README. The poll waits silently until the user sends more feedback, ends the session, or leaves every review window disconnected past the reconnect grace period - never kill it. Keep the poll in the foreground by default and let it return the feedback directly to the agent. A background poll is allowed only through a harness-native tracked background-job facility whose completion result is guaranteed to resume or notify the same agent. Never use `nohup`, shell `&`, `disown`, redirected fire-and-forget processes, or a detached terminal without an explicit verified callback merely to keep polling alive. If the harness has no completion-aware background facility, use the foreground poll or first wire a verified wake callback into the surrounding supervisor. Do not tell the user the artifact is being monitored until that wake path is live. If the poll gets killed or times out before feedback arrives, re-run it - feedback remains queued until delivery. Poll delivery consumes the response, so read it completely. If it returns browser_disconnected, the review window stayed disconnected past its reconnect grace period but the session remains resumable; ask the user whether to reopen or end it, and do neither uninvited."
+dom_snapshot: ""

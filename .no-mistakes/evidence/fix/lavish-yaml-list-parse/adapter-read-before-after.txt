@@ -1,0 +1,238 @@
+# Live lavish-axi 0.1.79 (isolated LAVISH_AXI_STATE_DIR, port 47391) -> bin/fm-procevent-lavish.sh
+
+################ capture: round1 ################
+== BASE 990b4b6 read ==
+SESSION-ENDING MESSAGE: (none)
+
+declared_items: 0
+presented_items: 0
+malformed_items: 0
+complete: yes
+lifecycle: feedback
+session_ended: (unset)
+annotation_count: 0
+session_ending_message_count: 0
+
+ANNOTATIONS: (none)
+END LAVISH RESULT (0 of 0)
+== BASE answers ==
+== FIX e4a3aeb read ==
+CAPTAIN MESSAGE
+| Overall: good direction, ship round 2. prompts[0]{tag,text}:
+END CAPTAIN MESSAGE
+
+declared_items: 9
+presented_items: 9
+malformed_items: 0
+complete: yes
+lifecycle: feedback
+session_ended: (unset)
+annotation_count: 8
+session_ending_message_count: 1
+
+ANNOTATIONS
+ANNOTATION 1 of 8
+element_uid: 1
+element_selector: h1
+tag: h1
+text:
+| Redesign board
+prompt:
+| Tighten the hero spacing
+ANNOTATION 2 of 8
+element_uid: 2
+element_selector: #c1
+tag: td
+text:
+| visible cell
+prompt:
+| This cell reads wrong
+ANNOTATION 3 of 8
+element_uid: 
+element_selector: #p
+tag: text
+text:
+| Paragraph
+prompt:
+| Selected phrase needs a citation
+ANNOTATION 4 of 8
+element_uid: 4
+element_selector: #p
+tag: p
+text:
+| Paragraph
+prompt:
+| Use the brand blue here
+ANNOTATION 5 of 8
+element_uid: 5
+element_selector: #f
+tag: choice
+text:
+| Tabs
+ANNOTATION 6 of 8
+element_uid: 6
+element_selector: body
+tag: body
+text:
+| Drop the footer
+prompt:
+| Drop the footer
+ANNOTATION 7 of 8
+element_uid: 7
+element_selector: h1
+tag: h1
+text:
+| Redesign board
+prompt:
+| Typo: 'Redesgin'
+ANNOTATION 8 of 8
+element_uid: 8
+element_selector: #c1
+tag: td
+text:
+| visible cell
+prompt:
+| Comma, inside, the comment
+END ANNOTATIONS
+END LAVISH RESULT (9 of 9)
+== FIX answers ==
+redesign-nav	tabs	Tabs
+
+################ capture: round11 ################
+== BASE 990b4b6 read ==
+SESSION-ENDING MESSAGE: (none)
+
+declared_items: 0
+presented_items: 0
+malformed_items: 0
+complete: yes
+lifecycle: feedback
+session_ended: true
+annotation_count: 0
+session_ending_message_count: 0
+
+ANNOTATIONS: (none)
+END LAVISH RESULT (0 of 0)
+== BASE answers ==
+== FIX e4a3aeb read ==
+SESSION-ENDING MESSAGE: (none)
+
+declared_items: 1
+presented_items: 1
+malformed_items: 0
+complete: yes
+lifecycle: feedback
+session_ended: true
+annotation_count: 1
+session_ending_message_count: 0
+
+ANNOTATIONS
+ANNOTATION 1 of 1
+element_uid: 2
+element_selector: #c1
+tag: td
+text:
+| visible cell
+prompt:
+| Final nit on this cell
+END ANNOTATIONS
+END LAVISH RESULT (1 of 1)
+== FIX answers ==
+
+################ capture: table ################
+== BASE 990b4b6 read ==
+SESSION-ENDING MESSAGE
+| plain message
+END SESSION-ENDING MESSAGE
+
+declared_items: 4
+presented_items: 4
+malformed_items: 0
+complete: yes
+lifecycle: feedback
+session_ended: true
+annotation_count: 3
+session_ending_message_count: 1
+
+ANNOTATIONS
+ANNOTATION 1 of 3
+element_uid: 1
+element_selector: h1
+tag: h1
+text:
+| Redesign board
+prompt:
+| Plain table row comment
+ANNOTATION 2 of 3
+element_uid: 6
+element_selector: body
+tag: body
+text:
+| Drop the footer
+prompt:
+| Drop the footer
+ANNOTATION 3 of 3
+element_uid: 5
+element_selector: #f
+tag: choice
+text:
+| Go
+END ANNOTATIONS
+END LAVISH RESULT (4 of 4)
+== BASE answers ==
+table-choice	go	Go
+== FIX e4a3aeb read ==
+SESSION-ENDING MESSAGE
+| plain message
+END SESSION-ENDING MESSAGE
+
+declared_items: 4
+presented_items: 4
+malformed_items: 0
+complete: yes
+lifecycle: feedback
+session_ended: true
+annotation_count: 3
+session_ending_message_count: 1
+
+ANNOTATIONS
+ANNOTATION 1 of 3
+element_uid: 1
+element_selector: h1
+tag: h1
+text:
+| Redesign board
+prompt:
+| Plain table row comment
+ANNOTATION 2 of 3
+element_uid: 6
+element_selector: body
+tag: body
+text:
+| Drop the footer
+prompt:
+| Drop the footer
+ANNOTATION 3 of 3
+element_uid: 5
+element_selector: #f
+tag: choice
+text:
+| Go
+END ANNOTATIONS
+END LAVISH RESULT (4 of 4)
+== FIX answers ==
+table-choice	go	Go
+
+################ adversarial ################
+== FIX read: real round1 capture with 9th item removed (declared 9) ==
+declared_items: 9
+presented_items: 8
+malformed_items: 0
+complete: no
+== FIX read: header prompts[nine]: ==
+declared_items: unknown
+presented_items: 0
+malformed_items: 0
+complete: no
+== FIX silent on status:ended + list content (1 = announced) ==
+silent_rc=1
