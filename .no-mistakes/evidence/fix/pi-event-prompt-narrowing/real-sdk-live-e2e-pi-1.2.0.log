@@ -1,0 +1,14 @@
+$ FM_PI_BRANCH_LIVE_E2E=1 FM_PI_PACKAGE_DIR=<Pi 1.2.0> bash tests/fm-pi-branch-live-e2e.test.sh  (copy that continues past the pre-existing first-probe failure)
+PRE-EXISTING (also fails on base 990b4b65 + Pi 1.1.0), continuing: pi-coding-agent 1.2.0: file:///Users/yian/.no-mistakes/worktrees/27c8282ea781/01M4V2VS6V16PF3EM16C0ZEJ6E/[eval1]:83
+  throw new Error(`timeout waiting for ${label}`);
+        ^
+Error: timeout waiting for watcher-owned main delivery
+Node.js v26.8.2
+ok - real Pi SDK 1.2.0 accepts the branch session construction and preserves an unpromptable wake
+ok - real Pi SDK 1.2.0 rejects a post-construction 429 to watcher-owned main delivery without losing its durable row
+not ok - real-SDK model-pin precedence guard failed against pi-coding-agent 1.2.0: file:///Users/yian/.no-mistakes/worktrees/27c8282ea781/01M4V2VS6V16PF3EM16C0ZEJ6E/[eval1]:52
+  throw new Error(`an unpinned reopen did not restore the session's own model: ${unpinned.session.model?.id}`);
+        ^
+Error: an unpinned reopen did not restore the session's own model: gemini-3.1-pro-preview
+Node.js v26.8.2
+exit=1

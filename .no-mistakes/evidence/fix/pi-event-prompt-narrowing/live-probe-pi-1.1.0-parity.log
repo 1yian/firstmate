@@ -1,0 +1,8 @@
+Pi 1.1.0 control: target and base produce IDENTICAL observable behavior
+ "providerCalls": 3,
+ "processingRequestReachedModel": true,
+ "extensionErrors": [],
+Pi 1.1.0 away: target and base produce IDENTICAL observable behavior
+ "providerCalls": 3,
+ "processingRequestReachedModel": true,
+ "extensionErrors": [],

@@ -1,0 +1,215 @@
+$ pi-before-agent-start-live-probe.sh <target 2830209e> <Pi 1.2.0> away
+{
+ "pi": "1.2.0",
+ "mode": "away",
+ "processingRunStarted": true,
+ "providerCalls": 1,
+ "processingRequestReachedModel": false,
+ "outcomeStillUnprocessed": true,
+ "extensionErrors": [],
+ "events": [
+  {
+   "event": "before_agent_start",
+   "messageType": "user",
+   "hasPrompt": true,
+   "customType": null
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 1
+  },
+  {
+   "event": "before_agent_start",
+   "messageType": "custom",
+   "hasPrompt": false,
+   "customType": "fm-branch-process",
+   "awayRecordCreated": true
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 1
+  }
+ ],
+ "result": "PASS"
+}
+exit=0
+$ pi-before-agent-start-live-probe.sh <target 2830209e> <Pi 1.2.0> control
+{
+ "pi": "1.2.0",
+ "mode": "control",
+ "processingRunStarted": true,
+ "providerCalls": 3,
+ "processingRequestReachedModel": true,
+ "outcomeStillUnprocessed": true,
+ "extensionErrors": [],
+ "events": [
+  {
+   "event": "before_agent_start",
+   "messageType": "user",
+   "hasPrompt": true,
+   "customType": null
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 1
+  },
+  {
+   "event": "before_agent_start",
+   "messageType": "custom",
+   "hasPrompt": false,
+   "customType": "fm-branch-process"
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 2
+  },
+  {
+   "event": "before_agent_start",
+   "messageType": "custom",
+   "hasPrompt": false,
+   "customType": "fm-branch-process"
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 3
+  }
+ ],
+ "result": "PASS"
+}
+exit=0
+$ pi-before-agent-start-live-probe.sh <target 2830209e> <Pi 1.1.0> away
+{
+ "pi": "1.1.0",
+ "mode": "away",
+ "processingRunStarted": false,
+ "providerCalls": 3,
+ "processingRequestReachedModel": true,
+ "outcomeStillUnprocessed": true,
+ "extensionErrors": [],
+ "events": [
+  {
+   "event": "before_agent_start",
+   "messageType": "(absent)",
+   "hasPrompt": true,
+   "customType": null
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 1
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 2
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 3
+  }
+ ],
+ "result": "FAIL"
+}
+exit=1
+$ pi-before-agent-start-live-probe.sh <target 2830209e> <Pi 1.1.0> control
+{
+ "pi": "1.1.0",
+ "mode": "control",
+ "processingRunStarted": false,
+ "providerCalls": 3,
+ "processingRequestReachedModel": true,
+ "outcomeStillUnprocessed": true,
+ "extensionErrors": [],
+ "events": [
+  {
+   "event": "before_agent_start",
+   "messageType": "(absent)",
+   "hasPrompt": true,
+   "customType": null
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 1
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 2
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 3
+  }
+ ],
+ "result": "FAIL"
+}
+exit=1
+$ pi-before-agent-start-live-probe.sh <counterfactual pre-R1 616e7922> <Pi 1.2.0> away
+{
+ "pi": "1.2.0",
+ "mode": "away",
+ "processingRunStarted": true,
+ "providerCalls": 2,
+ "processingRequestReachedModel": false,
+ "outcomeStillUnprocessed": true,
+ "extensionErrors": [],
+ "events": [
+  {
+   "event": "before_agent_start",
+   "messageType": "user",
+   "hasPrompt": true,
+   "customType": null
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 1
+  },
+  {
+   "event": "before_agent_start",
+   "messageType": "custom",
+   "hasPrompt": false,
+   "customType": "fm-branch-process",
+   "awayRecordCreated": true
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 2
+  }
+ ],
+ "result": "FAIL"
+}
+exit=1
+$ pi-before-agent-start-live-probe.sh <counterfactual base 990b4b65> <Pi 1.2.0> away
+{
+ "pi": "1.2.0",
+ "mode": "away",
+ "processingRunStarted": true,
+ "providerCalls": 2,
+ "processingRequestReachedModel": false,
+ "outcomeStillUnprocessed": true,
+ "extensionErrors": [
+  "/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-bas-probe.AJHcsO/repo/.pi/extensions/fm-branch-supervision.ts before_agent_start: Cannot read properties of undefined (reading 'trim')"
+ ],
+ "events": [
+  {
+   "event": "before_agent_start",
+   "messageType": "user",
+   "hasPrompt": true,
+   "customType": null
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 1
+  },
+  {
+   "event": "before_agent_start",
+   "messageType": "custom",
+   "hasPrompt": false,
+   "customType": "fm-branch-process",
+   "awayRecordCreated": true
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 2
+  }
+ ],
+ "result": "FAIL"
+}
+exit=1

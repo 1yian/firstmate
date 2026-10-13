@@ -1,0 +1,90 @@
+$ pi-before-agent-start-live-probe.sh <target> <Pi 1.2.0> watch
+{
+ "pi": "1.2.0",
+ "mode": "watch",
+ "providerCalls": 2,
+ "wakeDeliveredAndConfirmed": true,
+ "extensionErrors": [],
+ "events": [
+  {
+   "event": "before_agent_start",
+   "messageType": "custom",
+   "hasPrompt": false,
+   "customType": "fm-probe-custom"
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 1
+  },
+  {
+   "event": "before_agent_start",
+   "messageType": "user",
+   "hasPrompt": true,
+   "customType": null
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 2
+  }
+ ],
+ "result": "PASS"
+}
+exit=0
+$ pi-before-agent-start-live-probe.sh <target> <Pi 1.1.0> watch
+{
+ "pi": "1.1.0",
+ "mode": "watch",
+ "providerCalls": 2,
+ "wakeDeliveredAndConfirmed": true,
+ "extensionErrors": [],
+ "events": [
+  {
+   "event": "agent_end",
+   "providerCalls": 1
+  },
+  {
+   "event": "before_agent_start",
+   "messageType": "(absent)",
+   "hasPrompt": true,
+   "customType": null
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 2
+  }
+ ],
+ "result": "PASS"
+}
+exit=0
+$ pi-before-agent-start-live-probe.sh <base> <Pi 1.2.0> watch
+{
+ "pi": "1.2.0",
+ "mode": "watch",
+ "providerCalls": 2,
+ "wakeDeliveredAndConfirmed": true,
+ "extensionErrors": [],
+ "events": [
+  {
+   "event": "before_agent_start",
+   "messageType": "custom",
+   "hasPrompt": false,
+   "customType": "fm-probe-custom"
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 1
+  },
+  {
+   "event": "before_agent_start",
+   "messageType": "user",
+   "hasPrompt": true,
+   "customType": null
+  },
+  {
+   "event": "agent_end",
+   "providerCalls": 2
+  }
+ ],
+ "result": "PASS"
+}
+exit=0
