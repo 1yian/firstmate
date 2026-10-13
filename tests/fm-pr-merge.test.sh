@@ -2390,6 +2390,25 @@ test_forgejo_combined_status_reads_every_page() {
   pass "fm-pr-merge reads every Forgejo combined-status page before merging"
 }
 
+test_forgejo_status_error_body_on_later_page_refuses() {
+  local case_dir rc
+  case_dir=$(make_forgejo_case forgejo-status-page2-error)
+  printf '{"message":"Internal Server Error"}\n' > "$case_dir/tea-status-page2.json"
+
+  set +e
+  run_pr_merge "$case_dir" task-x1 "$FJ_URL" \
+    > "$case_dir/stdout" 2> "$case_dir/stderr"
+  rc=$?
+  set -e
+
+  expect_code 1 "$rc" "forgejo-status-page2-error: an error body on a later page should refuse"
+  assert_grep 'the combined commit status is "unreadable", not success' "$case_dir/stderr" \
+    "forgejo-status-page2-error: the error body was not reported as unreadable"
+  [ -z "$(tea_merge_line "$case_dir/tea.log")" ] \
+    || fail "forgejo-status-page2-error: a merge was attempted past an error body"
+  pass "fm-pr-merge refuses a Forgejo status page that is an error body"
+}
+
 test_forgejo_stale_recorded_head_is_reported() {
   local case_dir rc merge_line
   case_dir=$(make_forgejo_case forgejo-stale-head)
@@ -2982,6 +3001,7 @@ test_forgejo_refuses_when_login_is_ambiguous
 test_forgejo_each_condition_refuses_independently
 test_forgejo_unconfigured_ci_refuses_as_none
 test_forgejo_combined_status_reads_every_page
+test_forgejo_status_error_body_on_later_page_refuses
 test_forgejo_stale_recorded_head_is_reported
 test_forgejo_invalid_head_refuses
 test_forgejo_missing_tool_refuses_before_recording

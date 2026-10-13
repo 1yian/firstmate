@@ -466,6 +466,42 @@ test_unreadable_holders_refuse_admission() {
   pass "an unreadable state directory or task record refuses admission rather than undercounting"
 }
 
+# A registered local home whose own registry cannot be read could hide further
+# homes, so admission refuses instead of counting a partial machine.
+test_unreadable_registry_refuses_admission() {
+  local case_dir root a b c out rc=0
+  if [ "$(id -u)" = 0 ]; then
+    printf 'ok - skipped the unreadable-registry case (root reads files regardless of mode)\n'
+    return 0
+  fi
+  case_dir=$(make_case unreadable-registry task-c)
+  root="$case_dir/home"
+  a="$case_dir/mate-a"
+  b="$case_dir/mate-b"
+  c="$case_dir/mate-c"
+  make_home "$a"
+  make_home "$b"
+  make_home "$c"
+  printf '%s\n' schema=fm-secondmate-parent.v1 route=local "parent_home=$root" > "$a/.fm-secondmate-parent"
+  printf '%s\n' schema=fm-secondmate-parent.v1 route=local "parent_home=$root" > "$b/.fm-secondmate-parent"
+  printf -- '- a - mate a (home: %s; scope: project work; projects: project; added 2026-09-01)\n' "$a" \
+    > "$root/data/secondmates.md"
+  printf -- '- b - mate b (home: %s; scope: project work; projects: project; added 2026-09-01)\n' "$b" \
+    >> "$root/data/secondmates.md"
+  printf -- '- c - mate c (home: %s; scope: project work; projects: project; added 2026-09-01)\n' "$c" \
+    > "$a/data/secondmates.md"
+  declare_capacity "$root" "project 5"
+
+  chmod 000 "$a/data/secondmates.md"
+  out=$(spawn_ship "$case_dir" task-c "$case_dir/unused") || rc=$?
+  chmod 600 "$a/data/secondmates.md"
+  expect_code 1 "$rc" "an unreadable registry did not refuse admission: $out"
+  assert_contains "$out" "local Firstmate registry is unreadable at $a/data/secondmates.md" \
+    "the refusal did not name the unreadable registry"
+  assert_absent "$root/state/task-c.meta" "a spawn published past an unreadable registry"
+  pass "an unreadable local registry refuses admission rather than undercounting"
+}
+
 # Two spawns racing for the last place: the one holding the project lock
 # publishes, the other cannot publish while it waits and is deferred afterwards.
 test_concurrent_spawns_cannot_both_take_the_last_place() {
@@ -635,6 +671,7 @@ test_restart_does_not_count_its_own_record
 test_occupancy_counts_only_this_projects_workers
 test_capacity_is_shared_by_every_local_home
 test_unreadable_holders_refuse_admission
+test_unreadable_registry_refuses_admission
 test_concurrent_spawns_cannot_both_take_the_last_place
 test_failed_spawn_after_admission_holds_no_place
 test_unreadable_declaration_refuses_every_spawn
