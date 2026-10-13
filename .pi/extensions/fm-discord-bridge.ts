@@ -1,6 +1,6 @@
 // fm-discord-bridge.ts - bridge the firstmate Pi primary session to one Discord channel.
 //
-// Pi port of .omp/extensions/fm-discord-bridge.ts, with the same behavior:
+// Pi session bridge behavior:
 //
 // Inbound:  messages in BRIDGE_CHANNEL_ID are injected into this session as a
 //           user turn (pi.sendUserMessage, queued as a followUp while busy).
