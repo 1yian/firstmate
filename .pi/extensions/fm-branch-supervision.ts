@@ -1670,19 +1670,28 @@ ${context.command}
   // synchronous read it replaces did. The generation is captured before that
   // await so a session replaced while it runs cannot be staged into.
   pi.on?.("before_agent_start", async (event, ctx) => {
-    if (!("prompt" in event)) return;
     rememberMainModel(ctx);
     currentMainSession = ctx?.sessionManager ?? null;
     const promptGeneration = generation;
     if (!(await enqueueDelivery(() => actingAsOwner(promptGeneration)))) return;
     if (promptGeneration !== generation || !currentMainSession || !collectCurrentMainDialog()) return;
 
+    const start: { prompt?: string; message?: { role?: string; customType?: string; content?: unknown } } = event;
+    if (start.prompt === undefined) {
+      processingOpenedThisRun =
+        start.message !== undefined &&
+        isProcessingCustomMessage(start.message) &&
+        queuedProcessingContent !== null &&
+        start.message.content === queuedProcessingContent;
+      return;
+    }
+
     // This event is Pi's authoritative complete current prompt. At this point
     // SessionManager still contains only the preceding dialog, so relying on
     // getEntries() here loses the captain request that the next wake may answer.
     // Stage it verbatim and remember the future persisted index for turn_end's
     // duplicate suppression. Operational extension injections are not dialog.
-    const prompt = event.prompt;
+    const prompt = start.prompt;
     processingOpenedThisRun = queuedProcessingContent !== null && prompt === queuedProcessingContent;
     const trimmed = prompt.trim();
     if (!trimmed || isOperationalUserText(trimmed)) return;
