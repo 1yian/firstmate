@@ -1,10 +1,10 @@
-// Package-free Calm visibility policy shared by the Pi and omp harness wrappers.
+// Package-free Calm visibility policy for the Pi harness wrapper.
 //
 // This module owns the single Calm transcript-class allowlist, the on/off and
 // export-passthrough state, and the classification helpers every Calm adapter reads.
-// It imports no harness package, so `.pi/extensions/lib/fm-calm-visibility.ts` and
-// `.omp/extensions/lib/fm-calm-visibility.ts` both import it and add only their own
-// harness-specific `registerFirstmateSyntheticPresentation`. docs/calm.md owns the
+// It imports no harness package; `.pi/extensions/lib/fm-calm-visibility.ts` imports
+// it and adds the harness-specific `registerFirstmateSyntheticPresentation`.
+// docs/calm.md owns the
 // captain-facing behavior and docs/calm-mode-feasibility.md the version-scoped evidence.
 export const CALM_TRANSCRIPT_CLASSES = [
   "genuine-user-prompt",

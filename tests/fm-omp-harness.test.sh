@@ -64,7 +64,7 @@ make_named_shells() {  # <dir> -> echoes <bindir>
 # --- 1. Detection --------------------------------------------------------------
 
 test_detection_anchored_name_and_marker_precedence() {
-  local bin out baseline
+  local bin out
   bin=$(make_named_shells "$TMP_ROOT/named")
   # shellcheck disable=SC2016 # the quoted body expands inside the named shell
   out=$(env -u CLAUDECODE -u FM_OMP_HARNESS -u PI_CODING_AGENT -u CURSOR_AGENT -u CURSOR_INVOKED_AS \
@@ -81,15 +81,11 @@ test_detection_anchored_name_and_marker_precedence() {
   out=$(env -u PI_CODING_AGENT -u CURSOR_AGENT -u CURSOR_INVOKED_AS CLAUDECODE=1 FM_OMP_HARNESS=omp \
     "$bin/omp" -c '"$1"; :' _ "$HARNESS")
   [ "$out" = omp ] || fail "FM_OMP_HARNESS under an omp ancestor must outrank an inherited CLAUDECODE, got '$out'"
-  # ...and is inert without an omp ancestor, even when the caller itself runs
-  # under another detected harness whose real process ancestry outranks CLAUDECODE.
-  # shellcheck disable=SC2016 # the quoted body expands inside the named shell
-  baseline=$(env -u FM_OMP_HARNESS -u PI_CODING_AGENT -u CURSOR_AGENT -u CURSOR_INVOKED_AS CLAUDECODE=1 \
-    bash -c '"$1"; :' _ "$HARNESS")
+  # ...and is inert when it leaks into a worker with no omp ancestor.
   # shellcheck disable=SC2016 # the quoted body expands inside the named shell
   out=$(env -u PI_CODING_AGENT -u CURSOR_AGENT -u CURSOR_INVOKED_AS CLAUDECODE=1 FM_OMP_HARNESS=omp \
     bash -c '"$1"; :' _ "$HARNESS")
-  [ "$out" = "$baseline" ] || fail "a leaked FM_OMP_HARNESS without an omp ancestor changed harness identity from '$baseline' to '$out'"
+  [ "$out" = claude ] || fail "a leaked FM_OMP_HARNESS without an omp ancestor must not relabel a claude worker, got '$out'"
   pass "fm-harness: omp detects by its anchored name; the marker is a precedence override that needs real omp ancestry"
 }
 
@@ -452,19 +448,13 @@ test_ownership_proof_is_omp_keyed() {
 
 install_omp_extension_fixture() {  # <repo>
   local repo=$1
-  mkdir -p "$repo/.omp/extensions/lib" "$repo/.pi/extensions/lib" "$repo/bin" "$repo/node_modules/typebox" "$repo/node_modules/@oh-my-pi/pi-tui" "$repo/node_modules/@oh-my-pi/pi-coding-agent"
+  mkdir -p "$repo/.omp/extensions" "$repo/.pi/extensions/lib" "$repo/bin" "$repo/node_modules/typebox"
   cp "$ROOT/.omp/extensions/fm-primary-turnend-guard.ts" "$ROOT/.omp/extensions/fm-primary-omp-watch.ts" "$repo/.omp/extensions/"
-  cp "$ROOT/.omp/extensions/lib/fm-calm-visibility.ts" "$repo/.omp/extensions/lib/"
-  cp "$ROOT/.pi/extensions/lib/fm-calm-visibility-core.ts" "$repo/.pi/extensions/lib/"
   cp "$ROOT/.pi/extensions/lib/fm-operational-input.ts" "$ROOT/.pi/extensions/lib/fm-sessionstart-supervisor.mjs" "$repo/.pi/extensions/lib/"
   cp "$ROOT/bin/fm-operational-input.sh" "$ROOT/bin/fm-supervision-engine-lib.sh" "$repo/bin/"
   chmod +x "$repo/bin/fm-operational-input.sh"
   printf '{"name":"typebox","type":"module","exports":"./index.js"}\n' > "$repo/node_modules/typebox/package.json"
   printf 'export const Type = { Object(p) { return { type: "object", properties: p }; } };\n' > "$repo/node_modules/typebox/index.js"
-  printf '{"name":"@oh-my-pi/pi-tui","type":"module","exports":"./index.js"}\n' > "$repo/node_modules/@oh-my-pi/pi-tui/package.json"
-  printf 'export class Container {}\n' > "$repo/node_modules/@oh-my-pi/pi-tui/index.js"
-  printf '{"name":"@oh-my-pi/pi-coding-agent","type":"module","exports":"./index.js"}\n' > "$repo/node_modules/@oh-my-pi/pi-coding-agent/package.json"
-  printf 'export const getMarkdownTheme = () => ({}); export class UserMessageComponent {}\n' > "$repo/node_modules/@oh-my-pi/pi-coding-agent/index.js"
 }
 
 test_turnend_guard_extension_compels_one_continuation() {
