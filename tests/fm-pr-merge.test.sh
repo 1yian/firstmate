@@ -473,7 +473,7 @@ case "$endpoint" in
     elif [ -e "$log_dir/tea-status-page$page.json" ]; then
       cat "$log_dir/tea-status-page$page.json"
     else
-      printf '{"state":"","total_count":0,"statuses":[]}\n'
+      printf '{"state":"","total_count":0,"statuses":null}\n'
     fi
     ;;
   "/repos/{owner}/{repo}")
@@ -560,7 +560,7 @@ write_forgejo_status_json() {
     esac
   done
   if [ "$total" = 0 ]; then
-    printf '{"state":"","total_count":0,"statuses":[]}\n' > "$file"
+    printf '{"state":"","total_count":0,"statuses":null}\n' > "$file"
   else
     printf '{"state":"%s","total_count":%s,"statuses":[%s]}\n' "$state" "$total" \
       "$(seq "$total" | sed "s/.*/{\"context\":\"ci-&\",\"status\":\"$state\"}/" | paste -sd, -)" \
