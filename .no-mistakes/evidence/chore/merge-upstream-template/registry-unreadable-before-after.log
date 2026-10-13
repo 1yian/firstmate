@@ -1,0 +1,10 @@
+### AFTER (HEAD d9fe42b9, fixed bin/fm-wake-lib.sh)
+ok - an unreadable local registry refuses admission rather than undercounting
+EXIT=0
+
+### BEFORE (merge 44b61a2b bin/fm-wake-lib.sh, counterfactual)
+not ok - the refusal did not name the unreadable registry (missing: 'local Firstmate registry is unreadable at /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-project-capacity.DxwdfK/unreadable-registry/mate-a/data/secondmates.md')
+--- output ---
+/Users/yian/.no-mistakes/worktrees/27c8282ea781/01M4V3B4S27Q0975YX6M93BVEE/bin/fm-wake-lib.sh: line 1535: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-project-capacity.DxwdfK/unreadable-registry/mate-a/data/secondmates.md: Permission denied
+error: treehouse get did not enter an isolated worktree within 60s (last seen '/private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-project-capacity.DxwdfK/unreadable-registry/unused': it is not a readable directory; spawning project '/private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-project-capacity.DxwdfK/unreadable-registry/project'); inspect window firstmate:fm-task-c
+EXIT=1

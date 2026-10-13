@@ -1,0 +1,27 @@
+$ git log --graph --oneline -6 HEAD
+* d9fe42b9 no-mistakes(review): Accept Forgejo null statuses as empty page
+* 66492aee no-mistakes(review): Fail closed on Forgejo error bodies and unreadable registries; lengthen Herdr lock fixtures
+*   44b61a2b chore: merge upstream template while preserving fork behavior
+|\  
+| * 6407052f fix: prevent concurrent secondmate relaunch races (#7154)
+| * 20dcbf91 feat(bin): support Forgejo/Gitea as a forge via the tea CLI (#4395)
+| * a1ecefb4 fix: preserve announced recovery across Codex checkpoints (#4490)
+| * e0d95ac7 fix(bin): parse whole project names in home seed registry queries (#7076)
+| * 4cca7d07 fix(bin): pin markdown backend in backlog handoff and receive (#7047)
+
+$ git merge-base --is-ancestor 44b61a2bcef4b40c97b93954386dc43a7af49cc7 HEAD -> yes
+$ git merge-base --is-ancestor 6407052f4c521e39401ce2305dfa45d201249827 HEAD -> yes
+$ git merge-base --is-ancestor 990b4b6598c94ab9551b1486c07e31acf99c0b65 HEAD -> yes
+
+$ git show -s --format="%H parents: %P" 44b61a2b
+44b61a2bcef4b40c97b93954386dc43a7af49cc7 parents: 990b4b6598c94ab9551b1486c07e31acf99c0b65 6407052f4c521e39401ce2305dfa45d201249827
+
+$ git rev-list --count 990b4b65..6407052f (upstream commits brought in)
+26
+$ git rev-list --count 6407052f..990b4b65 (fork-only commits retained)
+35
+
+$ git rev-list --merges 44b61a2b..HEAD (no further merges/rewrites on top)
+       0
+$ grep -rIl "<<<<<<< \|>>>>>>> " --exclude-dir=.git . (conflict markers)
+(none above means clean)

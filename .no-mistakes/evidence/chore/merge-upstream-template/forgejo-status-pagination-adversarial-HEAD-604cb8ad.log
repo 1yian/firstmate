@@ -1,0 +1,108 @@
+=== null-statuses-terminator
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"","total_count":1,"statuses":null}
+  exit=0 merge_called=yes
+  status reads: page=1 page=2 
+  stderr: ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  stderr: ●  WATCHER DOWN - SUPERVISION IS OFF
+  stderr: ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  stderr: ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+=== mock-default-null-terminator
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: (mock default) {"state":"","total_count":0,"statuses":null}
+  exit=0 merge_called=yes
+  status reads: page=1 page=2 
+  stderr: ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  stderr: ●  WATCHER DOWN - SUPERVISION IS OFF
+  stderr: ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  stderr: ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+=== empty-array-terminator
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"","total_count":1,"statuses":[]}
+  exit=0 merge_called=yes
+  status reads: page=1 page=2 
+  stderr: ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  stderr: ●  WATCHER DOWN - SUPERVISION IS OFF
+  stderr: ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  stderr: ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+=== page2-green
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"success","total_count":1,"statuses":[{"context":"ci-2","status":"success"}]}
+  exit=0 merge_called=yes
+  status reads: page=1 page=2 page=3 
+  stderr: ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  stderr: ●  WATCHER DOWN - SUPERVISION IS OFF
+  stderr: ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  stderr: ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+=== page2-red
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"failure","total_count":1,"statuses":[{"context":"ci-2","status":"failure"}]}
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  stderr: ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  stderr: ●  WATCHER DOWN - SUPERVISION IS OFF
+  stderr: ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  stderr: ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+=== http-500-error-body
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"message":"Internal Server Error"}
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  stderr: ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  stderr: ●  WATCHER DOWN - SUPERVISION IS OFF
+  stderr: ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  stderr: ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+=== missing-statuses-key
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"success","total_count":1}
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  stderr: ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  stderr: ●  WATCHER DOWN - SUPERVISION IS OFF
+  stderr: ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  stderr: ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+=== missing-state-key
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"total_count":1,"statuses":null}
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  stderr: ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  stderr: ●  WATCHER DOWN - SUPERVISION IS OFF
+  stderr: ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  stderr: ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+=== state-null
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":null,"total_count":1,"statuses":null}
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  stderr: ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  stderr: ●  WATCHER DOWN - SUPERVISION IS OFF
+  stderr: ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  stderr: ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+=== statuses-wrong-type
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"success","total_count":1,"statuses":"oops"}
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  stderr: ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  stderr: ●  WATCHER DOWN - SUPERVISION IS OFF
+  stderr: ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  stderr: ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+=== non-json-garbage
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: Bad Gateway
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  stderr: ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  stderr: ●  WATCHER DOWN - SUPERVISION IS OFF
+  stderr: ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  stderr: ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+=== json-array-not-object
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: []
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  stderr: ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  stderr: ●  WATCHER DOWN - SUPERVISION IS OFF
+  stderr: ●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+  stderr: ●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.

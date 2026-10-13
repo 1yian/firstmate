@@ -1,0 +1,85 @@
+=== null-statuses-terminator
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"","total_count":1,"statuses":null}
+  exit=0 merge_called=yes
+  status reads: page=1 page=2 
+=== mock-default-null-terminator
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: (mock default) {"state":"","total_count":0,"statuses":null}
+  exit=0 merge_called=yes
+  status reads: page=1 page=2 
+=== empty-array-terminator
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"","total_count":1,"statuses":[]}
+  exit=0 merge_called=yes
+  status reads: page=1 page=2 
+=== page2-green
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"success","total_count":1,"statuses":[{"context":"ci-2","status":"success"}]}
+  page3: {"state":"","total_count":2,"statuses":null}
+  exit=0 merge_called=yes
+  status reads: page=1 page=2 page=3 
+=== page2-red
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"failure","total_count":1,"statuses":[{"context":"ci-2","status":"failure"}]}
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-page2-red/stderr:error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-page2-red/stderr:  - the combined commit status is "failure", not success
+=== http-500-error-body
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"message":"Internal Server Error"}
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-http-500-error-body/stderr:error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-http-500-error-body/stderr:  - the combined commit status is "unreadable", not success
+=== missing-statuses-key
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"success","total_count":1}
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-missing-statuses-key/stderr:error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-missing-statuses-key/stderr:  - the combined commit status is "unreadable", not success
+=== missing-state-with-null-statuses
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"total_count":1,"statuses":null}
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-missing-state-with-null-statuses/stderr:error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-missing-state-with-null-statuses/stderr:  - the combined commit status is "unreadable", not success
+=== statuses-string
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"success","total_count":1,"statuses":"oops"}
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-statuses-string/stderr:error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-statuses-string/stderr:  - the combined commit status is "unreadable", not success
+=== json-null-body
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: null
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-json-null-body/stderr:error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-json-null-body/stderr:  - the combined commit status is "unreadable", not success
+=== json-array-body
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: []
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-json-array-body/stderr:error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-json-array-body/stderr:  - the combined commit status is "unreadable", not success
+=== non-json-body
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: Bad Gateway
+  exit=1 merge_called=no
+  status reads: page=1 page=2 
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-non-json-body/stderr:error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-non-json-body/stderr:  - the combined commit status is "unreadable", not success
+=== page3-error-after-green-page2
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"success","total_count":1,"statuses":[{"context":"ci-2","status":"success"}]}
+  page3: {"message":"Not Found"}
+  exit=1 merge_called=no
+  status reads: page=1 page=2 page=3 
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-page3-error-after-green-page2/stderr:error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  out: /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-pr-merge-tests.8vP2KX/adv-page3-error-after-green-page2/stderr:  - the combined commit status is "unreadable", not success

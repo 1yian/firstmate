@@ -1,0 +1,70 @@
+=== null-statuses-terminator
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"","total_count":1,"statuses":null}
+  exit=0 merge_called=yes
+  status reads: page=1 page=2
+  stderr: verified: https://forgejo.example/fixture/fixture-repo/pulls/9 is open and mergeable, with a successful combined status at head cccccccccccccccccccccccccccccccccccccccc
+ok - null-statuses-terminator
+=== empty-array-terminator
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"","total_count":1,"statuses":[]}
+  exit=0 merge_called=yes
+  status reads: page=1 page=2
+  stderr: verified: https://forgejo.example/fixture/fixture-repo/pulls/9 is open and mergeable, with a successful combined status at head cccccccccccccccccccccccccccccccccccccccc
+ok - empty-array-terminator
+=== http-500-error-body
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"message":"Internal Server Error"}
+  exit=1 merge_called=no
+  status reads: page=1 page=2
+  stderr: error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  stderr:   - the combined commit status is "unreadable", not success
+ok - http-500-error-body
+=== missing-statuses-key
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"success","total_count":1}
+  exit=1 merge_called=no
+  status reads: page=1 page=2
+  stderr: error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  stderr:   - the combined commit status is "unreadable", not success
+ok - missing-statuses-key
+=== missing-state-key
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"total_count":1,"statuses":null}
+  exit=1 merge_called=no
+  status reads: page=1 page=2
+  stderr: error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  stderr:   - the combined commit status is "unreadable", not success
+ok - missing-state-key
+=== statuses-wrong-type
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: {"state":"success","total_count":1,"statuses":"oops"}
+  exit=1 merge_called=no
+  status reads: page=1 page=2
+  stderr: error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  stderr:   - the combined commit status is "unreadable", not success
+ok - statuses-wrong-type
+=== non-json-garbage
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: Bad Gateway
+  exit=1 merge_called=no
+  status reads: page=1 page=2
+  stderr: error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  stderr:   - the combined commit status is "unreadable", not success
+ok - non-json-garbage
+=== json-array-not-object
+  page1: {"state":"success","total_count":1,"statuses":[{"context":"ci-1","status":"success"}]}
+  page2: []
+  exit=1 merge_called=no
+  status reads: page=1 page=2
+  stderr: error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  stderr:   - the combined commit status is "unreadable", not success
+ok - json-array-not-object
+=== error-body-on-page1
+  page1: {"message":"Not Found","url":"https://forgejo.example/api/swagger"}
+  page2: <mock default: statuses:null terminator>
+  exit=1 merge_called=no
+  status reads: page=1
+  stderr: error: refusing to merge https://forgejo.example/fixture/fixture-repo/pulls/9
+  stderr:   - the combined commit status is "unreadable", not success
+ok - error-body-on-page1

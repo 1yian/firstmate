@@ -1,0 +1,20 @@
+HEAD=199570d140b2fdf801658b6561b3097e4bc30872
+merge parents: 44b61a2bcef4b40c97b93954386dc43a7af49cc7 990b4b6598c94ab9551b1486c07e31acf99c0b65 6407052f4c521e39401ce2305dfa45d201249827
+ancestor-of-HEAD: 44b61a2bcef4b40c97b93954386dc43a7af49cc7
+ancestor-of-HEAD: 6407052f4c521e39401ce2305dfa45d201249827
+ancestor-of-HEAD: 990b4b6598c94ab9551b1486c07e31acf99c0b65
+commits on top of merge (linear, no rewrite):
+199570d1 no-mistakes(document): Document Forgejo empty-page parsing and unreadable-registry refusal
+604cb8ad no-mistakes(test): Hold Herdr contention fixture locks past measured bounded window
+d9fe42b9 no-mistakes(review): Accept Forgejo null statuses as empty page
+66492aee no-mistakes(review): Fail closed on Forgejo error bodies and unreadable registries; lengthen Herdr lock fixtures
+upstream commits reachable via merge: 26
+* 199570d1 no-mistakes(document): Document Forgejo empty-page parsing and unreadable-registry refusal
+* 604cb8ad no-mistakes(test): Hold Herdr contention fixture locks past measured bounded window
+* d9fe42b9 no-mistakes(review): Accept Forgejo null statuses as empty page
+* 66492aee no-mistakes(review): Fail closed on Forgejo error bodies and unreadable registries; lengthen Herdr lock fixtures
+*   44b61a2b chore: merge upstream template while preserving fork behavior
+|\  
+| * 6407052f fix: prevent concurrent secondmate relaunch races (#7154)
+| * 20dcbf91 feat(bin): support Forgejo/Gitea as a forge via the tea CLI (#4395)
+| * a1ecefb4 fix: preserve announced recovery across Codex checkpoints (#4490)
