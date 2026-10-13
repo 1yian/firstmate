@@ -1,0 +1,3 @@
+transpile ok: .pi/extensions/fm-discord-bridge.ts
+transpile ok: .pi/extensions/lib/fm-calm-visibility-core.ts
+transpile ok: .omp/extensions/fm-primary-omp-watch.ts

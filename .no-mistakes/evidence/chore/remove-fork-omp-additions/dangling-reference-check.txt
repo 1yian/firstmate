@@ -1,0 +1,10 @@
+# dangling anchor links to removed omp sections
+./docs/sessionstart-nudge.md:45:#omp
+./docs/verification/runtime-backends.md:2458:#omp-oh-my-pi-native-delivery-2026-09-05
+(none above = clean)
+# imports of removed modules
+(none above = clean)
+# tracked .omp tree
+.omp/extensions/fm-primary-omp-watch.ts
+.omp/extensions/fm-primary-turnend-guard.ts
+.omp/fm-worker-overlay.yml

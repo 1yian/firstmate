@@ -1,0 +1,14 @@
+{
+ "composer": {
+  "shape": "borderless"
+ },
+ "plan": {
+  "defaultOnStartup": false
+ },
+ "prewalk": {
+  "enabled": false
+ },
+ "retry": {
+  "usageReservePolicy": "auto"
+ }
+}
