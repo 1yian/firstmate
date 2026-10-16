@@ -732,21 +732,23 @@ test_herdr_lab_omission_is_loud_for_ship_and_scout() {
       "$kind brief missing the fail-visible regeneration instruction"
     assert_grep 'one named job tab in your own current Herdr workspace, not a separate session or a hidden background job' "$brief" \
       "$kind brief must allow a bounded long-job tab without granting session access"
-    assert_grep "herdr pane current --pane \"\$HERDR_PANE_ID\"" "$brief" \
+    assert_grep "herdr pane current --pane \"\$HERDR_PANE_ID\" --session \"\$HERDR_SESSION\"" "$brief" \
       "$kind brief must discover the worker workspace from its own pane, not global focus"
-    assert_grep 'if it is unset or empty, you are not in a Herdr pane, so stop and ask firstmate' "$brief" \
+    assert_grep 'if either is unset or empty, you are not in a Herdr pane, so stop and ask firstmate' "$brief" \
       "$kind brief must stop a worker outside a Herdr pane"
+    assert_grep "pass \`--session \"\$HERDR_SESSION\"\` as an explicit option on every Herdr command below" "$brief" \
+      "$kind brief must bind every job-tab command to the worker session"
+    assert_grep "herdr tab create --workspace <id> --label <job-name> --no-focus --session \"\$HERDR_SESSION\"" "$brief" \
+      "$kind brief must create the named tab without taking focus, scoped to the worker session"
+    assert_grep "herdr pane run <new-pane-id> \"<command with its own timeout>\" --session \"\$HERDR_SESSION\"" "$brief" \
+      "$kind brief must run the bounded job in the new pane, scoped to the worker session"
     assert_grep "Never run \`herdr pane current\` without \`--pane\`" "$brief" \
       "$kind brief must forbid the focus-dependent workspace lookup"
-    assert_grep 'herdr tab create --workspace <id> --label <job-name> --no-focus' "$brief" \
-      "$kind brief must create the named tab without taking focus"
-    assert_grep 'herdr pane run <new-pane-id> "<command with its own timeout>"' "$brief" \
-      "$kind brief must run the bounded job in the new pane"
     assert_grep 'stop and ask firstmate rather than selecting another workspace' "$brief" \
       "$kind brief must not guess a workspace"
     assert_grep 'Reuse that tab for subsequent long jobs; do not alter other tabs, panes, or workspaces' "$brief" \
       "$kind brief must limit permission to the one owned tab"
-    assert_grep "list your workspace's tabs, finish or kill the job you started, and close only the tab you created" "$brief" \
+    assert_grep "list your workspace's tabs with the same explicit \`--session \"\$HERDR_SESSION\"\`, finish or kill the job you started, and close only the tab you created" "$brief" \
       "$kind brief must require job and tab cleanup before completion"
     assert_grep 'This job-tab exception does not authorize Herdr session or server lifecycle operations' "$brief" \
       "$kind brief must retain session and server isolation"
