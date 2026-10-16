@@ -1,0 +1,3 @@
+## worker env: HERDR_SESSION=fm-lab-jobtab2-66462-16484 HERDR_PANE_ID=<unset>
+## step 1: require HERDR_PANE_ID
+STOP: not in a Herdr pane; asking firstmate instead of selecting another workspace

@@ -1,0 +1,34 @@
+## worker env: HERDR_SESSION=fm-lab-jobtab2-66462-16484 HERDR_PANE_ID=w1:p1
+## step 1: require HERDR_PANE_ID
+## step 2: herdr pane current --pane "$HERDR_PANE_ID"
+resolved workspace=w1 (pane=w1:p1)
+## global focus at this moment (for contrast):
+[{"workspace_id":"w1","label":"worker-ws","focused":false},{"workspace_id":"w2","label":"bystander-ws","focused":true}]
+## step 3: herdr tab create --workspace w1 --label nm-pipeline --no-focus
+new tab=w1:t2 label=nm-pipeline focused=false new pane=w1:p2
+[{"tab_id":"w1:t1","label":"1","focused":false},{"tab_id":"w1:t2","label":"nm-pipeline","focused":false}]
+## step 4: herdr pane run w1:p2 <bounded job 1>
+job1 finished in w1:p2
+## step 5: reuse the same tab for job 2
+job2 finished in w1:p2
+## job pane output
+OB1-$((40+2))"], timeout=60); sys.exit(r.returncode)'
+tick 1
+tick 2
+tick 3
+JOB1-42
+python3 -c 'import subprocess,sys; r=subprocess.run(["sh","-c","echo second-job; sleep 1; echo JOB2-$((40+3))"], timeout
+=60); sys.exit(r.returncode)'
+ 󰀵  …/01M52QSZR3NKSD7420Z373TPSD  HEAD                                                                           3s
+❯ python3 -c 'import subprocess,sys; r=subprocess.run(["sh","-c","echo second-job; sleep 1; echo JOB2-$((40+3))"], timeo
+ut=60); sys.exit(r.returncode)'
+second-job
+JOB2-43
+ 󰀵  …/01M52QSZR3NKSD7420Z373TPSD  HEAD 
+❯
+## step 6: list my workspace's tabs before reporting done
+[{"tab_id":"w1:t1","label":"1"},{"tab_id":"w1:t2","label":"nm-pipeline"}]
+## step 7: close only the tab I created (w1:t2)
+{"type":"ok"}
+[{"tab_id":"w1:t1","label":"1"}]
+WORKER-DONE

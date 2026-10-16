@@ -1,0 +1,8 @@
+$ herdr tab list --workspace w1 --session "$HERDR_SESSION"
+{"tab_id":"w1:t1","label":"1"}
+{"tab_id":"w1:t2","label":"nm-pipeline"}
+job already finished (JOB-DONE present: JOB-DONE)
+$ herdr tab close w1:t2 --session "$HERDR_SESSION"
+{"id":"cli:tab:close","result":{"type":"ok"}}
+{"tab_id":"w1:t1","label":"1"}
+CLEANUP-DONE

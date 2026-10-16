@@ -1,0 +1,19 @@
+### Case 1: both unset (worker launched outside Herdr)
+exit=3
+worker env: HERDR_SESSION=<unset> HERDR_PANE_ID=<unset>
+STOP: HERDR_SESSION or HERDR_PANE_ID unset/empty - not in a Herdr pane; asking firstmate rather than selecting another workspace
+
+### Case 2: HERDR_SESSION present but HERDR_PANE_ID empty
+exit=3
+worker env: HERDR_SESSION=fm-lab-jobA-60667-31041 HERDR_PANE_ID=<unset>
+STOP: HERDR_SESSION or HERDR_PANE_ID unset/empty - not in a Herdr pane; asking firstmate rather than selecting another workspace
+
+### Case 3: HERDR_PANE_ID present but HERDR_SESSION unset
+exit=3
+worker env: HERDR_SESSION=<unset> HERDR_PANE_ID=w1:p1
+STOP: HERDR_SESSION or HERDR_PANE_ID unset/empty - not in a Herdr pane; asking firstmate rather than selecting another workspace
+
+### Contrast: the forbidden focus-dependent lookup (no --pane) from outside a pane, scoped to lab session A
+{"pane_id":"w2:p1","workspace_id":"w2","focused":true}
+(returns the focused bystander workspace w2, which the brief forbids using)
+no Herdr state change in either session

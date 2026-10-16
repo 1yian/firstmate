@@ -1,0 +1,10 @@
+python3 -c 'import subprocess; subprocess.run(["bash","-c","for i in 1 2 3; do echo long-job tick $i; sleep 1; done; ech
+o JOB-DONE > /tmp/fm-jobtab-wd/job.out"], timeout=120)'
+ 󰀵  /private/tmp/fm-jobtab-wd 
+❯ python3 -c 'import subprocess; subprocess.run(["bash","-c","for i in 1 2 3; do echo long-job tick $i; sleep 1; done; e
+cho JOB-DONE > /tmp/fm-jobtab-wd/job.out"], timeout=120)'
+long-job tick 1
+long-job tick 2
+long-job tick 3
+ 󰀵  /private/tmp/fm-jobtab-wd                                                                                    3s
+❯

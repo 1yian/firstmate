@@ -1,0 +1,9 @@
+gtimeout on PATH: absent
+ws=w1 tab=w1:t3 pane=w1:p3
+job bounded; elapsed=5s
+    raise TimeoutExpired(self.args, timeout)
+subprocess.TimeoutExpired: Command '['sleep', '600']' timed out after 3 seconds
+EXIT=1-end
+{"type":"ok"}
+[{"tab_id":"w1:t1","label":"1"}]
+OVERRUN-DONE

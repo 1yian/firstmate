@@ -1,0 +1,9 @@
+echo "S=[$HERDR_SESSION] P=[$HERDR_PANE_ID]"
+herdr pane current --pane "$HERDR_PANE_ID" --session "$HERDR_SESSION"
+herdr tab create --workspace w1 --label pipeline-job --no-focus --session "$HERDR_SESSION"
+command -v gtimeout; herdr pane run w1:p4 "gtimeout 600 bash -c 'for i in \$(seq 1 15); do echo pipeline step \$i; sleep 1; done; echo PIPELINE-OK > /tmp/fm-jobtab-wd/llm/job.out'" --session "$HERDR_SESSION"
+sleep 3; herdr pane read w1:p4 --session "$HERDR_SESSION" 2>&1 | tail -20
+herdr pane run w1:p4 "python3 -c 'import subprocess,sys; sys.exit(subprocess.run(sys.argv[1:], timeout=600).returncode)' bash -c 'for i in \$(seq 1 15); do echo pipeline step \$i; sleep 1; done; echo PIPELINE-OK > /tmp/fm-jobtab-wd/llm/job.out'" --session "$HERDR_SESSION"; sleep 3; herdr pane read w1:p4 --session "$HERDR_SESSION" 2>&1 | tail -5
+for i in $(seq 1 60); do [ -s /tmp/fm-jobtab-wd/llm/job.out ] && break; sleep 2; done; cat /tmp/fm-jobtab-wd/llm/job.out
+herdr tab list --workspace w1 --session "$HERDR_SESSION"; herdr pane read w1:p4 --session "$HERDR_SESSION" 2>&1 | tail -3
+herdr tab close w1:t4 --session "$HERDR_SESSION"; herdr tab list --workspace w1 --session "$HERDR_SESSION"

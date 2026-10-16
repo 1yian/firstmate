@@ -1,0 +1,35 @@
+## worker env: HERDR_SESSION=fm-lab-jobtab-56173-9402 HERDR_PANE_ID=w1:p1
+## step 1: herdr pane current
+{"id":"cli:pane:current","result":{"pane":{"agent_status":"unknown","cwd":"/Users/yian/.no-mistakes/worktrees/27c8282ea781/01M52QSZR3NKSD7420Z373TPSD","focused":true,"foreground_cwd":"/Users/yian/.no-mistakes/worktrees/27c8282ea781/01M52QSZR3NKSD7420Z373TPSD","pane_id":"w1:p1","revision":0,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":40},"tab_id":"w1:t1","terminal_id":"term_65df779610dab1","workspace_id":"w1"},"type":"pane_current"}}
+workspace=w1
+## step 2: herdr tab create --workspace w1 --label nm-pipeline --no-focus
+{"id":"cli:tab:create","result":{"root_pane":{"agent_status":"unknown","cwd":"/Users/yian/.no-mistakes/worktrees/27c8282ea781/01M52QSZR3NKSD7420Z373TPSD","focused":false,"foreground_cwd":"/Users/yian/.no-mistakes/worktrees/27c8282ea781/01M52QSZR3NKSD7420Z373TPSD","pane_id":"w1:p2","revision":0,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":40},"tab_id":"w1:t2","terminal_id":"term_65df77d0cd2583","workspace_id":"w1"},"tab":{"agent_status":"unknown","focused":false,"label":"nm-pipeline","number":2,"pane_count":1,"tab_id":"w1:t2","workspace_id":"w1"},"type":"tab_created"}}
+new tab=w1:t2 new pane=w1:p2
+## focus check: my own tab still focused?
+[{"tab_id":"w1:t1","label":"1","focused":true},{"tab_id":"w1:t2","label":"nm-pipeline","focused":false}]
+## step 3: herdr pane run w1:p2 "python3 -c 'import subprocess,sys; r=subprocess.run(["sh","-c","for i in 1 2 3; do echo tick $i; sleep 1; done; echo JOB1-$((40+2))"], timeout=60); sys.exit(r.returncode)'"
+job1 finished
+## step 4: reuse the same tab for a second long job
+job2 finished
+## job pane output
+python3 -c 'import subprocess,sys; r=subprocess.run(["sh","-c","for i in 1 2 3; do echo tick $i; sleep 1; done; echo JOB
+1-$((40+2))"], timeout=60); sys.exit(r.returncode)'
+ 󰀵  …/01M52QSZR3NKSD7420Z373TPSD  HEAD 
+❯ python3 -c 'import subprocess,sys; r=subprocess.run(["sh","-c","for i in 1 2 3; do echo tick $i; sleep 1; done; echo J
+OB1-$((40+2))"], timeout=60); sys.exit(r.returncode)'
+tick 1
+tick 2
+tick 3
+JOB1-42
+ 󰀵  …/01M52QSZR3NKSD7420Z373TPSD  HEAD                                                                           3s
+❯ python3 -c 'import subprocess,sys; r=subprocess.run(["sh","-c","echo second-job; sleep 1; echo JOB2-$((40+3))"], timeo
+ut=60); sys.exit(r.returncode)'
+second-job
+JOB2-43
+## step 5: list my workspace's tabs before reporting done
+[{"tab_id":"w1:t1","label":"1"},{"tab_id":"w1:t2","label":"nm-pipeline"}]
+## step 6: close only the tab I created (w1:t2)
+{"id":"cli:tab:close","result":{"type":"ok"}}
+## after close
+[{"tab_id":"w1:t1","label":"1"}]
+WORKER-DONE

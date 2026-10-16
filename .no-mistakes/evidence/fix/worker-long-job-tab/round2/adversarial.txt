@@ -1,0 +1,22 @@
+=== A: worker shell OUTSIDE any Herdr pane (lab session addressed via HERDR_SESSION, HERDR_PANE_ID unset); focus is on bystander w2
+worker exit=3
+## worker env: HERDR_SESSION=fm-lab-jobtab2-66462-16484 HERDR_PANE_ID=<unset>
+## step 1: require HERDR_PANE_ID
+STOP: not in a Herdr pane; asking firstmate instead of selecting another workspace
+--- contrast: the forbidden focus-dependent lookup from the same shell
+{"pane_id":"w2:p1","workspace_id":"w2"}
+--- A2: HERDR_PANE_ID set but empty
+worker exit=3
+## worker env: HERDR_SESSION=fm-lab-jobtab2-66462-16484 HERDR_PANE_ID=<unset>
+## step 1: require HERDR_PANE_ID
+STOP: not in a Herdr pane; asking firstmate instead of selecting another workspace
+--- A3: HERDR_PANE_ID stale/bogus (w9:p9): pane current --pane fails, so worker cannot identify workspace
+worker exit=4
+## worker env: HERDR_SESSION=fm-lab-jobtab2-66462-16484 HERDR_PANE_ID=w9:p9
+## step 1: require HERDR_PANE_ID
+## step 2: herdr pane current --pane "$HERDR_PANE_ID"
+{"error":{"code":"pane_not_found","message":"pane not found"},"id":"cli:pane:current"}
+STOP: cannot identify workspace; ask firstmate
+--- tabs after adversarial A (no tab created anywhere):
+[{"tab_id":"w1:t1","label":"1"}]
+[{"tab_id":"w2:t1","label":"1"}]

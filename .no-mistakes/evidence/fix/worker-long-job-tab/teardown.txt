@@ -1,0 +1,2 @@
+teardown rc=0 (fleet-state tripwire verified: default session unchanged)
+[]

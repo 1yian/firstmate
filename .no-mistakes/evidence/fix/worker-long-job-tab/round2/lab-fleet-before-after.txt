@@ -1,0 +1,14 @@
+=== BEFORE (focus deliberately on bystander w2)
+workspaces:
+[{"workspace_id":"w1","label":"worker-ws","tab_count":1,"focused":false},{"workspace_id":"w2","label":"bystander-ws","tab_count":1,"focused":true}]
+tabs w1:
+[{"tab_id":"w1:t1","label":"1","focused":false}]
+tabs w2:
+[{"tab_id":"w2:t1","label":"1","focused":true}]
+=== AFTER worker + adversarial runs
+workspaces:
+[{"workspace_id":"w1","label":"worker-ws","tab_count":1,"focused":false},{"workspace_id":"w2","label":"bystander-ws","tab_count":1,"focused":true}]
+tabs w1:
+[{"tab_id":"w1:t1","label":"1","focused":false}]
+tabs w2:
+[{"tab_id":"w2:t1","label":"1","focused":true}]

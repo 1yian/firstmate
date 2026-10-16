@@ -1,0 +1,25 @@
+=== adversarial A: herdr pane current from a shell that is NOT a Herdr pane (lab session addressed, no HERDR_PANE_ID)
+0
+{"id":"cli:pane:current","result":{"pane":{"agent_status":"unknown","cwd":"/Users/yian/.no-mistakes/worktrees/27c8282ea781/01M52QSZR3NKSD7420Z373TPSD","focused":true,"foreground_cwd":"/Users/yian/.no-mistakes/worktrees/27c8282ea781/01M52QSZR3NKSD7420Z373TPSD","pane_id":"w1:p1","revision":0,"scroll":{"max_offset_from_bottom":0,"offset_from_bottom":0,"viewport_rows":40},"tab_id":"w1:t1","terminal_id":"term_65df779610dab1","workspace_id":"w1"},"type":"pane_current"}}
+exit=0
+
+=== adversarial B: an overrunning job in the named tab is bounded by the Python timeout wrapper (gtimeout on PATH: absent)
+tab=w1:t3 pane=w1:p3
+elapsed=4s
+ line 2058, in _wait
+    raise TimeoutExpired(self.args, timeout)
+subprocess.TimeoutExpired: Command '['sleep', '600']' timed out after 3 seconds
+EXIT=1-end
+ 󰀵  …/01M52QSZR3NKSD7420Z373TPSD  HEAD                                                                           3s
+❯
+{"id":"cli:tab:close","result":{"type":"ok"}}
+[{"tab_id":"w1:t1","label":"1"}]
+=== adversarial A2: focus moves to bystander workspace w2; a shell outside any Herdr pane asks 'herdr pane current'
+"workspace_info"
+{"pane_id":"w2:p1","workspace_id":"w2"}
+exit=0
+{"pane_id":"w2:p1","workspace_id":"w2"}
+exit(--current)=0
+=== control: same query from inside worker pane w1:p1
+{"pane_id":"w1:p1","workspace_id":"w1"}
+"workspace_info"

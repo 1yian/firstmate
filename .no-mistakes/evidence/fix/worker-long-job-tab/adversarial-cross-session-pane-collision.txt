@@ -1,0 +1,34 @@
+### State with both workers' job tabs open
+== session fm-lab-jobA-60667-31041
+-- workspaces
+{"workspace_id":"w1","label":"worker","focused":false,"tab_count":2}
+{"workspace_id":"w2","label":"bystander","focused":true,"tab_count":1}
+-- tabs
+{"tab_id":"w1:t1","workspace_id":"w1","label":"1","focused":false}
+{"tab_id":"w1:t3","workspace_id":"w1","label":"nm-pipeline","focused":false}
+{"tab_id":"w2:t1","workspace_id":"w2","label":"1","focused":true}
+== session fm-lab-jobB-60674-21666
+-- workspaces
+{"workspace_id":"w1","label":"decoy-in-B","focused":true,"tab_count":2}
+-- tabs
+{"tab_id":"w1:t1","workspace_id":"w1","label":"1","focused":true}
+{"tab_id":"w1:t2","workspace_id":"w1","label":"nm-pipeline","focused":false}
+
+### Session A job pane w1:p3 (must reference /tmp/fm-jobtab-wd/A)
+python3 -c 'import subprocess; subprocess.run(["bash","-c","for i in 1 2 3; do echo long-job tick $i; sleep 1; done; ech
+o JOB-DONE > /tmp/fm-jobtab-wd/A/job.out"], timeout=120)'
+❯ python3 -c 'import subprocess; subprocess.run(["bash","-c","for i in 1 2 3; do echo long-job tick $i; sleep 1; done; e
+cho JOB-DONE > /tmp/fm-jobtab-wd/A/job.out"], timeout=120)'
+long-job tick 1
+
+### Session B job pane w1:p2 (must reference /tmp/fm-jobtab-wd/B)
+python3 -c 'import subprocess; subprocess.run(["bash","-c","for i in 1 2 3; do echo long-job tick $i; sleep 1; done; ech
+o JOB-DONE > /tmp/fm-jobtab-wd/B/job.out"], timeout=120)'
+❯ python3 -c 'import subprocess; subprocess.run(["bash","-c","for i in 1 2 3; do echo long-job tick $i; sleep 1; done; e
+cho JOB-DONE > /tmp/fm-jobtab-wd/B/job.out"], timeout=120)'
+long-job tick 1
+
+### Contrast: same pane id w1:p1 resolved against each session (read-only)
+fm-lab-jobA-60667-31041 -> {"workspace_id":"w1","label":"worker"}
+fm-lab-jobB-60674-21666 -> {"workspace_id":"w1","label":"decoy-in-B"}
+both sessions back to pre-test state

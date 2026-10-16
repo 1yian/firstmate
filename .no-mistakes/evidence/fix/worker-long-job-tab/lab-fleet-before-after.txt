@@ -1,0 +1,14 @@
+=== BEFORE
+workspaces:
+[{"workspace_id":"w1","label":"worker-ws","tab_count":1,"focused":true},{"workspace_id":"w2","label":"bystander-ws","tab_count":1,"focused":false}]
+tabs w1:
+[{"tab_id":"w1:t1","label":"1","focused":true}]
+tabs w2:
+[{"tab_id":"w2:t1","label":"1","focused":false}]
+=== AFTER
+workspaces:
+[{"workspace_id":"w1","label":"worker-ws","tab_count":1,"focused":true},{"workspace_id":"w2","label":"bystander-ws","tab_count":1,"focused":false}]
+tabs w1:
+[{"tab_id":"w1:t1","label":"1","focused":true}]
+tabs w2:
+[{"tab_id":"w2:t1","label":"1","focused":false}]

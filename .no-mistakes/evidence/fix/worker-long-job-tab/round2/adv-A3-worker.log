@@ -1,0 +1,5 @@
+## worker env: HERDR_SESSION=fm-lab-jobtab2-66462-16484 HERDR_PANE_ID=w9:p9
+## step 1: require HERDR_PANE_ID
+## step 2: herdr pane current --pane "$HERDR_PANE_ID"
+{"error":{"code":"pane_not_found","message":"pane not found"},"id":"cli:pane:current"}
+STOP: cannot identify workspace; ask firstmate
