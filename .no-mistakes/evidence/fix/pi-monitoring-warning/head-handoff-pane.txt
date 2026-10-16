@@ -1,0 +1,7 @@
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set -g extended-keys on` to ~/.tmux.conf and restart tmux.
+ Lab check: reply with exactly the word PONG and nothing else. Do not call any tools or run any commands.
+ PONG
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-lab.EISbJg/fm   detached
+ claude-opus-5-5 anthropic ◆ low                                                                                                                   ctx 3.8%/1.0M  ↑4 ↓5  cache 9%  $0.28 sub  3.0 tok/s
