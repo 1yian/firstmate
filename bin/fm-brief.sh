@@ -32,7 +32,8 @@
 #   omitting both still fails loudly so an accidental omission is never silent.
 #   Set FM_SECONDMATE_CHARTER='<charter>' to fill the charter text.
 #   Set FM_SECONDMATE_SCOPE='<scope>' to write a routing scope distinct from the charter text.
-#   --herdr-lab is mandatory when the task will issue Herdr lifecycle commands.
+#   --herdr-lab is mandatory for Herdr session/server lifecycle work, not for
+#   the ordinary worker's one named long-job tab in its current workspace.
 #   It adds the hard isolation contract backed by bin/fm-herdr-lab.sh.
 #   The flag must be explicit because {TASK} and {FIRSTMATE_SPEC} are filled
 #   after scaffolding and the caller-supplied repo string cannot reliably
@@ -552,8 +553,18 @@ else
 IFS= read -r -d '' HERDR_SECTION <<'EOF' || true
 # Herdr lifecycle declaration - NOT ENABLED
 **HARD SAFETY GATE:** this scaffold cannot inspect the task text filled in above.
-If the task will start, stop, delete, restart, profile, or otherwise drive Herdr lifecycle behavior, stop and regenerate the brief with `--herdr-lab` before dispatch.
-Do not add Herdr lifecycle commands to this unguarded brief by hand.
+For long-running commands (builds, test suites, servers, pipelines), you may create one named job tab in your own current Herdr workspace, not a separate session or a hidden background job.
+Herdr injects `$HERDR_SESSION` and `$HERDR_PANE_ID` only inside its own panes; if either is unset or empty, you are not in a Herdr pane, so stop and ask firstmate rather than selecting another workspace.
+Pane IDs repeat across sessions and ambient `HERDR_SESSION` is not reliably honored, so pass `--session "$HERDR_SESSION"` as an explicit option on every Herdr command below, before any `--` delimiter.
+Never run `herdr pane current` without `--pane`; outside a pane it silently returns whichever workspace has focus.
+Run `herdr pane current --pane "$HERDR_PANE_ID" --session "$HERDR_SESSION"` to get your workspace ID, then `herdr tab create --workspace <id> --label <job-name> --no-focus --session "$HERDR_SESSION"`, then `herdr pane run <new-pane-id> "<command with its own timeout>" --session "$HERDR_SESSION"`.
+If your current workspace still cannot be identified, stop and ask firstmate rather than selecting another workspace.
+Bound the command with `gtimeout` or a Python/shell timeout wrapper; macOS has no `timeout` by default.
+Reuse that tab for subsequent long jobs; do not alter other tabs, panes, or workspaces.
+Before reporting done, list your workspace's tabs with the same explicit `--session "$HERDR_SESSION"`, finish or kill the job you started, and close only the tab you created.
+This job-tab exception does not authorize Herdr session or server lifecycle operations.
+If the task will start, stop, delete, restart, profile, or otherwise drive Herdr sessions or servers, stop and regenerate the brief with `--herdr-lab` before dispatch.
+Do not add other Herdr lifecycle commands to this unguarded brief by hand.
 EOF
 HERDR_SECTION=${HERDR_SECTION%$'\n'}
 fi
