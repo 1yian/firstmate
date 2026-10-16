@@ -1,0 +1,9 @@
+## live Pi session pid 25924 alive, watch lock unheld, beacon age 79s
+exit=0
+## after Pi session exited (pid 25924 alive? no), markers left behind, beacon fresh 83s
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  TURN WOULD END BLIND - SUPERVISION IS OFF
+●  1 registered custom check(s), but no live watcher holds this home lock (last beat: 83s ago).
+●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-labroot.1JX9f2/fm/.pi/extensions/fm-primary-turnend-guard.ts -e /var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-labroot.1JX9f2/fm/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+exit=2

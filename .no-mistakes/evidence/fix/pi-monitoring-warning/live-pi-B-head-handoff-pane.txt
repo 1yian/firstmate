@@ -1,0 +1,12 @@
+ Warning: tmux extended-keys is off. Modified Enter keys may not work. Add `set -g extended-keys on` to ~/.tmux.conf and restart tmux.
+ This is a disposable lab test. Call the fm_watch_arm_pi tool exactly once now, then reply with only the tool's output line. Do nothing else.
+ ● fm_watch_arm_pi()
+ watcher: started Pi extension arm child 1; future ordinary re-arms are automatic; call fm_watch_arm_pi again only after a later notification says the cycle is missing, failed, or unhealthy
+ Lab check A: reply with exactly the word ALPHA and do nothing else.
+ ALPHA
+ Lab check B: reply with exactly the word BRAVO and do nothing else.
+ BRAVO
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-labroot.1JX9f2/fm   fix/pi-monitoring-warning
+ claude-opus-5-5 anthropic ◆ low                                                                                                               ctx 3.8%/1.0M  ↑14 ↓117  cache 77%  $0.30 sub  3.6 tok/s

@@ -1,0 +1,27 @@
+ Lab check A: reply with exactly the word ALPHA and do nothing else.
+ ALPHA
+ Lab check B: reply with exactly the word BRAVO and do nothing else.
+ BRAVO
+ Lab check C: reply with exactly the word CHARLIE and do nothing else.
+ CHARLIE
+ ⁣FIRSTMATE_OP: v1 turn-end-guard: TURN WOULD END BLIND - supervision is off. The watcher cycle is missing, failed, or unhealthy. Follow the harness recovery instruction below before ending the turn.
+ ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ ●  TURN WOULD END BLIND - SUPERVISION IS OFF
+ ●  1 registered custom check(s), but no live watcher holds this home lock (last beat: 51s ago).
+ ●  repair a missing or failed watcher cycle with the Pi tool fm_watch_arm_pi, or restart Pi with -e
+ /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-labroot.1JX9f2/fm/.pi/extensions/fm-primary-turnend-guard.ts -e
+ /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-labroot.1JX9f2/fm/.pi/extensions/fm-primary-pi-watch.ts if the extensions are not loaded.
+ ●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Thinking...
+ ● bash(bin/fm-wake-drain.sh)
+ ● fm_watch_arm_pi()
+ ● bash(bin/fm-wake-drain.sh --ack-through 0 --recovery-generation 54509.1792166948.cao51A)
+ Captain, monitoring stopped responding, so I tried to restart it.
+ Nothing was waiting for me, but monitoring is not confirmed back up yet.
+ - The restart request changed nothing because a retry was already scheduled to bring it back on its own.
+ - That retry has not been confirmed to work yet.
+ - If it fails, another notification should arrive and I'll act on it then.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  /private/var/folders/kc/ynb88hy54wj6yplt096j1bk00000gn/T/fm-labroot.1JX9f2/fm   fix/pi-monitoring-warning
+ claude-opus-5-5 anthropic ◆ low                                                                                                              ctx 3.9%/1.0M  ↑26 ↓511  cache 88%  $0.35 sub  59.8 tok/s
