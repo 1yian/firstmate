@@ -425,7 +425,7 @@ fm_afk_mode() {
 
 # fm_watcher_supervision_verdict <state> <watch-path> [grace] [home] [root]
 # Model-aware "is supervision healthy right now" verdict for the pull warning
-# guard (bin/fm-guard.sh), NOT the arm layer or the turn-end guard. Sets:
+# guard (bin/fm-guard.sh) and extension-model turn-end guard, NOT the arm layer. Sets:
 #   FM_WATCHER_VERDICT_OK      true when supervision is healthy for this model
 #   FM_WATCHER_VERDICT_REASON  when not ok, the true failing condition:
 #                              no-watcher   - a live watcher process is the real
