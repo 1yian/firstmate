@@ -35,7 +35,7 @@ The turn-end guard closes the remaining gap at the primary's own turn boundary.
 The guard acts at that boundary when both of these hold:
 
 - Work, a process-event source, a registered custom check, or Relay polling needs supervision.
-- No identity-matched watcher has a fresh beacon.
+- No identity-matched watcher has a fresh beacon, and no verified supervision owner covers the transition.
 
 The beacon is `state/.last-watcher-beat`, which `bin/fm-watch.sh` touches every cycle, as [Guard grace and the poll cadence](#guard-grace-and-the-poll-cadence) describes.
 When the guard acts, the harness integration must do one of two things:
@@ -43,9 +43,10 @@ When the guard acts, the harness integration must do one of two things:
 - Block the turn end.
 - Force one bounded follow-up that uses the recovery instruction from the emitted session-start protocol.
 
-The mid-turn pull warning uses the model-aware supervision verdict described below, while the turn-end guard keeps the PID-strict watcher predicate.
+The mid-turn pull warning uses the model-aware supervision verdict described below.
+The turn-end guard also uses that verdict for extension primaries, as described under [Extension model](#extension-model).
 
-Away and quiet mode are the one place the turn-end guard accepts a different supervisor.
+Away and quiet mode can also satisfy the turn-end guard through a different supervisor.
 While `state/.afk` exists, in either mode (`bin/fm-wake-lib.sh`'s `fm_afk_mode`), the daemon owns supervision.
 A live identity-matched daemon with a fresh beacon then satisfies that boundary in place of a watcher process holding the lock.
 
@@ -90,9 +91,8 @@ Under that check:
 - A stale beacon blocks even when a watcher pid is live.
 - A fresh leftover beacon blocks when the lock is missing, dead, or identity-mismatched.
 
-The turn-end guard needs that strict check because it fires at the turn boundary.
-At that boundary the auto-arm is bringing a fresh watcher up for the upcoming idle period.
-The guard cooperates with that arm rather than trusting a beacon left by the cycle that just ended.
+Extension primaries can additionally satisfy the guard through the verified transition described under [Extension model](#extension-model).
+Claude and Cursor Stop modes retain their own arm cooperation rather than accepting the extension-model verdict.
 
 ### Foreign session-lock owner
 
@@ -138,7 +138,7 @@ Without that proof a stale or absent beacon is a genuine lapse and alarms.
 
 Under the extension model (Pi, pi-signed, and omp) a live identity-matched watcher is the ordinary healthy state.
 A genuinely unheld lock with a beacon fresh within grace is also healthy while a live Pi or omp session provably owns continuity.
-That hand-off is benign because `.pi/extensions/fm-primary-pi-watch.ts` and `.omp/extensions/fm-primary-omp-watch.ts` tear the watcher down on every actionable wake and spawn the replacement themselves.
+Both the pull warning and the default turn-end guard accept this hand-off because `.pi/extensions/fm-primary-pi-watch.ts` and `.omp/extensions/fm-primary-omp-watch.ts` spawn the replacement after every actionable watcher close.
 
 A lock is genuinely unheld only in one of these cases:
 
@@ -196,7 +196,7 @@ That beacon check uses the poll-derived grace described below rather than the fl
 It uses that grace because the daemon starts a fresh one-shot watcher only after it finishes handling the previous wake.
 That handling can legitimately outrun a fixed 300-second window under load (a slow registered check, a busy supervisor pane) with the daemon perfectly healthy throughout.
 
-With `state/.afk` absent the daemon lock proves nothing and the strict watcher predicate is unchanged.
+With `state/.afk` absent the daemon lock proves nothing; the other supervision predicates still apply.
 
 ### State directory, grace, and missing input
 
@@ -549,6 +549,7 @@ That warning uses `bin/fm-supervision-instructions.sh --repair-line`, so it alwa
 - Child-worktree exclusion.
 - `FM_HOME` and `FM_STATE_OVERRIDE` precedence.
 - The live-lock and fresh-beacon guard predicate.
+- The extension-owned Pi hand-off at the turn boundary, plus its persistent and auto-arm isolation and its stale-beacon, dead-held-lock, and missing-ownership negatives.
 - The cooperative `--claude` open-generation claim wait.
 - Monotonic failed-epoch progression.
 - Bounded attended fail-open.

@@ -344,7 +344,7 @@ test_hook_blocks_when_dead_lock_has_fresh_beacon() {
 }
 
 test_hook_silent_with_live_lock_and_fresh_beacon() {
-  local dir pid identity out status
+  local dir pid identity out status source marker version model
   dir=$(make_primary_dir "$TMP_ROOT/hook-live-lock-fresh")
   : > "$dir/state/task1.meta"
   sleep 60 &
@@ -362,6 +362,40 @@ test_hook_silent_with_live_lock_and_fresh_beacon() {
   expect_code 0 "$status" "hook must exit 0 with a live identity-matched watcher lock and fresh beacon"
   [ -z "$out" ] || fail "hook produced output despite a live fresh watcher lock: $out"
   pass "fm-turnend-guard: silent no-op with a live watcher lock and fresh beacon"
+
+  rm -rf "$dir/state/.watch.lock"
+  printf '%s\n' "$$" > "$dir/state/.lock"
+  mkdir -p "$dir/.pi/extensions"
+  for source in fm-primary-pi-watch.ts fm-primary-turnend-guard.ts; do
+    cp "$ROOT/.pi/extensions/$source" "$dir/.pi/extensions/$source"
+    case "$source" in
+      fm-primary-pi-watch.ts) marker=.pi-watch-extension-loaded ;;
+      *) marker=.pi-turnend-extension-loaded ;;
+    esac
+    version=$(FM_STATE_OVERRIDE="$dir/state" bash -c '. "$1"; fm_pi_extension_version "$2"' \
+      _ "$dir/bin/fm-wake-lib.sh" "$dir/.pi/extensions/$source") || fail "could not hash extension"
+    printf '%s\n%s\ngeneration=1 phase=active\n' "$version" "$$" > "$dir/state/$marker"
+  done
+  out=$(FM_SUPERVISION_MODEL=extension run_hook "$dir" false); status=$?
+  expect_code 0 "$status" "turn boundary during an extension-owned hand-off must not alarm"
+  [ -z "$out" ] || fail "healthy Pi hand-off produced output: $out"
+
+  for model in persistent autoarm; do
+    out=$(FM_SUPERVISION_MODEL="$model" run_hook "$dir" false); status=$?
+    expect_code 2 "$status" "$model Stop must not borrow extension hand-off tolerance"
+  done
+  touch -t 202001010000 "$dir/state/.last-watcher-beat"
+  out=$(FM_SUPERVISION_MODEL=extension run_hook "$dir" false); status=$?
+  expect_code 2 "$status" "extension ownership must not suppress an expired-beacon alarm"
+  touch "$dir/state/.last-watcher-beat"
+  record_watcher_lock "$dir" "$(nonexistent_pid)" "dead watcher identity"
+  out=$(FM_SUPERVISION_MODEL=extension run_hook "$dir" false); status=$?
+  expect_code 2 "$status" "extension ownership must not suppress a dead held-watcher alarm"
+  rm -rf "$dir/state/.watch.lock"
+  rm "$dir/state/.pi-watch-extension-loaded"
+  out=$(FM_SUPERVISION_MODEL=extension run_hook "$dir" false); status=$?
+  expect_code 2 "$status" "fresh beacon without the owning extension must still alarm"
+  pass "fm-turnend-guard: extension hand-off stays silent but absent, stale, and dead supervision still alarms"
 }
 
 test_hook_non_claude_health_ignores_claude_budget_contention() {

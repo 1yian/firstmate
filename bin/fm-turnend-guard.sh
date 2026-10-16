@@ -43,9 +43,9 @@
 # daemon starts a fresh one-shot watcher only after it finishes handling the
 # previous wake, and that handling can legitimately run past a flat 300s
 # window under load (a slow registered check, a busy supervisor pane) with the
-# daemon perfectly healthy throughout. The strict watcher predicate and $GRACE
-# are unchanged everywhere else, including for a dead daemon pid or a beacon
-# older than AFK_GRACE, which still block.
+# daemon perfectly healthy throughout. Extension primaries also accept the
+# model-aware hand-off verdict. Without either proof of supervision, a dead
+# daemon pid or a beacon older than AFK_GRACE still blocks.
 #
 # Loop-guard, codex/Grok (default) mode: never block twice in the same turn.
 # Codex uses stop_hook_active and Grok uses stopHookActive; typed camel-case
@@ -231,6 +231,12 @@ allow_supervised_stop() {
 
 if fm_watcher_healthy "$STATE" "$WATCH" "$GRACE" "$FM_HOME"; then
   allow_supervised_stop
+fi
+
+if [ "$CLAUDE_MODE" -eq 0 ] && [ "$CURSOR_MODE" -eq 0 ] \
+  && [ "$(fm_supervision_model)" = extension ]; then
+  fm_watcher_supervision_verdict "$STATE" "$WATCH" "$GRACE" "$FM_HOME" "$FM_ROOT"
+  [ "$FM_WATCHER_VERDICT_OK" != true ] || allow_supervised_stop
 fi
 
 # Away mode transfers supervision ownership from the watcher to the away-mode
