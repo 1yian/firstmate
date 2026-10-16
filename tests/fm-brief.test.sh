@@ -732,7 +732,12 @@ test_herdr_lab_omission_is_loud_for_ship_and_scout() {
       "$kind brief missing the fail-visible regeneration instruction"
     assert_grep 'one named job tab in your own current Herdr workspace, not a separate session or a hidden background job' "$brief" \
       "$kind brief must allow a bounded long-job tab without granting session access"
-    assert_grep 'herdr pane current' "$brief" "$kind brief must discover the worker workspace"
+    assert_grep 'herdr pane current --pane "$HERDR_PANE_ID"' "$brief" \
+      "$kind brief must discover the worker workspace from its own pane, not global focus"
+    assert_grep 'if it is unset or empty, you are not in a Herdr pane, so stop and ask firstmate' "$brief" \
+      "$kind brief must stop a worker outside a Herdr pane"
+    assert_grep 'Never run `herdr pane current` without `--pane`' "$brief" \
+      "$kind brief must forbid the focus-dependent workspace lookup"
     assert_grep 'herdr tab create --workspace <id> --label <job-name> --no-focus' "$brief" \
       "$kind brief must create the named tab without taking focus"
     assert_grep 'herdr pane run <new-pane-id> "<command with its own timeout>"' "$brief" \

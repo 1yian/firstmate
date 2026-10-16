@@ -554,8 +554,10 @@ IFS= read -r -d '' HERDR_SECTION <<'EOF' || true
 # Herdr lifecycle declaration - NOT ENABLED
 **HARD SAFETY GATE:** this scaffold cannot inspect the task text filled in above.
 For long-running commands (builds, test suites, servers, pipelines), you may create one named job tab in your own current Herdr workspace, not a separate session or a hidden background job.
-Run `herdr pane current` to get your workspace ID, then `herdr tab create --workspace <id> --label <job-name> --no-focus`, then `herdr pane run <new-pane-id> "<command with its own timeout>"`.
-If your current workspace cannot be identified, stop and ask firstmate rather than selecting another workspace.
+Herdr sets `$HERDR_PANE_ID` only inside its own panes; if it is unset or empty, you are not in a Herdr pane, so stop and ask firstmate rather than selecting another workspace.
+Never run `herdr pane current` without `--pane`; outside a pane it silently returns whichever workspace has focus.
+Run `herdr pane current --pane "$HERDR_PANE_ID"` to get your workspace ID, then `herdr tab create --workspace <id> --label <job-name> --no-focus`, then `herdr pane run <new-pane-id> "<command with its own timeout>"`.
+If your current workspace still cannot be identified, stop and ask firstmate rather than selecting another workspace.
 Bound the command with `gtimeout` or a Python/shell timeout wrapper; macOS has no `timeout` by default.
 Reuse that tab for subsequent long jobs; do not alter other tabs, panes, or workspaces.
 Before reporting done, list your workspace's tabs, finish or kill the job you started, and close only the tab you created.
