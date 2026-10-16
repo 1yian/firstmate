@@ -692,6 +692,8 @@ test_herdr_lab_contract_is_explicit_and_complete() {
     "Herdr lab brief missing the after tripwire"
   assert_no_grep "Herdr lifecycle declaration - NOT ENABLED" "$brief" \
     "Herdr lab brief retained the unguarded declaration"
+  assert_no_grep 'one named job tab' "$brief" \
+    "Herdr lab brief must not inherit the ordinary workspace exception"
   pass "fm-brief.sh: --herdr-lab emits the complete hard safety contract"
 }
 
@@ -728,8 +730,23 @@ test_herdr_lab_omission_is_loud_for_ship_and_scout() {
       "$kind brief silently omitted the Herdr declaration"
     assert_grep "regenerate the brief with \`--herdr-lab\` before dispatch" "$brief" \
       "$kind brief missing the fail-visible regeneration instruction"
+    assert_grep 'one named job tab in your own current Herdr workspace, not a separate session or a hidden background job' "$brief" \
+      "$kind brief must allow a bounded long-job tab without granting session access"
+    assert_grep 'herdr pane current' "$brief" "$kind brief must discover the worker workspace"
+    assert_grep 'herdr tab create --workspace <id> --label <job-name> --no-focus' "$brief" \
+      "$kind brief must create the named tab without taking focus"
+    assert_grep 'herdr pane run <new-pane-id> "<command with its own timeout>"' "$brief" \
+      "$kind brief must run the bounded job in the new pane"
+    assert_grep 'stop and ask firstmate rather than selecting another workspace' "$brief" \
+      "$kind brief must not guess a workspace"
+    assert_grep 'Reuse that tab for subsequent long jobs; do not alter other tabs, panes, or workspaces' "$brief" \
+      "$kind brief must limit permission to the one owned tab"
+    assert_grep "list your workspace's tabs, finish or kill the job you started, and close only the tab you created" "$brief" \
+      "$kind brief must require job and tab cleanup before completion"
+    assert_grep 'This job-tab exception does not authorize Herdr session or server lifecycle operations' "$brief" \
+      "$kind brief must retain session and server isolation"
   done
-  pass "fm-brief.sh: ship and scout scaffolds make omitted Herdr intent fail-visible"
+  pass "fm-brief.sh: ship and scout allow one bounded job tab while retaining the Herdr lab requirement"
 }
 
 # Regression (issue #2575): AGENTS.md section 11 and this script's own help tell
