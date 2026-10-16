@@ -234,8 +234,8 @@ fm_watcher_healthy() {
 # arm layer (bin/fm-watch-arm.sh, bin/fm-claude-stop-autoarm.sh) needs exactly
 # that - it decides whether to start, attach to, or replace a real watcher
 # process, so a leftover beacon must never satisfy it. bin/fm-turnend-guard.sh
-# also keeps this strict check because it fires at the turn boundary where the
-# auto-arm brings a fresh watcher up. The pull warning (bin/fm-guard.sh) fires
+# checks it first at the turn boundary, and for extension primaries only also
+# accepts the model-aware verdict below. The pull warning (bin/fm-guard.sh) fires
 # mid-turn, where the auto-arm model runs no watcher at all, so it wants a
 # different, model-aware question:
 

@@ -549,6 +549,7 @@ That warning uses `bin/fm-supervision-instructions.sh --repair-line`, so it alwa
 - Child-worktree exclusion.
 - `FM_HOME` and `FM_STATE_OVERRIDE` precedence.
 - The live-lock and fresh-beacon guard predicate.
+- The extension-owned Pi hand-off at the turn boundary, plus its persistent and auto-arm isolation and its stale-beacon, dead-held-lock, and missing-ownership negatives.
 - The cooperative `--claude` open-generation claim wait.
 - Monotonic failed-epoch progression.
 - Bounded attended fail-open.
